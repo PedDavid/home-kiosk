@@ -2,7 +2,8 @@
 
 This chart deploys the Home HQ dashboard: a single-replica Deployment with the Recreate
 strategy, a Service, an Ingress, and the household settings as a ConfigMap. Changing the settings
-rolls the pod.
+rolls the pod. Optionally the app terminates TLS itself behind a dedicated LAN address (see
+[Dedicated LAN address](#dedicated-lan-address)).
 
 Each `v*` tag in this repo publishes the chart and the image with the same version:
 
@@ -47,7 +48,7 @@ spec:
     key:
       existingSecret: home-hq # holds HQ_KEY, created per RFC 004
     ingress:
-      host: home-hq.lab.prdv.cloud
+      host: home-hq.prdv.cloud
     settings:
       timezone: Europe/Lisbon
       location: { lat: 38.7223, lon: -9.1393, units: celsius }
@@ -93,18 +94,48 @@ run with that bundled example. Quote dates such as `"2026-01-06"` so YAML keeps 
 
    Alternatively, make both packages public (`home-kiosk` and `charts/home-hq`). Neither contains
    secrets.
-3. **DNS.** `home-hq.lab.prdv.cloud` must resolve to Traefik's LoadBalancer IP.
+3. **DNS.** `home-hq.prdv.cloud` must resolve to Traefik's LoadBalancer IP (or to the LAN
+   address, with `lanService`).
 4. **TLS.** By default the Ingress uses Traefik's default certificate. If your other apps
    reference the wildcard Secret explicitly, set `ingress.tls.secretName`.
 
 Then open:
 
 ```
-https://home-hq.lab.prdv.cloud/?key=<HQ_KEY>
+https://home-hq.prdv.cloud/?key=<HQ_KEY>
 ```
 
 You should be redirected to `/` with a `hq` cookie set, and the dashboard should show dummy
 data. `/m` is the phone page.
+
+## Dedicated LAN address
+
+Behind Traefik, a device allowed to reach Traefik's IP can reach every other ingress by sending a
+different hostname. For a kiosk on an untrusted network, give the dashboard an address of its own
+instead. The app serves TLS from a `kubernetes.io/tls` Secret, and `lanService` points a
+LoadBalancer straight at it, so a firewall rule for that IP and port reaches the dashboard and
+nothing else:
+
+```yaml
+  values:
+    tls:
+      existingSecret: home-hq.prdv.cloud-tls # e.g. from cert-manager
+    lanService:
+      enabled: true
+      annotations:
+        metallb.io/loadBalancerIPs: 192.168.8.56
+        external-dns.kubernetes.io/hostname: home-hq.prdv.cloud
+    ingress:
+      enabled: false # so DNS points only at the LAN address
+```
+
+The whole Secret is mounted (no `subPath`) and the app re-reads it every minute, so a renewed
+certificate is served without a restart. A file that doesn't load is logged and the previous
+certificate stays in use. Plain HTTP on 8080 stays on for the probes. `externalTrafficPolicy:
+Local` (the default here) keeps client addresses in the logs.
+
+The listener is rustls: TLS 1.2 and 1.3, AEAD suites only (AES-GCM, ChaCha20). Android 6 with
+WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a client is that old.
 
 ## Values
 
@@ -116,6 +147,8 @@ data. `/m` is the phone page.
 | `settings` | `{}` | Household settings. Empty means the bundled example |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
+| `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |
+| `lanService.enabled`, `type`, `port`, `externalTrafficPolicy`, `annotations` | `false`, `LoadBalancer`, `443`, `Local`, `{}` | A Service straight to the TLS listener: a dedicated LAN address. Needs `tls.existingSecret` |
 | `extraEnv` | `[]` | Extra env vars (HA token and adapter credentials in later deliveries) |
 | `logLevel` | `info` | `RUST_LOG` |
 | `resources`, `podSecurityContext`, `securityContext`, `nodeSelector`, `tolerations`, `affinity`, `podAnnotations` | small, non-root, read-only root filesystem | The usual |

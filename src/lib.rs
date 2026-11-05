@@ -5,6 +5,7 @@ pub mod assets;
 pub mod auth;
 pub mod demo;
 pub mod settings;
+pub mod tls;
 
 use std::sync::Arc;
 

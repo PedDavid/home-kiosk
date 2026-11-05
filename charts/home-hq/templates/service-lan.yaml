@@ -1,0 +1,26 @@
+{{- if .Values.lanService.enabled }}
+{{- if not .Values.tls.existingSecret }}
+{{- fail "lanService.enabled needs tls.existingSecret: the LAN Service goes straight to the TLS listener" }}
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "home-hq.fullname" . }}-lan
+  labels:
+    {{- include "home-hq.labels" . | nindent 4 }}
+  {{- with .Values.lanService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.lanService.type }}
+  {{- if and (ne .Values.lanService.type "ClusterIP") .Values.lanService.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.lanService.externalTrafficPolicy }}
+  {{- end }}
+  selector:
+    {{- include "home-hq.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: https
+      port: {{ .Values.lanService.port }}
+      targetPort: https
+{{- end }}

@@ -52,7 +52,9 @@ empty `frontend/dist`.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `HQ_LISTEN` | `0.0.0.0:8080` | Listen address |
+| `HQ_LISTEN` | `0.0.0.0:8080` | Listen address (plain HTTP, always on) |
+| `HQ_TLS_CERT` / `HQ_TLS_KEY` | unset (no TLS) | PEM certificate chain and key. Both set adds a TLS listener; the files are re-read every minute and a renewed certificate is used without a restart |
+| `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
