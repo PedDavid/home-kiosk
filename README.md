@@ -37,6 +37,7 @@ Each later delivery replaces one slice of `demo.rs` with a real port and adapter
 | Frames monitor | offline notification through HA after 15 minutes |
 | Capabilities | `/api/state` capability flags, plus the frontend patch that hides unconfigured tabs |
 | Integrations | Immich, Mealie, CalDAV, travel time |
+| Auth | Keycloak login for phones, frame pairing, step-up for sensitive controls ([RFC](docs/rfc-device-auth.md)) |
 
 ## Running locally
 
