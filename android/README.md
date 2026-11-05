@@ -11,6 +11,21 @@ closer fingers as one touch.
 - **Reload dashboard** reloads the current URL.
 - **Back to dashboard** dismisses the controls.
 
+## Pull down from the top
+
+The controls also open with a one-finger pull from the top edge: touch within 32 dp of the top
+and drag down. A round bubble with a menu icon follows the finger, and a ring around it fills as
+you pull. After 110 dp it turns light, and letting go then opens the controls. Letting go
+sooner, or pulling back up, sends the bubble away and does nothing. It is always on and works
+on panels that merge two-finger touches.
+
+A touch that starts in that 32 dp strip reaches the page only once it is clearly not a pull:
+on release (a tap), when it moves sideways, when a second finger lands, or after 500 ms
+without moving. Pages that act on `pointerdown` therefore react to taps in the strip on
+release, and a pull never reaches the page at all. This relies on the kiosk's immersive window
+getting the top-edge swipe; on frames where Android shows the status bar for it instead, the
+two-finger hold or the Menu button remain.
+
 ## Optional single-tap Menu button
 
 On panels where the two-finger gesture is unreliable, enable a native **Menu** button:

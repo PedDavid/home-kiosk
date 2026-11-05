@@ -50,7 +50,9 @@ import java.util.Map;
 /**
  * Full-screen kiosk WebView for the Home HQ wall tablet.
  * - Immersive mode hides the status + navigation bars (true 1280x800).
- * - Controls: hold two fingers still on the screen for 1.5s for launcher/settings/Wi-Fi/reload.
+ * - Controls: hold two fingers still on the screen for 1.5s for launcher/settings/Wi-Fi/reload,
+ *   or pull one finger down from the top edge until the bubble lights up, then let go (for panels
+ *   that merge two-finger touches).
  *   Optional single-tap Menu button: launch with --ez menu_button true (false removes it).
  * - Offline: a failed page load shows a native screen instead of WebView's error page (which
  *   prints the full URL, including any token in it). With no Wi-Fi it offers Wi-Fi settings.
@@ -84,6 +86,16 @@ public class MainActivity extends Activity {
   static final long NAV_CHECK_MS = 5000;
   static final long NAV_REBIND_MS = 1000;
   static final float EXIT_SLOP_PX = 60;
+  // Pull-down: a touch that starts within PULL_ZONE_DP of the top edge and is dragged down shows a
+  // bubble that follows it; PULL_TRIGGER_DP of travel arms it, and letting go then opens the
+  // controls. The top edge is free here because this kiosk's immersive window gets the swipe.
+  // A touch that starts in the zone is held back from the page until it is clearly not a pull,
+  // because the dashboard acts on pointerdown and a later cancel can't undo that.
+  static final int PULL_ZONE_DP = 32;
+  static final int PULL_SLOP_DP = 10;
+  static final int PULL_TRIGGER_DP = 110;
+  static final int PULL_BUBBLE_DP = 48;
+  static final long PULL_HOLD_MS = 500; // a press that stays still this long goes to the page
   static final String LOCAL_HOST = "127.0.0.1";
   static final int LOCAL_PORT = 8765;
   static final String LOCAL_ASSETS = "site";
@@ -106,6 +118,11 @@ public class MainActivity extends Activity {
   private final float[] exitX = new float[2];
   private final float[] exitY = new float[2];
   private boolean exitArmed;
+  private MotionEvent pullDown; // held-back DOWN of a possible pull
+  private boolean pulling; // the bubble is out
+  private boolean pullSwallow; // a pull was aborted by a second finger; ignore the rest of the touch
+  private PullBubble bubble;
+  private final Runnable releasePull = this::releasePullDown;
   private String retryUrl;
   private String mainUrl;
   private boolean pageFailed;
@@ -322,6 +339,10 @@ public class MainActivity extends Activity {
         dp(72), dp(48), Gravity.BOTTOM | Gravity.LEFT);
     menuPosition.setMargins(dp(12), dp(12), dp(12), dp(12));
     root.addView(menuButton, menuPosition);
+    bubble = new PullBubble(this);
+    bubble.setVisibility(View.GONE);
+    root.addView(bubble, new FrameLayout.LayoutParams(
+        dp(PULL_BUBBLE_DP), dp(PULL_BUBBLE_DP), Gravity.TOP | Gravity.LEFT));
     applyMenuButtonFlag(getIntent());
     setContentView(root);
 
@@ -916,10 +937,60 @@ public class MainActivity extends Activity {
     Log.i(TAG, "Start after boot " + (boot ? "on" : "off"));
   }
 
-  /** Watches for the two-finger exit hold; all touches still go to the page (after a stale-touch reset). */
+  /**
+   * Watches for the two-finger exit hold and the top-edge pull. All touches still go to the page
+   * (after a stale-touch reset), except a pull; one that starts at the top edge arrives late, once
+   * it is clearly not a pull.
+   */
   @Override
   public boolean dispatchTouchEvent(MotionEvent e) {
-    switch (e.getActionMasked()) {
+    int action = e.getActionMasked();
+    if (action == MotionEvent.ACTION_DOWN) pullSwallow = false;
+    if (pullSwallow) return true;
+    if (action == MotionEvent.ACTION_DOWN && e.getY() <= dp(PULL_ZONE_DP)) {
+      cancelPageTouches(); // as below, before this touch is held back
+      dropPullDown();
+      pullDown = MotionEvent.obtain(e);
+      handler.postDelayed(releasePull, PULL_HOLD_MS);
+      return true;
+    }
+    if (pullDown != null) {
+      float dx = Math.abs(e.getX() - pullDown.getX());
+      float dy = e.getY() - pullDown.getY();
+      switch (action) {
+        case MotionEvent.ACTION_MOVE:
+          if (!pulling && dy >= dp(PULL_SLOP_DP) && dy >= dx) {
+            pulling = true;
+            handler.removeCallbacks(releasePull);
+            showBubble(e.getX());
+          }
+          if (pulling) {
+            moveBubble(dy);
+            return true;
+          }
+          if (dx < dp(PULL_SLOP_DP)) return true; // too little movement to tell yet
+          break; // sideways: not a pull
+        case MotionEvent.ACTION_UP:
+          if (pulling) {
+            finishPull(bubble.isArmed());
+            return true;
+          }
+          break; // a tap
+        case MotionEvent.ACTION_CANCEL:
+          if (pulling) finishPull(false);
+          else dropPullDown();
+          return true;
+        default: // a second finger
+          if (pulling) {
+            finishPull(false);
+            pullSwallow = true;
+            return true;
+          }
+          break;
+      }
+      releasePullDown(); // a tap, a sideways drag or a second finger: the page gets it after all
+    }
+    switch (action) {
       case MotionEvent.ACTION_DOWN:
         // Android sends DOWN only when every earlier finger has lifted. If the page still holds a
         // touch from before (see cancelPageTouches), clear it first so this tap is not read as a
@@ -960,6 +1031,59 @@ public class MainActivity extends Activity {
         break;
     }
     return super.dispatchTouchEvent(e);
+  }
+
+  /** Hands a held-back top-edge touch to the page: not a pull after all. */
+  private void releasePullDown() {
+    handler.removeCallbacks(releasePull);
+    if (pullDown == null || pulling) return;
+    MotionEvent down = pullDown;
+    pullDown = null;
+    super.dispatchTouchEvent(down);
+    down.recycle();
+  }
+
+  private void dropPullDown() {
+    handler.removeCallbacks(releasePull);
+    if (pullDown == null) return;
+    pullDown.recycle();
+    pullDown = null;
+  }
+
+  private void showBubble(float x) {
+    int size = dp(PULL_BUBBLE_DP);
+    int width = getWindow().getDecorView().getWidth();
+    bubble.animate().cancel();
+    bubble.setScaleX(1);
+    bubble.setScaleY(1);
+    bubble.setProgress(0);
+    bubble.setAlpha(0);
+    bubble.setTranslationX(Math.max(dp(8), Math.min(width - size - dp(8), x - size / 2f)));
+    bubble.setTranslationY(-size);
+    bubble.setVisibility(View.VISIBLE);
+  }
+
+  /** The bubble trails the finger (so the finger doesn't hide it), and slows down past the trigger. */
+  private void moveBubble(float dy) {
+    int size = dp(PULL_BUBBLE_DP);
+    float trigger = dp(PULL_TRIGGER_DP);
+    float travel = dy <= trigger ? dy : trigger + (dy - trigger) * 0.25f;
+    bubble.setProgress(dy / trigger);
+    bubble.setTranslationY(-size + travel * 0.6f);
+    bubble.setAlpha(Math.min(1, travel / size));
+  }
+
+  private void finishPull(boolean open) {
+    pulling = false;
+    dropPullDown();
+    if (open) {
+      Log.i(TAG, "Pull-down");
+      bubble.animate().alpha(0).setDuration(150).withEndAction(() -> bubble.setVisibility(View.GONE)).start();
+      showControls.run();
+    } else {
+      bubble.animate().translationY(-dp(PULL_BUBBLE_DP)).alpha(0).setDuration(180)
+          .withEndAction(() -> bubble.setVisibility(View.GONE)).start();
+    }
   }
 
   private void cancelExit() {
