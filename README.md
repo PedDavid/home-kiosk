@@ -66,12 +66,13 @@ frontend embedded, and ships it on `distroless/cc` as non-root. Woodpecker
 ([`.woodpecker.yml`](.woodpecker.yml)) runs fmt, clippy and tests on every push, and builds and
 pushes the image on tags. It uses the `registry_*` secrets. While the repo lives on GitHub,
 GitHub Actions runs the same checks (`ci.yml`). On `v*` tags it also builds and pushes
-`ghcr.io/peddavid/home-kiosk` for amd64 and arm64 (`release.yml`).
+`ghcr.io/peddavid/home-kiosk` for amd64 and arm64, plus the Helm chart (`release.yml`).
 
 ## Deployment
 
-- [`deploy/home-hq/`](deploy/home-hq/): the kustomize component to copy into the Flux repo,
-  with bootstrap steps.
+- [`charts/home-hq/`](charts/home-hq/): the Helm chart, published to
+  `oci://ghcr.io/peddavid/charts/home-hq` on each `v*` tag, together with the image of the same
+  version. Its README has the `HelmRelease` for the Flux repo and the bootstrap steps.
 - [`docs/frame-runbook.md`](docs/frame-runbook.md): the one-time PF1007L setup (router rules,
   ISRG roots in the trust store, kiosk app, checks).
 

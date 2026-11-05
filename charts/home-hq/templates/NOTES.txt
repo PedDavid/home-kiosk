@@ -1,0 +1,9 @@
+Home HQ {{ .Values.image.tag | default .Chart.AppVersion }} is deployed.
+{{- if .Values.ingress.enabled }}
+
+Open https://{{ .Values.ingress.host }}/?key=<HQ_KEY> once on each device (wall view at /, phone page at /m).
+{{- end }}
+{{- if not .Values.key.existingSecret }}
+
+WARNING: key.existingSecret is not set, so the dashboard is open to anyone who can reach it.
+{{- end }}

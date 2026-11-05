@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "home-hq.fullname" . }}
+  labels:
+    {{- include "home-hq.labels" . | nindent 4 }}
+spec:
+  # One replica: alerts, frame check-ins and (later) the state file live in this one process.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "home-hq.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "home-hq.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/settings: {{ toJson .Values.settings | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: home-hq
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.logLevel | quote }}
+            {{- if .Values.settings }}
+            - name: HQ_SETTINGS
+              value: /config/settings.json
+            {{- end }}
+            {{- if .Values.key.existingSecret }}
+            - name: HQ_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.key.existingSecret }}
+                  key: {{ .Values.key.secretKey }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.settings }}
+          volumeMounts:
+            - name: settings
+              mountPath: /config
+              readOnly: true
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- if .Values.settings }}
+      volumes:
+        - name: settings
+          configMap:
+            name: {{ include "home-hq.fullname" . }}-settings
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

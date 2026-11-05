@@ -1,0 +1,16 @@
+# Used by CI: `helm template` with every optional part switched on.
+imagePullSecrets: [{ name: ghcr-pull }]
+key:
+  existingSecret: home-hq
+ingress:
+  host: home-hq.lab.example.com
+  tls:
+    secretName: wildcard-tls
+extraEnv:
+  - name: EXAMPLE
+    value: "1"
+settings:
+  timezone: Europe/Lisbon
+  location: { lat: 38.7223, lon: -9.1393, units: celsius }
+  people:
+    - { id: alex, name: Alex, color: "#2D5BFF", ha: person.alex }

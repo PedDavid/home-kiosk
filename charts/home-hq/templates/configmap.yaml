@@ -1,0 +1,11 @@
+{{- if .Values.settings }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "home-hq.fullname" . }}-settings
+  labels:
+    {{- include "home-hq.labels" . | nindent 4 }}
+data:
+  settings.json: |
+    {{- toPrettyJson .Values.settings | nindent 4 }}
+{{- end }}

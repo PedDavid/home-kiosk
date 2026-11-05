@@ -1,0 +1,60 @@
+image:
+  repository: ghcr.io/peddavid/home-kiosk
+  # Defaults to the chart's appVersion, so a chart version always runs its matching image.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Needed while the GHCR package is private, e.g. [{ name: ghcr-pull }].
+imagePullSecrets: []
+
+# The dashboard key (HQ_KEY) comes from an existing Secret, never from values.
+# With no existingSecret the dashboard is open to anyone who can reach it.
+key:
+  existingSecret: ""
+  secretKey: HQ_KEY
+
+# Household settings in upstream Home HQ's settings.json format (timezone, location, people,
+# bins, shopping, display). Rendered to JSON in a ConfigMap; any change rolls the pod.
+# Empty: the image's bundled example settings are used.
+settings: {}
+
+logLevel: info
+
+# Extra environment variables for the container (later deliveries: HA_TOKEN, calendar URLs, ...).
+extraEnv: []
+
+service:
+  port: 80
+
+ingress:
+  enabled: true
+  className: traefik
+  host: home-hq.example.com
+  annotations: {}
+  tls:
+    enabled: true
+    # Empty: Traefik's default certificate (e.g. a wildcard set as the default TLSStore).
+    secretName: ""
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

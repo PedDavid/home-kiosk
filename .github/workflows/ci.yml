@@ -28,3 +28,15 @@ jobs:
       - run: cargo test --locked
       - name: Build release binary (frontend embedded)
         run: cargo build --release --locked
+
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint charts/home-hq
+      - run: helm lint charts/home-hq -f charts/home-hq/ci/test-values.yaml
+      - name: Render with defaults and with every option on
+        run: |
+          helm template home-hq charts/home-hq > /dev/null
+          helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml

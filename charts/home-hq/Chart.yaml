@@ -1,0 +1,10 @@
+apiVersion: v2
+name: home-hq
+description: Self-hosted backend for the Home HQ family dashboard (frontend embedded)
+type: application
+# Both are overwritten from the git tag when the release workflow packages the chart.
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/PedDavid/home-kiosk
+sources:
+  - https://github.com/PedDavid/home-kiosk

@@ -20,7 +20,7 @@ The kiosk app's own README is vendored at [`frontend/kiosk/README.md`](../fronte
 - **USB ADB** works from your machine. Every step below uses `adb -d` (USB). The frame's wireless
   ADB stays off.
 - **The dashboard is deployed** and works from the LAN: `https://home-hq.lab.prdv.cloud/?key=…`
-  shows the dashboard. See [`deploy/home-hq/README.md`](../deploy/home-hq/README.md).
+  shows the dashboard. See [`charts/home-hq/README.md`](../charts/home-hq/README.md).
 - **You have the `HQ_KEY` value** from the Secret.
 
 Set these once in your shell:
