@@ -64,8 +64,9 @@ empty `frontend/dist`.
 The [`Dockerfile`](Dockerfile) builds the frontend with Node, builds the binary with the
 frontend embedded, and ships it on `distroless/cc` as non-root. Woodpecker
 ([`.woodpecker.yml`](.woodpecker.yml)) runs fmt, clippy and tests on every push, and builds and
-pushes the image on tags. It uses the `registry_*` secrets. The GitHub Actions workflow runs the
-same checks while the repo lives on GitHub.
+pushes the image on tags. It uses the `registry_*` secrets. While the repo lives on GitHub,
+GitHub Actions runs the same checks (`ci.yml`). On `v*` tags it also builds and pushes
+`ghcr.io/peddavid/home-kiosk` for amd64 and arm64 (`release.yml`).
 
 ## Updating the vendored frontend
 
