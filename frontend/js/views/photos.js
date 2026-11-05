@@ -53,8 +53,9 @@
       }
       el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length;
       V.show.start();
+      if (App.current === 'photos') App.resetIdle();
     },
-    resume: function () { V.el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length; V.show.start(); },
+    resume: function () { V.el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length; V.show.start(); App.resetIdle(); },
     hide: function () { if (V.show) V.show.stop(); }
   });
 })();

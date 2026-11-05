@@ -59,6 +59,14 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+### Photo frame behaviour
+
+After eight seconds without interaction in Photos, the daytime frame shows only an
+edge-to-edge slideshow: navigation, captions, notes, clock, weather and controls are hidden.
+The first touch restores the Photos controls without triggering a photo action. Other views
+use the existing configurable rest timeout before entering the same image-only ambient mode.
+Night and screen-off schedules still take precedence, and open dialogs keep the normal timeout.
+
 ### Immich favourites
 
 Set both `HQ_IMMICH_URL` (the Immich API base URL, e.g. `https://photos.example.com/api`)

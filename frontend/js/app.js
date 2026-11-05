@@ -64,7 +64,7 @@
   App.rest = function () {
     var m = App.restMode();
     App.closeSheet();
-    App.go('home');
+    if (App.current !== 'photos') App.go('home');
     App.setMode(m);
     App.scheduledOff = m === 'off';
   };
@@ -385,6 +385,9 @@
     idleSec++;
     var blocked = $('#takeover').classList.contains('is-open');
     if (App.mode !== 'day' || blocked) return;
+    // Open dialogs keep their normal timeout; idle photos become an image-only frame.
+    var dialog = $('#sheetLayer').classList.contains('is-open') || $('#demo').classList.contains('is-open');
+    if (App.current === 'photos' && window.DATA.photos.length && idleSec >= 8 && !dialog) { App.rest(); return; }
     if (idleSec === App.idle.home && App.current !== 'home') { App.closeSheet(); App.go('home'); }
     if (idleSec >= (App.isNight() ? App.idle.peek : App.idle.rest)) App.rest();
   }
