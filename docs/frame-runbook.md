@@ -19,14 +19,14 @@ The kiosk app's own README is vendored at [`frontend/kiosk/README.md`](../fronte
   follow upstream's PF1007L guide first.
 - **USB ADB** works from your machine. Every step below uses `adb -d` (USB). The frame's wireless
   ADB stays off.
-- **The dashboard is deployed** and works from the LAN: `https://home-hq.lab.prdv.cloud/?key=…`
+- **The dashboard is deployed** and works from the LAN: `https://home-hq.prdv.cloud/?key=…`
   shows the dashboard. See [`charts/home-hq/README.md`](../charts/home-hq/README.md).
 - **You have the `HQ_KEY` value** from the Secret.
 
 Set these once in your shell:
 
 ```bash
-FRAME_URL='https://home-hq.lab.prdv.cloud/?frame=kitchen&key=<HQ_KEY>'
+FRAME_URL='https://home-hq.prdv.cloud/?frame=kitchen&key=<HQ_KEY>'
 ```
 
 `frame=kitchen` names this frame in check-ins and in the display controls.
@@ -41,31 +41,50 @@ Follow the existing RM4 and SLZB pattern in `router/playbook.yml`:
    adb -d shell cat /sys/class/net/wlan0/address
    ```
 
-2. **An IoT→LAN allow rule:** source is the frame's fixed IP, destination is Traefik's
-   LoadBalancer IP, TCP 443 only. Nothing else from IoT to LAN.
+2. **An IoT→LAN allow rule:** source is the frame's fixed IP, destination is the dashboard's own
+   LAN address (the chart's `lanService`, a MetalLB IP), TCP 443 only. Nothing else from IoT to
+   LAN.
 3. **A "block WAN" rule** for the frame's MAC, so it gets no internet. Vendor firmware and apps
    can't phone home, and the clock comes from the router's NTP if it serves one. Without NTP,
    check that the frame's clock is right, because TLS fails on a wrong date.
-4. **DNS** goes through Pi-hole as for every IoT client, and `home-hq.lab.prdv.cloud` must
-   resolve to Traefik's IP.
+4. **DNS** goes through Pi-hole as for every IoT client, and `home-hq.prdv.cloud` must
+   resolve to that LAN address.
 5. **Recommended:** make sure other IoT clients can't reach the frame (client isolation on the
    IoT SSID, or a drop rule for traffic to the frame's IP). The frame runs root ADB with no key
    check. Its wireless ADB is off by default, but isolation keeps it that way if something turns
    it on.
 
-Accepted trade-off, from PRD 002: because the rule targets Traefik's IP, the frame can also
-reach other `*.lab` hostnames. Each of those keeps its own authentication.
+The address belongs to the dashboard alone: the app terminates TLS itself and nothing else listens
+there. That's why it isn't Traefik's IP, which would let the frame reach every other ingress by
+sending a different hostname.
 
-## 2. Trust store: ISRG roots
+## 2. Trust store
 
 The frame validates the dashboard's certificate, so the key is never sent over an untrusted
-connection. The chain is `lab.prdv.cloud` → Let's Encrypt YR2 → ISRG Root YR, cross-signed by
-ISRG Root X1. Android 6 trusts neither root, so both go into the system CA store.
+connection. The certificate is from Actalis: `home-hq.prdv.cloud` → Actalis DV TLS Server RSA CA
+2025 → Actalis TLS Server RSA Root CA 2025 → Actalis Authentication Root CA. Android 6 ships that
+last root, so there's nothing to install. Check it's there:
 
-1. **See what Traefik actually serves**, from the LAN:
+```bash
+adb -d shell ls /system/etc/security/cacerts/5f47b495.0
+```
+
+And check the served chain from the LAN:
+
+```bash
+openssl s_client -connect home-hq.prdv.cloud:443 -servername home-hq.prdv.cloud -showcerts </dev/null | grep -E 's:|i:'
+```
+
+### Fallback: ISRG roots
+
+Only if the dashboard ever moves to a Let's Encrypt certificate (chain: Let's Encrypt YR2 → ISRG
+Root YR, cross-signed by ISRG Root X1). Android 6 trusts neither root, so both go into the system
+CA store.
+
+1. **See what is actually served**, from the LAN:
 
    ```bash
-   openssl s_client -connect home-hq.lab.prdv.cloud:443 -servername home-hq.lab.prdv.cloud -showcerts </dev/null | grep -E 's:|i:'
+   openssl s_client -connect home-hq.prdv.cloud:443 -servername home-hq.prdv.cloud -showcerts </dev/null | grep -E 's:|i:'
    ```
 
    The last issuer tells you which root the frame has to know. Install both anyway.
@@ -115,9 +134,6 @@ ISRG Root X1. Android 6 trusts neither root, so both go into the system CA store
 
 5. **Check.** In Settings → Security → Trusted credentials → System, "ISRG Root X1" and "ISRG
    Root YR" appear.
-
-**Fallback,** if `/system` can't be modified: the existing Actalis issuer (as used for the
-Roborock). PRD 002 records this, but no Actalis certificate is issued unless it's needed.
 
 **Undo:** remount read-write, delete the two files, remount read-only, reboot.
 
