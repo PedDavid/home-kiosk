@@ -33,30 +33,41 @@ FRAME_URL='https://home-hq.prdv.cloud/?frame=kitchen&key=<HQ_KEY>'
 
 ## 1. Network (router playbook, infra repo)
 
-Follow the existing RM4 and SLZB pattern in `router/playbook.yml`:
+The frame's Wi-Fi MAC is random on every boot (RTL8723CS), so nothing on the router can key on
+it: no DHCP reservation, no per-MAC rule. The frame holds a fixed address of its own instead,
+and the router's rules key on that.
 
-1. **A fixed DHCP lease** on the IoT network for the frame's Wi-Fi MAC. Read the MAC with:
+1. **A static IP on the frame**, in the IoT subnet and outside the DHCP pool: `192.168.10.160`.
+   In Android Settings → Wi-Fi, long-press the IoT network → Modify network → Advanced options →
+   IP settings: Static. Use the router as gateway and Pi-hole as DNS. Check it with:
 
    ```bash
-   adb -d shell cat /sys/class/net/wlan0/address
+   adb -d shell ip -4 addr show wlan0
    ```
 
-2. **An IoT→LAN allow rule:** source is the frame's fixed IP, destination is the dashboard's own
-   LAN address (the chart's `lanService`, a MetalLB IP), TCP 443 only. Nothing else from IoT to
-   LAN.
-3. **A "block WAN" rule** for the frame's MAC, so it gets no internet. Vendor firmware and apps
-   can't phone home, and the clock comes from the router's NTP if it serves one. Without NTP,
-   check that the frame's clock is right, because TLS fails on a wrong date.
+2. **The IoT→LAN allow rule** (`Allow-IoT-Home-HQ` in `router/playbook.yml`): source
+   `192.168.10.160`, destination the dashboard's own LAN address (the chart's `lanService`, a
+   MetalLB IP, `192.168.8.56`), TCP 443 only. Nothing else goes from IoT to LAN. If the frame
+   ever loses its static IP, it falls back to DHCP and the dashboard stops loading. It never
+   gains access.
+3. **No internet.** The IoT zone is default-deny to WAN (infra RFC 020), so vendor firmware and
+   apps can't phone home and the frame needs no rule of its own. The clock comes from the
+   router's NTP if it serves one. Without NTP, check that the frame's clock is right, because
+   TLS fails on a wrong date.
 4. **DNS** goes through Pi-hole as for every IoT client, and `home-hq.prdv.cloud` must
    resolve to that LAN address.
 5. **Recommended:** make sure other IoT clients can't reach the frame (client isolation on the
-   IoT SSID, or a drop rule for traffic to the frame's IP). The frame runs root ADB with no key
-   check. Its wireless ADB is off by default, but isolation keeps it that way if something turns
-   it on.
+   IoT SSID, or a drop rule for traffic to `192.168.10.160`). The frame runs root ADB with no
+   key check. Its wireless ADB is off by default, but isolation keeps it that way if something
+   turns it on.
 
 The address belongs to the dashboard alone: the app terminates TLS itself and nothing else listens
 there. That's why it isn't Traefik's IP, which would let the frame reach every other ingress by
 sending a different hostname.
+
+The source-IP scope is defense in depth, not a hard wall: another device on the same Wi-Fi can
+claim `192.168.10.160` (at the cost of an IP conflict). The dashboard's own key check is the
+real boundary.
 
 ## 2. Trust store
 
@@ -179,7 +190,7 @@ reload after a deploy.
 
 5. **Wireless ADB stays off.** Don't save an `adbfrom` subnet unless you need over-the-air
    installs. If you do, use your workstation's subnet, never `any`, and remember that the router
-   only lets the frame talk to Traefik anyway.
+   only lets the frame reach the dashboard's LAN address anyway.
 
 ## 4. Checks
 
@@ -201,5 +212,5 @@ reload after a deploy.
 ## Rebuilding from scratch
 
 The steps don't depend on each other's leftovers. On a new or reset frame, run sections 2–4 in
-order, after upstream's rooting and WebView steps. If the MAC changed, update the router lease
-and rules (section 1) first.
+order, after upstream's rooting and WebView steps, and set the static IP from section 1 first.
+The router rules key on that IP, so they don't change when the frame does.
