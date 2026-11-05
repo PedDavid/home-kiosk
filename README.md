@@ -67,6 +67,44 @@ The first touch restores the Photos controls without triggering a photo action. 
 use the existing configurable rest timeout before entering the same image-only ambient mode.
 Night and screen-off schedules still take precedence, and open dialogs keep the normal timeout.
 
+### Connect Immich by QR code
+
+Home HQ supports [`PedDavid/immich-device-auth`](https://github.com/PedDavid/immich-device-auth)
+as an alternative to configuring a static Immich API key. Deploy the broker alongside Immich,
+enable Immich OIDC sign-in, and register the broker's OAuth callback with your identity provider
+as described in that repository. Then configure Home HQ:
+
+```sh
+HQ_IMMICH_URL=https://photos.example.com/api
+HQ_IMMICH_DEVICE_AUTH_URL=https://device.photos.example.com
+```
+
+Leave `HQ_IMMICH_API_KEY` unset in device-auth mode. Both URLs are server configuration;
+the browser cannot supply a broker or change where Home HQ sends a key. The configured
+Immich URL must address the same server as the broker, and includes `/api` (the broker URL
+does not). Internal service URLs are supported; the broker must return an approval URL reachable
+from your phone. Use HTTPS in deployment and set `HQ_KEY` to restrict dashboard and pairing access.
+With no dashboard key, pairing management is open just like the rest of the dashboard.
+
+Open **Photos → Connect Immich** (or `/immich`), scan the QR code, compare the displayed code,
+and approve on your phone. Home HQ requests `asset.read asset.view asset.update`, with a
+one-day lifetime capped by the broker. The device code and issued key stay on the backend;
+the QR image is generated locally. Polling respects the broker interval and `slow_down` responses.
+Once connected, use **Show favourite photos**. **Disconnect** revokes the issued key through
+the broker; if revocation fails, the grant is retained so you can retry.
+
+A grant is shared by this Home HQ instance and all its frames. Grants are held in memory only:
+restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
+Expired grants stop being used even if the broker is unavailable. There is no refresh token;
+return to `/immich` to approve again after expiry. Cancelling a pending request clears it locally;
+the broker expires abandoned approvals and revokes any uncollected keys. Read-only container
+filesystems need no extra writable volume. Helm users can pass the two URLs through `extraEnv`.
+
+The flow was tested end to end with the broker at commit
+`1af7484a9a71b3946f14b7f569c3c5d440f98563` and its mock identity provider/Immich server
+(extended locally with fixture photo endpoints). Real Immich/OIDC deployment validation is still
+required; the broker's README lists its current proof-of-concept limitations.
+
 ### Immich favourites
 
 Set both `HQ_IMMICH_URL` (the Immich API base URL, e.g. `https://photos.example.com/api`)

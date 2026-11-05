@@ -21,7 +21,7 @@
           '<button class="ph-zone ph-zone--l" data-prev aria-label="Previous"></button>' +
           '<button class="ph-zone ph-zone--c" data-loud aria-label="Show details"></button>' +
           '<button class="ph-zone ph-zone--r" data-next aria-label="Next"></button>' +
-          '<div class="ph-top"><div class="seg seg--glass">' + LAYOUTS.map(function (l) {
+          '<div class="ph-top"><a class="ph-btn ph-connect" href="/immich" hidden>Connect Immich</a><div class="seg seg--glass">' + LAYOUTS.map(function (l) {
             return '<button data-layout="' + l[0] + '" class="' + (l[0] === V.layout ? 'is-on' : '') + '">' + l[1] + '</button>';
           }).join('') + '</div></div>' +
           '<div class="ph-bottom">' +
@@ -51,11 +51,16 @@
           }
         });
       }
+      el.querySelector('.ph-connect').hidden = !window.DATA.photoAuth;
+      el.querySelector('.ph-connect').textContent = window.DATA.photoAuth && window.DATA.photoAuth.status === 'connected' ? 'Immich connection' : 'Connect Immich';
+      el.querySelector('.ph-empty').innerHTML = window.DATA.photoAuth
+        ? 'No favourite photos yet.<br><i>Connect Immich above, then mark photos as favourites in Immich.</i>'
+        : 'No photos yet.<br><i>Add some from your phone at <b>' + location.host + '/upload</b></i>';
       el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length;
       V.show.start();
       if (App.current === 'photos') App.resetIdle();
     },
-    resume: function () { V.el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length; V.show.start(); App.resetIdle(); },
+    resume: function () { this.show(V.el); },
     hide: function () { if (V.show) V.show.stop(); }
   });
 })();

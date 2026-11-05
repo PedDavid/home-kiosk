@@ -4,6 +4,7 @@ pub mod api;
 pub mod assets;
 pub mod auth;
 pub mod demo;
+pub mod device_auth;
 pub mod immich;
 pub mod settings;
 
@@ -19,6 +20,7 @@ pub type Clock = Arc<dyn Fn() -> DateTime<Utc> + Send + Sync>;
 pub struct AppState {
     /// The dashboard key. `None` leaves the dashboard open (development and demo only).
     pub key: Option<Arc<str>>,
+    pub device_auth: Option<Arc<device_auth::DeviceAuth>>,
     pub immich: Option<Arc<immich::Immich>>,
     pub demo: Arc<Mutex<demo::Demo>>,
     pub clock: Clock,
@@ -29,9 +31,18 @@ impl AppState {
         let demo = demo::Demo::new(settings, clock());
         AppState {
             immich: None,
+            device_auth: None,
             key: key.filter(|k| !k.is_empty()).map(Arc::from),
             demo: Arc::new(Mutex::new(demo)),
             clock,
+        }
+    }
+
+    pub async fn photo_source(&self) -> Option<Arc<immich::Immich>> {
+        if let Some(auth) = &self.device_auth {
+            auth.source().await
+        } else {
+            self.immich.clone()
         }
     }
 

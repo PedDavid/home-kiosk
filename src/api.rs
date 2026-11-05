@@ -61,6 +61,12 @@ fn image(content_type: &'static str, data: String) -> Response {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/state", get(state))
+        .route(
+            "/immich/auth",
+            get(immich_status).post(immich_start).delete(immich_disconnect),
+        )
+        .route("/immich/auth/poll", post(immich_poll))
+        .route("/immich/auth/qr", get(immich_qr))
         .route("/calendar", get(calendar))
         .route("/weather", get(weather))
         .route("/events", post(add_event))
@@ -89,10 +95,16 @@ pub fn router() -> Router<AppState> {
 
 async fn state(State(app): State<AppState>) -> Response {
     let mut state = app.demo.lock().await.state(app.now());
-    if let Some(immich) = &app.immich {
+    if let Some(immich) = app.photo_source().await {
         match immich.photos().await {
             Ok(photos) => state["photos"] = json!(photos),
             Err(_) => return bad("photo source unavailable", StatusCode::BAD_GATEWAY),
+        }
+    }
+    if let Some(auth) = &app.device_auth {
+        state["photoAuth"] = auth.status().await;
+        if state["photoAuth"]["status"] != "connected" {
+            state["photos"] = json!([]);
         }
     }
     ok(state)
@@ -229,7 +241,7 @@ struct PhotoQuery {
 }
 
 async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Query<PhotoQuery>) -> Response {
-    if let Some(immich) = &app.immich {
+    if let Some(immich) = app.photo_source().await {
         return match immich.image(&id, q.s.is_some()).await {
             Ok(Some((mime, bytes))) => (
                 [
@@ -243,6 +255,9 @@ async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Qu
             Ok(None) => bad("not found", StatusCode::NOT_FOUND),
             Err(_) => bad("photo source unavailable", StatusCode::BAD_GATEWAY),
         };
+    }
+    if app.device_auth.is_some() {
+        return bad("connect Immich first", StatusCode::CONFLICT);
     }
     match app.demo.lock().await.photo_svg(&id, q.s.is_some()) {
         Some(svg) => (
@@ -261,12 +276,15 @@ async fn favourite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes
     let Some(fav) = body(&b)["fav"].as_bool() else {
         return bad("fav must be a boolean", StatusCode::BAD_REQUEST);
     };
-    if let Some(immich) = &app.immich {
+    if let Some(immich) = app.photo_source().await {
         return match immich.favourite(&id, fav).await {
             Ok(true) => ok(json!({"ok":true})),
             Ok(false) => bad("not found", StatusCode::NOT_FOUND),
             Err(_) => bad("photo source unavailable", StatusCode::BAD_GATEWAY),
         };
+    }
+    if app.device_auth.is_some() {
+        return bad("connect Immich first", StatusCode::CONFLICT);
     }
     app.demo.lock().await.set_favourite(&id, fav);
     ok(json!({ "ok": true }))
@@ -323,4 +341,48 @@ async fn camera(State(app): State<AppState>, Query(q): Query<IdQuery>) -> Respon
 
 async fn art() -> Response {
     StatusCode::NOT_FOUND.into_response()
+}
+
+async fn immich_status(State(app): State<AppState>) -> Response {
+    match &app.device_auth {
+        Some(auth) => ok(auth.status().await),
+        None => ok(json!({"status":"disabled"})),
+    }
+}
+async fn immich_start(State(app): State<AppState>, Json(_): Json<Value>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.start().await {
+        Ok(status) => ok(status),
+        Err(_) => bad("could not start Immich connection", StatusCode::BAD_GATEWAY),
+    }
+}
+async fn immich_poll(State(app): State<AppState>, Json(_): Json<Value>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.poll().await {
+        Ok(status) => ok(status),
+        Err(_) => bad("could not check Immich connection", StatusCode::BAD_GATEWAY),
+    }
+}
+async fn immich_disconnect(State(app): State<AppState>, Json(_): Json<Value>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.disconnect().await {
+        Ok(status) => ok(status),
+        Err(_) => bad("could not revoke Immich access; try again", StatusCode::BAD_GATEWAY),
+    }
+}
+async fn immich_qr(State(app): State<AppState>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.qr().await {
+        Ok(Some(svg)) => image("image/svg+xml", svg),
+        Ok(None) => bad("no pending connection", StatusCode::NOT_FOUND),
+        Err(_) => bad("could not create QR code", StatusCode::BAD_GATEWAY),
+    }
 }

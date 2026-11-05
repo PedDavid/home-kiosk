@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect Immich · Home HQ</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f2eee6; color: #171917; font: 20px/1.5 system-ui, sans-serif; }
+    main { max-width: 720px; margin: 5vh auto; padding: 32px; }
+    h1 { font: 48px/1.1 Georgia, serif; margin: 24px 0; }
+    a { color: inherit; }
+    button, .approval { display: inline-block; min-height: 52px; padding: 12px 24px; border: 0; border-radius: 12px; background: #171917; color: white; font: inherit; cursor: pointer; }
+    button:disabled { opacity: .5; }
+    #qr { width: 300px; max-width: 100%; height: auto; background: white; padding: 12px; }
+    #code { display: block; font-size: 32px; letter-spacing: .12em; }
+    #error { color: #a21c3b; }
+    .muted { color: #575d59; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body><main>
+  <a href="/#photos">← Back to photos</a>
+  <h1>Connect Immich</h1>
+  <p>Scan the code with your phone and approve Home HQ to show your favourite photos.</p>
+  <p class="muted">Home HQ requests permission to read and view photos and update favourites. Access expires; you can disconnect at any time.</p>
+  <p id="status" role="status" aria-live="polite">Checking connection…</p>
+  <section id="pending" hidden>
+    <img id="qr" alt="Scan to approve this photo frame in Immich">
+    <strong id="code"></strong>
+    <p>Check this code matches the approval page on your phone.</p>
+    <a id="approval" class="approval" target="_blank" rel="noopener noreferrer">Open approval page</a>
+  </section>
+  <p id="error" role="alert"></p>
+  <button id="connect" hidden>Connect Immich</button>
+  <button id="disconnect" hidden>Disconnect</button>
+  <p id="connected" hidden><a href="/#photos">Show favourite photos →</a></p>
+</main><script type="module" src="/js/immich-auth.js"></script></body>
+</html>

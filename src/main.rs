@@ -25,7 +25,10 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let mut state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
-    state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);
+    state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
+    if state.device_auth.is_none() {
+        state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);
+    }
     let app = router(state).layer(TraceLayer::new_for_http());
     let listener = tokio::net::TcpListener::bind(&listen)
         .await
