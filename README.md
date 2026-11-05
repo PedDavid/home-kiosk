@@ -61,6 +61,25 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+### Check the frame layout without deploying
+
+With the built Rust server running, run from `frontend/`:
+
+```bash
+npx playwright install chromium  # once, unless using an installed Chromium
+npm run test:layout
+```
+
+For an installed browser, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:layout`.
+`LAYOUT_BASE_URL` overrides the default server address (`http://127.0.0.1:8080`);
+`LAYOUT_OUTPUT` overrides the screenshot directory (`/tmp/home-hq-layout`).
+The check covers the PF1007L's 1280×800 viewport, smaller viewports and a wider
+screen. It blocks external requests, verifies bundled fonts load, and checks that
+the clock and cards fit. Screenshots use a fixed four-digit PM clock. This is a
+desktop Chromium layout check, not an Android WebView 106 emulator; device font
+rasterization and Android system bars can differ. The frame's density should be
+160, as described in `frontend/kiosk/README.md`.
+
 ## Container image
 
 The [`Dockerfile`](Dockerfile) builds the frontend with Node, builds the binary with the
