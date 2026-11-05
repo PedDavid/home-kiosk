@@ -10,5 +10,6 @@ Keep this list short. Every patch here has to be carried across `git subtree pul
 | Offline fonts | `frontend/css/fonts.css`, `frontend/public/fonts/`, `frontend/index.html`, `frontend/m.html` | Serve Archivo and Instrument Serif locally so the LAN-only frame uses the intended type metrics; font licences are bundled |
 | Frame grid sizing | `frontend/css/base.css`, `frontend/css/views/home.css` | Prevent intrinsic card widths from expanding the home grid beyond the 1280×800 frame |
 | Offline layout regression check | `frontend/tools/check-layout.mjs`, `frontend/package.json`, `frontend/package-lock.json` | Capture frame-sized screenshots and check font loading, clock spacing and card bounds without deployment |
+| Preserve photo colours at night | `frontend/css/base.css`, `frontend/js/app.js`, `frontend/tools/check-photo-colours.mjs`, `frontend/package.json` | Apply the night filter to UI regions rather than the shared view container, preserving slideshow and home-tile image colours. |
 
 Planned: hide tabs whose capability `/api/state` reports as unavailable (PRD 002).

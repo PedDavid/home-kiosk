@@ -68,6 +68,7 @@ edge-to-edge slideshow: navigation, captions, notes, clock, weather and controls
 The first touch restores the Photos controls without triggering a photo action. Other views
 use the existing configurable rest timeout before entering the same image-only ambient mode.
 Night and screen-off schedules still take precedence, and open dialogs keep the normal timeout.
+Photo colours stay unchanged at night; only the dashboard UI receives the night tint.
 
 ### Connect Immich by QR code
 
@@ -139,6 +140,7 @@ With the built Rust server running, run from `frontend/`:
 ```bash
 npx playwright install chromium  # once, unless using an installed Chromium
 npm run test:layout
+npm run test:photo-colours
 ```
 
 For an installed browser, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:layout`.
