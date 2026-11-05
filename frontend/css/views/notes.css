@@ -1,0 +1,38 @@
+/* Sticky notes: bottom-left over the Today lanes, a pill elsewhere, small on the ambient photo. */
+.notes { position: absolute; z-index: 30; left: 100px; bottom: 22px; pointer-events: none; }
+.notes.is-empty { display: none; }
+.notes > * { pointer-events: auto; }
+.stage[data-mode="night"] .notes, .stage[data-mode="off"] .notes, .stage[data-mode="ambient"] .notes { display: none; }
+
+.nt-stack { display: grid; width: 340px; }
+.nt {
+  grid-area: 1 / 1; align-self: end; width: 100%; text-align: left;
+  display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 14px;
+  background: rgb(var(--c-rgb) / .14); background-color: #FFFDF6;
+  background-image: linear-gradient(rgb(var(--c-rgb) / .13), rgb(var(--c-rgb) / .13));
+  border-top: 6px solid var(--c); border-radius: 4px 4px 14px 4px;
+  box-shadow: 0 10px 24px rgba(17, 17, 17, .18), 0 2px 4px rgba(17, 17, 17, .08);
+  transform: rotate(var(--tilt)) translateY(calc(var(--i) * -46px)) translateX(calc(var(--i) * 8px)); /* older notes peek out above */
+}
+.nt:active { transform: rotate(var(--tilt)) scale(.98); }
+.nt-for { font-size: var(--fs-min); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--c); }
+.nt-text { font-size: 26px; line-height: 1.15; font-style: italic; color: var(--ink); overflow-wrap: anywhere; }
+.nt-by { font-size: 15px; color: var(--ink-2); }
+.nt-more { margin-top: 8px; font-size: 15px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: var(--paper); }
+.nt-pill { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 800; padding: 10px 16px; border-radius: 999px; background: var(--ink); color: var(--paper); box-shadow: 0 6px 16px rgba(17, 17, 17, .2); }
+
+/* the newest note on the ambient photo */
+.amb-note { position: absolute; right: 40px; top: 36px; max-width: 420px; padding: 14px 18px; border-radius: 10px; background: rgba(0, 0, 0, .45); color: #fff; display: flex; flex-direction: column; gap: 4px; }
+.amb-note:empty { display: none; }
+.amb-note span { font-size: 26px; font-style: italic; line-height: 1.15; }
+.amb-note small { font-size: 15px; opacity: .8; }
+
+/* write / view sheets */
+.ntw-text { height: auto; min-height: 96px; resize: none; font-size: 40px; line-height: 1.15; }
+.ntw-count { text-align: right; font-size: 14px; color: var(--mute); margin-top: -10px; }
+.chip-date { font: inherit; font-size: 18px; font-weight: 700; border: 0; }
+.chip-date[hidden] { display: none; }
+.ntv { min-width: 520px; max-width: 720px; border-top: 8px solid var(--c); }
+.ntv-text { font-size: 44px; line-height: 1.12; font-style: italic; margin: 14px 0 18px; overflow-wrap: anywhere; }
+.ntl { display: flex; flex-direction: column; gap: 14px; min-width: 560px; }
+.ntl .nt { transform: none; }

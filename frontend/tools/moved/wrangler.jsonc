@@ -1,0 +1,11 @@
+{
+  // Deploy over the OLD Worker name after renaming the dashboard: npx wrangler deploy -c tools/moved/wrangler.jsonc
+  // It keeps that Worker's DASHBOARD_KEY secret, which it needs to pass the key on. Delete the
+  // Worker once every frame and phone has been pointed at the new address.
+  "name": "home-dashboard",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-30",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": { "NEW_ORIGIN": "https://dashboard.example.com" }
+}

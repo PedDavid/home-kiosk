@@ -1,0 +1,189 @@
+/* Home / Today — 1136 × 752 content box, no scrolling */
+.home {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: 184px 1fr;
+  gap: 16px;
+}
+
+/* ---- clock */
+.h-clock { grid-column: 1 / 5; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 6px; border-bottom: 3px solid var(--ink); }
+.h-time { font-size: var(--fs-clock); line-height: .78; letter-spacing: -.035em; display: flex; align-items: flex-start; }
+.h-ampm { font-size: 28px; font-weight: 800; letter-spacing: .06em; margin: 6px 0 0 10px; }
+.h-date { font-size: 24px; margin-top: 14px; font-family: var(--serif); }
+.h-date b { font-family: var(--sans); font-weight: 800; font-stretch: 75%; text-transform: uppercase; letter-spacing: .06em; font-size: 20px; margin-right: 6px; }
+
+/* ---- weather */
+.h-weather { grid-column: 5 / 10; border-bottom: 3px solid var(--ink); padding: 0 8px 6px; display: flex; flex-direction: column; justify-content: flex-end; }
+.h-wx-top { display: flex; align-items: center; gap: 12px; }
+.h-wx-icon { color: var(--ink); }
+.h-wx-temp { font-size: 84px; line-height: .8; letter-spacing: -.03em; }
+.h-wx-meta { display: flex; flex-direction: column; font-size: 17px; margin-left: 4px; }
+.h-wx-meta b { font-weight: 800; font-stretch: 80%; text-transform: uppercase; letter-spacing: .06em; font-size: 16px; }
+.h-wx-meta span { color: var(--mute); font-variant-numeric: tabular-nums; white-space: pre; }
+.h-wx-say { font-family: var(--serif); font-size: 22px; line-height: 1.15; margin: 8px 0 8px; }
+.h-wx-say b { font-weight: 400; font-style: italic; }
+/* Met Office warning: replaces the summary line while one is out */
+.h-wx-warn {
+  display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 7px 12px; border-radius: 12px;
+  font-size: 18px; line-height: 1.15; text-align: left; color: var(--ink); background: #FFC93C;
+}
+.h-wx-warn b { font-weight: 800; }
+.h-wx-warn.is-amber { background: #FF8A00; }
+.h-wx-warn.is-red { background: #C8102E; color: #fff; }
+.h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); }
+.h-hr { display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 16px; }
+.h-hr-l { font-size: var(--fs-min); font-weight: 700; color: var(--mute); text-transform: uppercase; }
+.h-hr-i { height: 26px; display: grid; place-items: center; }
+.h-hr b { font-weight: 800; font-stretch: 70%; }
+.h-hr.is-wet .h-hr-i { color: #1F6FEB; }
+
+/* ---- presence */
+.h-presence { grid-column: 10 / 13; display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; border-bottom: 3px solid var(--ink); padding: 2px 0 10px; }
+/* Sat on the rule like the clock and weather beside it; four or more people fill the column. */
+.h-presence:has(.h-who ~ .h-who ~ .h-who ~ .h-who) { justify-content: space-between; gap: 0; }
+.h-logo { margin: auto 0; align-self: center; display: flex; align-items: center; gap: 10px; color: var(--ink); } /* centred in the space above the people */
+.h-logo-home { font-size: 44px; font-style: italic; line-height: 1; letter-spacing: -.01em; }
+.h-logo-hq { font-size: 32px; line-height: 1; padding: 5px 8px 4px; border-radius: 8px; background: var(--ink); color: var(--paper); letter-spacing: .02em; }
+.h-presence:has(.h-who ~ .h-who ~ .h-who ~ .h-who) .h-logo { display: none; }
+.h-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.h-who > span:not(.avatar) { flex: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.h-who b { font-size: 18px; font-weight: 800; white-space: nowrap; flex: none; }
+.h-who small { font-size: var(--fs-min); color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.h-who small b { font-size: var(--fs-min); color: var(--c); }
+.h-who .avatar--away { background: var(--paper); }
+
+/* ---- main column */
+.h-main { grid-column: 1 / 8; display: grid; grid-template-rows: 232px 1fr; gap: 16px; min-height: 0; }
+.h-hero-slot { display: grid; }
+.h-hero {
+  display: flex; align-items: stretch; gap: 20px; width: 100%;
+  background: var(--c); color: var(--c-ink);
+  border-radius: var(--r); padding: 22px 26px;
+  overflow: hidden; position: relative;
+}
+.h-hero-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.h-hero-title { font-size: 72px; line-height: .95; margin: 8px 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-hero-meta { font-size: 19px; opacity: .88; }
+.h-hero-foot { margin-top: auto; display: flex; align-items: center; gap: 14px; }
+.h-hero-foot .dots i { box-shadow: 0 0 0 3px var(--c); }
+.h-hero-count { font-size: 150px; line-height: .78; letter-spacing: -.04em; text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; }
+.h-hero-count small { font-size: 22px; letter-spacing: .1em; text-transform: uppercase; font-stretch: 80%; margin-top: 10px; }
+.h-hero--empty { background: var(--ink); color: var(--paper); flex-direction: column; justify-content: flex-start; }
+.h-hero--empty .h-hero-title { white-space: normal; font-size: 54px; line-height: 1; margin: 10px 0 0; overflow: visible; }
+/* "Tomorrow starts with …" sits on the bottom edge on one line, clear of the title's descenders */
+.h-hero--empty .h-hero-meta { margin-top: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.h-lanes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; min-height: 0; }
+.h-lane { display: flex; flex-direction: column; gap: 6px; min-width: 0; border-top: 6px solid var(--c); padding-top: 10px; }
+.h-lane-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.h-lane-head b { font-size: 18px; font-weight: 800; font-stretch: 80%; text-transform: uppercase; letter-spacing: .06em; }
+.h-ev {
+  width: 100%; min-width: 0; overflow: hidden;
+  display: flex; flex-direction: column; gap: 1px;
+  min-height: 60px; padding: 7px 12px; border-radius: 12px;
+  background: rgb(var(--c-rgb) / .12);
+}
+.h-ev-t { font-size: 16px; font-weight: 800; font-stretch: 70%; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.h-ev-n { display: block; width: 100%; font-size: 18px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-ev.is-now { background: var(--c); color: var(--c-ink); }
+.h-ev.is-now .h-ev-t { color: inherit; text-transform: uppercase; letter-spacing: .08em; }
+.h-free { font-size: 21px; color: var(--mute); padding: 6px 2px; line-height: 1.1; }
+.h-more { min-height: 36px; margin-top: auto; font-size: 16px; font-weight: 800; font-stretch: 75%; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); text-align: left; padding: 0 12px; }
+
+/* ---- side column */
+.h-side { grid-column: 8 / 13; display: grid; grid-template-rows: 1fr 184px; gap: 16px; min-height: 0; }
+.h-side.has-bins { grid-template-rows: 1fr 84px 184px; }
+.h-photo { position: relative; border-radius: var(--r); overflow: hidden; background: var(--paper-2); display: block; width: 100%; }
+.h-photo-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+.h-photo-cap {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 18px 14px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, .6), rgba(0, 0, 0, 0));
+  color: #fff; display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+}
+.h-photo-cap b { font-size: var(--fs-min); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.h-photo-cap span { font-family: var(--serif); font-size: 20px; font-style: italic; }
+
+.h-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.h-shop, .h-status { display: flex; flex-direction: column; gap: 4px; }
+.h-stat { display: flex; align-items: baseline; gap: 8px; }
+.h-stat .num { font-size: 56px; line-height: .9; }
+.h-stat small { font-size: 16px; color: var(--mute); }
+.h-recent li { font-size: 16px; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; line-height: 1.35; }
+.h-recent i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); flex: none; }
+.h-st-row { display: flex; align-items: center; gap: 8px; font-size: 17px; min-height: 28px; }
+.h-st-row b { font-size: 24px; }
+.h-st-row span { color: var(--ink-2); }
+.h-st-row.is-warn { color: #B45F00; font-weight: 800; }
+.h-st-row.is-warn span { color: inherit; }
+
+/* ---- bins: next collection; dark from 4 PM the day before until they're out */
+/* button.h-bins: beats base.css's button.card { display: block } */
+button.h-bins { display: flex; align-items: center; gap: 14px; padding: 8px 18px 8px 12px; text-align: left; }
+button.h-bins[hidden] { display: none; }
+.h-bins-icons { display: flex; gap: 4px; flex: none; align-self: stretch; align-items: center; }
+.h-bins-icons .bin { display: block; }
+.h-bins-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.h-bins-what { font-size: 17px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-bins-what b { font-size: 20px; font-weight: 800; color: var(--ink); }
+.h-bins-in { font-size: 20px; color: var(--ink-2); flex: none; }
+.h-bins-go { flex: none; display: flex; align-items: center; gap: 6px; font-size: 17px; font-weight: 800; padding: 10px 14px; border-radius: 12px; background: #fff; color: var(--ink); }
+.h-bins-go.is-done { background: none; color: var(--ok); padding: 0; }
+.h-bins.is-due { background: var(--ink); color: #fff; }
+.h-bins.is-due .h-bins-what, .h-bins.is-due .h-bins-what b { color: #fff; }
+.h-bins.is-due .bin-body, .h-bins.is-due .bin-lid { stroke: #fff; stroke-width: 1; }
+
+/* ---- next-up hero when it's time to leave */
+.h-hero.is-go { background: var(--amber); color: var(--ink); }
+.h-hero.is-late { background: var(--alert); color: #fff; }
+.h-hero.is-go .label--on, .h-hero.is-late .label--on { color: inherit; }
+.h-hero-count .i { margin-bottom: 4px; }
+
+/* ---- sheets: warnings and bin dates */
+.wxs { display: flex; flex-direction: column; gap: 22px; max-width: 620px; }
+.wxs-item h2 { font-size: 46px; line-height: 1; margin: 10px 0 6px; }
+.wxs-item p { font-size: 19px; line-height: 1.35; color: var(--ink-2); margin-top: 8px; }
+.wxs-when { font-size: 26px; }
+.wxs-tag { display: inline-block; padding: 5px 10px; border-radius: 8px; font-size: var(--fs-label); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: #FFC93C; }
+.wxs-tag.is-amber { background: #FF8A00; }
+.wxs-tag.is-red { background: #C8102E; color: #fff; }
+.bns { display: flex; flex-direction: column; gap: 16px; min-width: 520px; }
+.bns-row { display: flex; align-items: center; gap: 8px; }
+.bns-row > div { margin-left: 10px; display: flex; flex-direction: column; }
+.bns-row b { font-size: 22px; font-weight: 800; }
+.bns-row span { font-size: 17px; color: var(--ink-2); }
+
+/* ---- home checks sheet (tap "All clear") */
+.ck { min-width: 560px; max-width: 680px; }
+.ck h2 { font-size: 46px; line-height: 1; margin: 8px 0 18px; }
+.ck ul { display: flex; flex-direction: column; gap: 12px; }
+.ck li { display: flex; align-items: center; gap: 12px; font-size: 20px; }
+.ck-ok { color: var(--ok); }
+.ck-ok span { color: var(--ink); }
+.ck-bad { color: #B45F00; font-weight: 800; }
+.ck-detail { font-size: 16px !important; color: var(--ink-2); line-height: 1.5; padding-left: 34px; }
+
+/* ---- energy sheet: today so far */
+.en { min-width: 820px; }
+.en-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin: 8px 0 18px; }
+.en-hero .num { display: block; font-size: 64px; line-height: .9; }
+.en-hero small { font-size: 17px; color: var(--ink-2); }
+.en-facts { display: flex; gap: 28px; }
+.en-facts div { display: flex; flex-direction: column; align-items: flex-end; }
+.en-facts b { font-size: 28px; }
+.en-facts span { font-size: var(--fs-min); color: var(--mute); }
+.en-plot { background: var(--paper); border-radius: 16px; padding: 12px 12px 4px; }
+.en-chart { width: 100%; height: auto; display: block; }
+.en-grid { stroke: var(--line); stroke-width: 1; }
+.en-base { stroke: var(--ink-2); stroke-width: 1.5; }
+.en-ax { font-size: 12px; font-weight: 700; fill: var(--mute); font-family: var(--sans); }
+.en-bar { fill: var(--ink); }
+.en-bar.is-now { fill: var(--ink); opacity: .35; }
+/* a tapped bar: the others fade (no new colour: colours on this dashboard mean people) */
+.en-chart.has-pick .en-bar { opacity: .3; }
+.en-chart.has-pick .en-bar.is-picked { opacity: 1; }
+.en-hit { fill: transparent; cursor: pointer; }
+.en-tip { margin-top: 10px; font-size: 18px; min-height: 26px; }
+.en-tip span { color: var(--mute); font-size: 15px; }
+.en-note { margin-top: 10px; font-size: 15px; color: var(--ink-2); line-height: 1.4; }

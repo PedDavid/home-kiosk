@@ -1,0 +1,26 @@
+/* Media: one card per player, playing ones first */
+.md { height: 100%; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.md-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 3px solid var(--ink); padding-bottom: 8px; }
+.md-head h2 { font-size: 48px; line-height: 1; }
+.md-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; overflow-y: auto; min-height: 0; padding-bottom: 8px; }
+.md-card { background: var(--card); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.md-card.is-playing { box-shadow: inset 0 0 0 3px var(--ink); }
+.md-card.is-off { opacity: .7; }
+.md-top { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.md-art { width: 84px; height: 84px; border-radius: 12px; object-fit: cover; flex: none; background: var(--paper-2); }
+.md-art--none { display: grid; place-items: center; color: var(--mute); }
+.md-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.md-text b { font-size: 26px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.md-text b i { color: var(--mute); }
+.md-text > span:last-child:not(.label) { font-size: 16px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.md-power { width: 52px; height: 52px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--paper-2); color: var(--mute); }
+.md-power.is-on { background: var(--ink); color: var(--paper); }
+.md-controls { display: flex; align-items: center; gap: 10px; }
+.md-btn { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--paper-2); flex: none; }
+.md-btn--main { width: 64px; height: 64px; background: var(--ink); color: var(--paper); }
+.md-btn:disabled { opacity: .3; }
+.md-vol { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; margin-left: 8px; color: var(--ink-2); }
+.md-vol input { flex: 1; min-width: 0; height: 44px; accent-color: var(--ink); }
+.md-vol .num { width: 58px; text-align: right; font-size: 17px; }
+.md-mute { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.md-empty { font-size: 30px; color: var(--mute); padding: 40px 0; }

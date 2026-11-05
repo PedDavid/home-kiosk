@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F2EEE6">
+  <title>Home HQ</title>
+  <!-- The phone app: install it from Chrome's menu to get Home HQ in the gallery's Share menu -->
+  <link rel="manifest" href="/m.webmanifest">
+  <link rel="icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Instrument+Serif:ital@0;1&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+  <header class="top">
+    <h1 class="serif" id="title">Shopping</h1>
+    <span class="sync" id="sync"></span>
+  </header>
+
+  <main>
+    <div class="msg msg--frames" id="frameWarn" hidden></div>
+    <section id="tab-shopping" class="tab">
+      <form class="add" id="addForm" autocomplete="off">
+        <input id="addInput" list="catalog" placeholder="Add an item…" enterkeyhint="done" aria-label="Add an item">
+        <datalist id="catalog"></datalist>
+        <button type="submit" aria-label="Add">＋</button>
+      </form>
+      <div class="seg" id="stores"></div>
+      <div id="shopList"></div>
+    </section>
+
+    <section id="tab-notes" class="tab" hidden>
+      <form class="note-form" id="noteForm" autocomplete="off">
+        <textarea id="noteText" maxlength="140" rows="3" placeholder="Leave a note on the frames…" aria-label="Note"></textarea>
+        <div class="note-row"><span class="label">From</span><div class="seg" id="noteFrom"></div></div>
+        <div class="note-row"><span class="label">For</span><div class="seg" id="noteFor"></div></div>
+        <div class="note-row"><span class="label">Keep</span><div class="seg" id="noteKeep"></div></div>
+        <button type="submit" class="note-pin">Pin note</button>
+      </form>
+      <div id="noteList"></div>
+    </section>
+
+
+    <div class="msg" id="locked" hidden>
+      <b>Not connected.</b> Open this page once with <code>?key=</code> and the dashboard key on the end of
+      the address. The key is then remembered on this phone.
+    </div>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <nav class="tabs">
+    <button data-tab="shopping" class="is-on"><span>🛒</span>Shopping</button>
+    <button data-tab="notes"><span>📌</span>Notes</button>
+    <a href="/upload"><span>🖼️</span>Photos</a>
+    <a href="/?wall"><span>🖥️</span>Wall view</a>
+  </nav>
+
+  <script type="module" src="/js/mobile.js"></script>
+</body>
+</html>
