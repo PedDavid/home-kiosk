@@ -44,8 +44,8 @@ then kept in an HttpOnly cookie. That works, but:
 - Each phone authenticates as a **person**, through the existing Keycloak.
 - Revocation is per device and per person, and needs no change on other devices.
 - Sensitive actions need a **fresh, strong proof of a person**, no matter which device sent them.
-- The frame never talks to Keycloak directly. It keeps its single firewall rule (443 to Traefik
-  only).
+- The frame never talks to Keycloak directly. It keeps its single firewall rule (443 to the dashboard's
+  own LAN address only, not Traefik).
 - It works on Android 6 / WebView 106 with upstream's kiosk APK, unmodified.
 - Every control action is logged with its principal (to Loki).
 
@@ -147,7 +147,7 @@ Details:
 ### Keycloak configuration (infra repo)
 
 - Client `home-hq`: confidential, standard flow, redirect URI
-  `https://home-hq.lab.prdv.cloud/auth/callback`, a `groups` mapper, and PKCE required.
+  `https://home-hq.prdv.cloud/auth/callback`, a `groups` mapper, and PKCE required.
 - Client `home-hq-frame`: confidential, **OAuth 2.0 Device Authorization Grant** enabled,
   standard flow off, `offline_access` allowed, consent required (so the approver sees what
   they approve).
