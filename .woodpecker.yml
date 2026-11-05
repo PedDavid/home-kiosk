@@ -39,4 +39,4 @@ steps:
       password:
         from_secret: registry_password
       auto_tag: true
-      platforms: linux/amd64,linux/arm64
+      platforms: linux/amd64
