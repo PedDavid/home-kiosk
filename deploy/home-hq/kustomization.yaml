@@ -1,0 +1,18 @@
+# Home HQ dashboard. Copy this folder into the Flux repo as the `home-hq` component.
+# The Secret is not part of it: create it per RFC 004 (see README.md).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: home-hq
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+configMapGenerator:
+  # Hashed name: editing settings.json rolls the pod, so "changes need a restart" is automatic.
+  - name: home-hq-settings
+    files:
+      - settings.json
+labels:
+  - pairs:
+      app.kubernetes.io/name: home-hq

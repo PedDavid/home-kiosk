@@ -68,6 +68,13 @@ pushes the image on tags. It uses the `registry_*` secrets. While the repo lives
 GitHub Actions runs the same checks (`ci.yml`). On `v*` tags it also builds and pushes
 `ghcr.io/peddavid/home-kiosk` for amd64 and arm64 (`release.yml`).
 
+## Deployment
+
+- [`deploy/home-hq/`](deploy/home-hq/): the kustomize component to copy into the Flux repo,
+  with bootstrap steps.
+- [`docs/frame-runbook.md`](docs/frame-runbook.md): the one-time PF1007L setup (router rules,
+  ISRG roots in the trust store, kiosk app, checks).
+
 ## Updating the vendored frontend
 
 `frontend/` is a squashed `git subtree` of upstream's `dashboard/` folder. To update it:
