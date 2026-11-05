@@ -42,6 +42,17 @@ try {
       if (ampm.right > clock.right + 1 || ampm.right > icon.left) failures.push('Clock overlaps weather');
       const stage = rect('#stage');
       if (stage.left < -1 || stage.right > innerWidth + 1 || stage.bottom > innerHeight + 1) failures.push('Stage outside viewport');
+      for (const hour of document.querySelectorAll('.h-hr')) {
+        const label = hour.querySelector('.h-hr-l').getBoundingClientRect();
+        const icon = hour.querySelector('.h-hr-i').getBoundingClientRect();
+        if (label.bottom > icon.top) failures.push('Weather hour overlaps icon');
+      }
+      if (innerWidth === 1280 && innerHeight === 800) {
+        for (const selector of ['.h-presence', '.h-side', '.h-shop', '.h-status']) {
+          const r = rect(selector);
+          if (Math.abs(r.left - Math.round(r.left)) > 0.01 || Math.abs(r.right - Math.round(r.right)) > 0.01) failures.push(`${selector} has fractional column edges`);
+        }
+      }
       // Check nested cards as well as the outer grid: overflow:hidden can hide
       // broken layout while leaving the document's scrollWidth unchanged.
       for (const element of document.querySelectorAll('.home > *, .h-side > *, .h-duo > *')) {
@@ -57,7 +68,7 @@ try {
     assert.deepEqual(errors, [], 'Browser errors');
     assert.deepEqual(external.filter(url => /fonts\.googleapis\.com|fonts\.gstatic\.com/.test(url)), [], 'External font dependency');
     assert.deepEqual(failures, [], `${width}x${height} layout: ${filename}`);
-    console.log(`PASS ${width}x${height}: offline fonts, clock spacing, card bounds (${filename})`);
+    console.log(`PASS ${width}x${height}: offline fonts, clock/weather spacing, card bounds and native column alignment (${filename})`);
     await context.close();
   }
 } finally {

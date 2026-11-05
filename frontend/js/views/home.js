@@ -3,6 +3,21 @@
   'use strict';
   var D = window.DATA, V = { chimed: {} };
 
+  // Fractional grid tracks put the right-hand columns between pixels at the
+  // frame's native resolution. Distribute rounding across tracks instead of
+  // translating/scaling text, keeping the full available width on resize.
+  function alignGrid() {
+    var grid = V.el && V.el.querySelector('.home');
+    if (!grid || !grid.clientWidth) return;
+    var gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
+    var available = grid.clientWidth - gap * 11;
+    var columns = [];
+    for (var i = 0; i < 12; i++) {
+      columns.push((Math.round(available * (i + 1) / 12) - Math.round(available * i / 12)) + 'px');
+    }
+    grid.style.setProperty('--home-columns', columns.join(' '));
+  }
+
   function clock() {
     var n = App.now();
     return '<div class="h-time num">' + App.fmt.time(n, false) + '<span class="h-ampm">' + App.fmt.ampm(n) + '</span></div>' +
@@ -338,6 +353,11 @@
           if (g) App.go(g.dataset.go);
         });
         V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, interval: 12000, onChange: photoCaption });
+      }
+      alignGrid();
+      if (!V.gridObserver) {
+        V.gridObserver = new ResizeObserver(alignGrid);
+        V.gridObserver.observe(el.querySelector('.home'));
       }
       paint();
       V.slides.start();
