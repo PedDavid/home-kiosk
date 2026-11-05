@@ -1,0 +1,42 @@
+# Every push: build the frontend and run the Rust checks. Tags: build and push the image.
+# CARGO_HOME lives in the workspace so the registry download is shared between steps; add a
+# cache plugin (or a host volume) here to keep it between pipelines.
+when:
+  - event: [push, pull_request, tag, manual]
+
+variables:
+  - &rust_image rust:1.97-bookworm
+
+steps:
+  frontend:
+    image: node:22-bookworm-slim
+    commands:
+      - cd frontend
+      - npm ci --no-audit --no-fund
+      - npx vite build
+
+  test:
+    image: *rust_image
+    environment:
+      CARGO_HOME: .cargo
+    commands:
+      - rustup component add rustfmt clippy
+      - cargo fmt --check
+      - cargo clippy --all-targets --locked -- -D warnings
+      - cargo test --locked
+
+  image:
+    image: woodpeckerci/plugin-docker-buildx
+    when:
+      - event: tag
+    settings:
+      registry:
+        from_secret: registry_host
+      repo:
+        from_secret: registry_repo
+      username:
+        from_secret: registry_username
+      password:
+        from_secret: registry_password
+      auto_tag: true
+      platforms: linux/amd64,linux/arm64
