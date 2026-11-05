@@ -1,0 +1,87 @@
+{
+  "_readme": "Copy to settings.json (gitignored) and edit, then npm run deploy. The Worker bundles it at deploy time; only names, colours and lists reach the browser. Keys, tokens and calendar links go in secrets.json instead. Delete any section you don't use.",
+
+  "timezone": "Europe/London",
+  "location": { "lat": 51.5072, "lon": -0.1276, "units": "celsius" },
+  "warnings": { "region": "se", "areas": ["Hampshire", "West Sussex"] },
+
+  "bins": {
+    "types": {
+      "general": { "name": "Black", "what": "General waste", "color": "#222222", "lid": "#222222" },
+      "recycling": { "name": "Blue", "what": "Cans, glass and plastic", "color": "#1F6FEB" }
+    },
+    "every": [
+      { "bin": "general", "from": "2026-01-06", "weeks": 2 },
+      { "bin": "recycling", "from": "2026-01-13", "weeks": 2 }
+    ],
+    "moved": { "2026-12-22": "2026-12-19", "2026-12-29": null }
+  },
+
+  "people": [
+    { "id": "sam", "name": "Sam", "color": "#2D5BFF", "ha": "person.sam", "notify": "notify.mobile_app_sams_phone" },
+    { "id": "alex", "name": "Alex", "color": "#E4007C", "ha": "person.alex" },
+    { "id": "maya", "name": "Maya", "color": "#00A36C" },
+    { "id": "otto", "name": "Otto", "color": "#FFB000" }
+  ],
+
+  "_calendars": "Calendar links are private: they go in secrets.json (see secrets.example.json) with the other secrets, not here.",
+
+  "shopping": {
+    "stores": [{ "id": "grocer", "name": "Tesco" }, { "id": "bulk", "name": "Costco" }],
+    "categories": ["Produce", "Bakery", "Meat & Fish", "Dairy & Eggs", "Pantry", "Frozen", "Snacks", "Household"],
+    "storeOrder": { "bulk": ["Household", "Pantry", "Snacks", "Dairy & Eggs", "Meat & Fish", "Frozen", "Produce", "Bakery"] },
+    "usuals": ["Milk", "Eggs", "Bananas", "Bread", "Apples", "Coffee beans", "Greek yogurt", "Cheddar", "Butter", "Spinach", "Chicken thighs", "Kitchen roll"],
+    "catalog": {
+      "Produce": ["Apples", "Avocados", "Bananas", "Spinach", "Blueberries", "Broccoli", "Carrots", "Cucumber", "Garlic", "Grapes", "Lemons", "Onions", "Potatoes", "Strawberries", "Tomatoes"],
+      "Bakery": ["Bread", "Bagels", "Croissants", "Sourdough loaf", "Wraps"],
+      "Meat & Fish": ["Bacon", "Chicken breasts", "Chicken thighs", "Mince", "Salmon fillets", "Prawns"],
+      "Dairy & Eggs": ["Butter", "Cheddar", "Cream cheese", "Eggs", "Greek yogurt", "Milk", "Oat milk", "Parmesan"],
+      "Pantry": ["Baked beans", "Cereal", "Coffee beans", "Flour", "Honey", "Olive oil", "Pasta", "Pasta sauce", "Peanut butter", "Rice", "Sugar", "Tea bags"],
+      "Frozen": ["Frozen peas", "Frozen berries", "Ice cream", "Pizza", "Fish fingers"],
+      "Snacks": ["Crisps", "Crackers", "Dark chocolate", "Biscuits", "Popcorn"],
+      "Household": ["Washing-up liquid", "Dishwasher tablets", "Bin bags", "Laundry detergent", "Kitchen roll", "Toilet roll", "Toothpaste"]
+    }
+  },
+
+  "home": {
+    "_note": "Home Assistant, reached from Cloudflare: use your Nabu Casa or Cloudflare Tunnel URL. The long-lived token is a Worker secret (HA_TOKEN), not here.",
+    "url": "https://your-home.ui.nabu.casa",
+    "rooms": [
+      {
+        "name": "Kitchen",
+        "devices": [
+          { "entity": "light.kitchen_pendants", "name": "Pendants" },
+          { "entity": "cover.kitchen_blind", "name": "Blind" }
+        ]
+      },
+      {
+        "name": "Entry",
+        "devices": [
+          { "entity": "lock.front_door", "name": "Front Door" },
+          { "entity": "cover.garage_door", "name": "Garage", "garage": true }
+        ]
+      }
+    ],
+    "climate": "climate.main_floor",
+    "cameras": [
+      { "entity": "camera.front_porch", "name": "Front Porch" },
+      { "entity": "camera.driveway", "name": "Driveway" }
+    ],
+    "scenes": [
+      { "entity": "scene.morning", "name": "Morning", "icon": "sunrise" },
+      { "entity": "scene.dinner", "name": "Dinner", "icon": "utensils" },
+      { "entity": "scene.movie", "name": "Movie", "icon": "film" },
+      { "entity": "scene.goodnight", "name": "Goodnight", "icon": "moon" }
+    ],
+    "alerts": {
+      "doorbell": { "entity": "binary_sensor.doorbell", "camera": "camera.front_porch", "lock": "lock.front_door" },
+      "leak": { "entities": ["binary_sensor.laundry_leak"], "valve": "valve.water_main" },
+      "smoke": { "entities": ["binary_sensor.hallway_smoke", "binary_sensor.landing_co"] },
+      "garageOpenMinutes": 15
+    },
+    "energy": { "cost": ["sensor.electricity_cost_today", "sensor.gas_cost_today"], "power": "sensor.house_power", "high": 3000,
+      "usage": ["sensor.electricity_usage_today", "sensor.gas_usage_today"], "rate": 0.245, "standing": 0.55 }
+  },
+
+  "frames": { "notify": ["notify.mobile_app_your_phone"], "quietMinutes": 20 }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "home-dashboard",
+  "private": true,
+  "version": "1.23.2",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "node tools/wr.mjs dev --port 8787",
+    "build": "vite build",
+    "preview": "vite preview",
+    "db:migrate": "node tools/wr.mjs d1 migrations apply home-hq --remote",
+    "db:migrate:local": "wrangler d1 migrations apply home-hq --local",
+    "deploy": "vite build && node tools/wr.mjs deploy",
+    "secrets": "node tools/secrets.mjs",
+    "ha-alerts": "node tools/ha-alerts.mjs",
+    "ha-state": "node tools/ha-state.mjs"
+  },
+  "devDependencies": {
+    "vite": "^8.3.1",
+    "wrangler": "^4.145.0"
+  },
+  "dependencies": {
+    "ical.js": "^2.2.1"
+  }
+}

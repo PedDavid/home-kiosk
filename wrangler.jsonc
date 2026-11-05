@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Deploys to YOUR Cloudflare account (npx wrangler login). See README.md for the one-time setup.
+  // Renaming it creates a new Worker; secrets don't follow (npm run secrets), and every screen
+  // and phone needs the new address with ?key= once (tools/moved/ can redirect the old one).
+  "name": "home-hq",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-30",
+  // Serve only at your own domain (a zone on this Cloudflare account; Cloudflare adds the DNS record
+  // and certificate). Without one, drop "routes" and set workers_dev to true for
+  // <name>.<subdomain>.workers.dev. No per-version preview URLs either way.
+  "routes": [{ "pattern": "dashboard.example.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+  // Every 5 minutes: notify (settings.json "frames") when a frame goes quiet or comes back.
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // The Worker sees every request so ?key=… works on any page; it hands non-API paths to ASSETS.
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    // `npx wrangler d1 create home-hq` prints the database_id to paste here.
+    { "binding": "DB", "database_name": "home-hq", "database_id": "REPLACE_WITH_YOUR_D1_ID", "migrations_dir": "migrations" }
+  ],
+  "r2_buckets": [
+    { "binding": "PHOTOS", "bucket_name": "home-hq-photos" }
+  ],
+  // One Durable Object holds every frame's WebSocket for pushed alerts (worker/index.js, AlertHub).
+  "durable_objects": { "bindings": [{ "name": "ALERTS", "class_name": "AlertHub" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["AlertHub"] }],
+  "observability": { "enabled": true }
+}
