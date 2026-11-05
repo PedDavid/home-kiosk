@@ -8,6 +8,7 @@
     "dev:api": "node tools/wr.mjs dev --port 8787",
     "build": "vite build",
     "preview": "vite preview",
+    "test:layout": "node tools/check-layout.mjs",
     "db:migrate": "node tools/wr.mjs d1 migrations apply home-hq --remote",
     "db:migrate:local": "wrangler d1 migrations apply home-hq --local",
     "deploy": "vite build && node tools/wr.mjs deploy",
@@ -16,6 +17,7 @@
     "ha-state": "node tools/ha-state.mjs"
   },
   "devDependencies": {
+    "playwright": "1.65.0",
     "vite": "^8.3.1",
     "wrangler": "^4.145.0"
   },

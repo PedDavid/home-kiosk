@@ -74,7 +74,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .rail-clock span { font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--mute); }
 
 /* ---------------------------------------------------------------- views */
-.views { position: relative; overflow: hidden; }
+.views { position: relative; min-width: 0; overflow: hidden; }
 .view { position: absolute; top: 0; right: 0; bottom: 0; left: 0; padding: var(--pad); content-visibility: hidden; z-index: 0; }
 .view.is-active, .view.is-warming { content-visibility: visible; }
 .view.is-active { z-index: 1; }

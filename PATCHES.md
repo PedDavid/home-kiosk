@@ -7,5 +7,8 @@ Keep this list short. Every patch here has to be carried across `git subtree pul
 | `frontend/LICENSE` added | `frontend/LICENSE` | Upstream keeps its MIT licence at the repo root, outside `dashboard/` |
 | Quiet photo frame | `frontend/js/app.js`, `frontend/js/views/photos.js`, `frontend/js/views/ambient.js`, `frontend/css/views/ambient.css`, `frontend/js/views/notes.js`, `frontend/css/views/notes.css` | After eight idle seconds in Photos, show an edge-to-edge image without overlays; first tap restores photo controls. Daytime ambient mode is also image-only; night/off schedules remain active. |
 | Immich device pairing | `frontend/immich.html`, `frontend/js/immich-auth.js`, `frontend/js/sync.js`, `frontend/js/views/photos.js`, `frontend/css/views/photos.css`, `frontend/vite.config.js` | QR approval page and connection link; issued credentials remain on the backend. |
+| Offline fonts | `frontend/css/fonts.css`, `frontend/public/fonts/`, `frontend/index.html`, `frontend/m.html` | Serve Archivo and Instrument Serif locally so the LAN-only frame uses the intended type metrics; font licences are bundled |
+| Frame grid sizing | `frontend/css/base.css`, `frontend/css/views/home.css` | Prevent intrinsic card widths from expanding the home grid beyond the 1280×800 frame |
+| Offline layout regression check | `frontend/tools/check-layout.mjs`, `frontend/package.json`, `frontend/package-lock.json` | Capture frame-sized screenshots and check font loading, clock spacing and card bounds without deployment |
 
 Planned: hide tabs whose capability `/api/state` reports as unavailable (PRD 002).

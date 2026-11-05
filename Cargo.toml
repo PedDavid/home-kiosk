@@ -8,10 +8,12 @@ qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
 anyhow = "1.0.104"
 axum = { version = "0.8.9", features = ["ws", "macros"] }
+axum-server = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 chrono-tz = "0.10.4"
 mime_guess = "2.0.5"
 rust-embed = "8.13.0"
+rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["preserve_order"] }
 subtle = "2.6.1"
@@ -23,5 +25,7 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 [dev-dependencies]
 futures-util = "0.3.34"
 http-body-util = "0.1.5"
+rcgen = { version = "0.14.10", default-features = false, features = ["crypto", "pem", "ring"] }
+tokio-rustls = { version = "0.26.4", default-features = false, features = ["ring", "tls12"] }
 tokio-tungstenite = "0.30.0"
 tower = { version = "0.5.3", features = ["util"] }

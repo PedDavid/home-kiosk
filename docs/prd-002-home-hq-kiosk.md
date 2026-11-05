@@ -51,6 +51,12 @@ fixed lease. It can reach only the dashboard over HTTPS, and it has no internet 
 uses the existing Traefik wildcard certificate, made acceptable to Android 6 by adding the ISRG
 roots to the frame's system trust store over root ADB.
 
+> **Update 2026-11-05.** Two decisions below changed at deployment. **TLS:** a per-host Actalis
+> certificate for `home-hq.prdv.cloud`, because the frame's stock store already has Actalis
+> Authentication Root CA, so `/system` stays untouched (ISRG roots are now the fallback). **Network:**
+> the dedicated-IP fallback is the design: the app terminates TLS itself on a MetalLB address
+> (`lanService`), the Ingress is off, and the frame's one firewall rule reaches only that IP:443.
+
 ## User Stories
 
 1. As a household member, I want the frame to show "next up" events for today, so that I know what's coming without opening my phone.
@@ -170,7 +176,7 @@ PRD 001's reorganisation lands. It contains:
 - a single-replica Deployment using the Recreate strategy, since SQLite allows only one writer
 - a 1Gi PVC
 - a Service
-- an Ingress on `home-hq.lab.prdv.cloud` using the existing `lab.prdv.cloud` wildcard certificate
+- an Ingress on `home-hq.prdv.cloud` using the existing `lab.prdv.cloud` wildcard certificate
 - the settings ConfigMap
 - the Secret, documented in the README bootstrap section
 - a ServiceMonitor, if the app exposes metrics
@@ -181,6 +187,7 @@ Renovate tracks the image.
 
 - a fixed DHCP lease for the frame
 - an IoT→LAN rule allowing only the frame's IP to reach Traefik's LoadBalancer IP on TCP 443
+  (superseded: the dashboard's own LAN IP, see the update at the top)
 - a "block WAN" rule for the frame's MAC, following the RM4 and SLZB pattern
 
 DNS for the frame already goes through Pi-hole. Accepted trade-off: because the rule targets
@@ -193,7 +200,8 @@ MQTT pattern).
 cross-signed by ISRG Root X1. Android 6 trusts neither root. Decision: push ISRG Root X1 and ISRG
 Root YR into the frame's system CA store over root ADB, once, as part of the frame runbook. The
 existing Actalis issuer (used for the Roborock) is the fallback if the device can't be modified.
-No Actalis certificate is issued for this.
+No Actalis certificate is issued for this. (Superseded: Actalis is now the primary, see the update
+at the top.)
 
 **Frame side.** Upstream's kiosk APK (full-screen WebView, two-finger menu, screen-off modes) and
 its set-kiosk-URL script are reused, pointing at the dashboard hostname with the key. The frame

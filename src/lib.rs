@@ -7,6 +7,7 @@ pub mod demo;
 pub mod device_auth;
 pub mod immich;
 pub mod settings;
+pub mod tls;
 
 use std::sync::Arc;
 

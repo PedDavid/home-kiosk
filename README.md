@@ -52,7 +52,9 @@ empty `frontend/dist`.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `HQ_LISTEN` | `0.0.0.0:8080` | Listen address |
+| `HQ_LISTEN` | `0.0.0.0:8080` | Listen address (plain HTTP, always on) |
+| `HQ_TLS_CERT` / `HQ_TLS_KEY` | unset (no TLS) | PEM certificate chain and key. Both set adds a TLS listener; the files are re-read every minute and a renewed certificate is used without a restart |
+| `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
@@ -130,6 +132,25 @@ require an Immich account; deployment should also be checked against your Immich
 The adapter uses the metadata-search page API supported by Immich v2; current upstream
 also exposes it but marks these search filters/pagination deprecated as of v3.2.
 
+### Check the frame layout without deploying
+
+With the built Rust server running, run from `frontend/`:
+
+```bash
+npx playwright install chromium  # once, unless using an installed Chromium
+npm run test:layout
+```
+
+For an installed browser, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:layout`.
+`LAYOUT_BASE_URL` overrides the default server address (`http://127.0.0.1:8080`);
+`LAYOUT_OUTPUT` overrides the screenshot directory (`/tmp/home-hq-layout`).
+The check covers the PF1007L's 1280×800 viewport, smaller viewports and a wider
+screen. It blocks external requests, verifies bundled fonts load, and checks that
+the clock and cards fit. Screenshots use a fixed four-digit PM clock. This is a
+desktop Chromium layout check, not an Android WebView 106 emulator; device font
+rasterization and Android system bars can differ. The frame's density should be
+160, as described in `frontend/kiosk/README.md`.
+
 ## Container image
 
 The [`Dockerfile`](Dockerfile) builds the frontend with Node, builds the binary with the
@@ -137,7 +158,7 @@ frontend embedded, and ships it on `distroless/cc` as non-root. Woodpecker
 ([`.woodpecker.yml`](.woodpecker.yml)) runs fmt, clippy and tests on every push, and builds and
 pushes the image on tags. It uses the `registry_*` secrets. While the repo lives on GitHub,
 GitHub Actions runs the same checks (`ci.yml`). On `v*` tags it also builds and pushes
-`ghcr.io/peddavid/home-kiosk` for amd64 and arm64, plus the Helm chart (`release.yml`).
+`ghcr.io/peddavid/home-kiosk` for amd64, plus the Helm chart (`release.yml`).
 
 ## Deployment
 

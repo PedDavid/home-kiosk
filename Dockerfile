@@ -18,6 +18,7 @@ RUN cargo build --release --locked
 FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=build /src/target/release/home-hq /usr/local/bin/home-hq
 ENV HQ_LISTEN=0.0.0.0:8080
-EXPOSE 8080
-USER nonroot
+EXPOSE 8080 8443
+# distroless nonroot, numeric so Kubernetes runAsNonRoot can verify it.
+USER 65532:65532
 ENTRYPOINT ["/usr/local/bin/home-hq"]

@@ -35,6 +35,10 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+            {{- if .Values.tls.existingSecret }}
+            - name: https
+              containerPort: 8443
+            {{- end }}
           env:
             - name: RUST_LOG
               value: {{ .Values.logLevel | quote }}
@@ -49,14 +53,28 @@ spec:
                   name: {{ .Values.key.existingSecret }}
                   key: {{ .Values.key.secretKey }}
             {{- end }}
+            {{- if .Values.tls.existingSecret }}
+            - name: HQ_TLS_CERT
+              value: /tls/tls.crt
+            - name: HQ_TLS_KEY
+              value: /tls/tls.key
+            {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- if .Values.settings }}
+          {{- if or .Values.settings .Values.tls.existingSecret }}
           volumeMounts:
+            {{- if .Values.settings }}
             - name: settings
               mountPath: /config
               readOnly: true
+            {{- end }}
+            {{- if .Values.tls.existingSecret }}
+            # Whole Secret, not subPath: subPath mounts never see a renewed certificate.
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+            {{- end }}
           {{- end }}
           readinessProbe:
             httpGet:
@@ -73,11 +91,18 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-      {{- if .Values.settings }}
+      {{- if or .Values.settings .Values.tls.existingSecret }}
       volumes:
+        {{- if .Values.settings }}
         - name: settings
           configMap:
             name: {{ include "home-hq.fullname" . }}-settings
+        {{- end }}
+        {{- if .Values.tls.existingSecret }}
+        - name: tls
+          secret:
+            secretName: {{ .Values.tls.existingSecret }}
+        {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
