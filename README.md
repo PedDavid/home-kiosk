@@ -59,6 +59,31 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+### Immich favourites
+
+Set both `HQ_IMMICH_URL` (the Immich API base URL, e.g. `https://photos.example.com/api`)
+and `HQ_IMMICH_API_KEY` to replace demo photos with the API key owner's favourite images.
+Keep the key in a secret/environment binding; never put it in household settings or browser code.
+Use HTTPS outside local development. The key needs Immich asset search, view and update
+permissions (`asset.read`, `asset.view`, `asset.update` on versions with scoped keys).
+In Helm, pass these variables through `extraEnv`, using `secretKeyRef` for the key.
+
+The adapter follows metadata search pagination (up to 10,000 images), caches the list for
+60 seconds, and provides thumbnail/preview images through the authenticated dashboard API.
+Video assets are excluded. Capture date, city, orientation and favourite status feed the existing
+slideshow; favourites changed in the dashboard update Immich and invalidate the list cache.
+Unfavouriting removes that photo from the next list. Other Immich changes appear after the cache
+expires. Only listed favourite assets can be fetched or changed through this integration.
+An empty library shows no photos; upstream errors return a generic 502 rather than demo images.
+Images have a 20 MiB limit and upstream requests have a 15-second timeout. Redirects are disabled.
+The API URL must include `/api`; incomplete configuration prevents startup. With neither variable
+set, demo mode is unchanged. Albums and memories are not yet implemented.
+
+Run `cargo test --locked --test immich` for the mock-server integration checks. These do not
+require an Immich account; deployment should also be checked against your Immich version.
+The adapter uses the metadata-search page API supported by Immich v2; current upstream
+also exposes it but marks these search filters/pagination deprecated as of v3.2.
+
 ## Container image
 
 The [`Dockerfile`](Dockerfile) builds the frontend with Node, builds the binary with the

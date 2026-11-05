@@ -24,7 +24,8 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    let mut state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);
     let app = router(state).layer(TraceLayer::new_for_http());
     let listener = tokio::net::TcpListener::bind(&listen)
         .await

@@ -88,7 +88,14 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn state(State(app): State<AppState>) -> Response {
-    ok(app.demo.lock().await.state(app.now()))
+    let mut state = app.demo.lock().await.state(app.now());
+    if let Some(immich) = &app.immich {
+        match immich.photos().await {
+            Ok(photos) => state["photos"] = json!(photos),
+            Err(_) => return bad("photo source unavailable", StatusCode::BAD_GATEWAY),
+        }
+    }
+    ok(state)
 }
 
 async fn calendar(State(app): State<AppState>) -> Response {
@@ -222,6 +229,21 @@ struct PhotoQuery {
 }
 
 async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Query<PhotoQuery>) -> Response {
+    if let Some(immich) = &app.immich {
+        return match immich.image(&id, q.s.is_some()).await {
+            Ok(Some((mime, bytes))) => (
+                [
+                    (header::CONTENT_TYPE, mime.as_str()),
+                    (header::CACHE_CONTROL, "private, max-age=60"),
+                    (header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
+                ],
+                bytes,
+            )
+                .into_response(),
+            Ok(None) => bad("not found", StatusCode::NOT_FOUND),
+            Err(_) => bad("photo source unavailable", StatusCode::BAD_GATEWAY),
+        };
+    }
     match app.demo.lock().await.photo_svg(&id, q.s.is_some()) {
         Some(svg) => (
             [
@@ -236,7 +258,16 @@ async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Qu
 }
 
 async fn favourite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes) -> Response {
-    let fav = body(&b)["fav"].as_bool().unwrap_or(false);
+    let Some(fav) = body(&b)["fav"].as_bool() else {
+        return bad("fav must be a boolean", StatusCode::BAD_REQUEST);
+    };
+    if let Some(immich) = &app.immich {
+        return match immich.favourite(&id, fav).await {
+            Ok(true) => ok(json!({"ok":true})),
+            Ok(false) => bad("not found", StatusCode::NOT_FOUND),
+            Err(_) => bad("photo source unavailable", StatusCode::BAD_GATEWAY),
+        };
+    }
     app.demo.lock().await.set_favourite(&id, fav);
     ok(json!({ "ok": true }))
 }
