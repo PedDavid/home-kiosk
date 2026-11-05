@@ -13,7 +13,16 @@ use serde_json::{Value, json};
 
 use crate::{AppState, demo};
 
-type ApiResult = Result<Response, Response>;
+type ApiResult = Result<Response, ApiError>;
+
+/// A handler's failure: rendered as upstream's `{ "error": "..." }` with a status.
+struct ApiError(&'static str, StatusCode);
+
+impl IntoResponse for ApiError {
+    fn into_response(self) -> Response {
+        bad(self.0, self.1)
+    }
+}
 
 fn ok(v: Value) -> Response {
     ([(header::CACHE_CONTROL, "no-store")], Json(v)).into_response()
@@ -95,7 +104,7 @@ async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
         .lock()
         .await
         .add_event(&body(&b))
-        .map_err(|e| bad(e, StatusCode::BAD_REQUEST))?;
+        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
     Ok(ok(json!({ "ok": true })))
 }
 
@@ -109,7 +118,7 @@ async fn bins_out(State(app): State<AppState>, b: Bytes) -> ApiResult {
     let date = b["date"]
         .as_str()
         .filter(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").is_ok());
-    let date = date.ok_or_else(|| bad("date required", StatusCode::BAD_REQUEST))?;
+    let date = date.ok_or(ApiError("date required", StatusCode::BAD_REQUEST))?;
     let out = b["out"].as_bool() != Some(false);
     Ok(ok(app.demo.lock().await.set_bins_out(date, out, app.now())))
 }
@@ -119,7 +128,7 @@ async fn frame_beat(State(app): State<AppState>, b: Bytes) -> ApiResult {
         .lock()
         .await
         .frame_beat(&body(&b), app.now())
-        .map_err(|e| bad(e, StatusCode::BAD_REQUEST))?;
+        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
     Ok(ok(json!({ "ok": true, "replaced": 0 })))
 }
 
@@ -168,7 +177,7 @@ async fn put_note(State(app): State<AppState>, b: Bytes) -> ApiResult {
         .lock()
         .await
         .put_note(&body(&b), now)
-        .map_err(|e| bad(e, StatusCode::BAD_REQUEST))?;
+        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
     Ok(ok(json!({ "ok": true, "notes": notes })))
 }
 
@@ -187,7 +196,7 @@ async fn put_grocery(State(app): State<AppState>, b: Bytes) -> ApiResult {
         .lock()
         .await
         .put_grocery(&body(&b))
-        .map_err(|e| bad(e, StatusCode::BAD_REQUEST))?;
+        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
     Ok(ok(json!({ "ok": true })))
 }
 
@@ -247,7 +256,7 @@ async fn control_device(State(app): State<AppState>, Path(id): Path<String>, b: 
         } else {
             StatusCode::BAD_REQUEST
         };
-        bad(e, status)
+        ApiError(e, status)
     })?;
     Ok(ok(json!({ "ok": true })))
 }
@@ -265,7 +274,7 @@ async fn home_action(State(app): State<AppState>, Path(what): Path<String>, b: B
         .lock()
         .await
         .home_action(&what, &body(&b))
-        .map_err(|e| bad(e, StatusCode::NOT_FOUND))?;
+        .map_err(|e| ApiError(e, StatusCode::NOT_FOUND))?;
     Ok(ok(json!({ "ok": true })))
 }
 

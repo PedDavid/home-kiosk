@@ -20,7 +20,7 @@ steps:
     environment:
       CARGO_HOME: .cargo
     commands:
-      - rustup component add rustfmt clippy
+      - rustup show active-toolchain || rustup toolchain install
       - cargo fmt --check
       - cargo clippy --all-targets --locked -- -D warnings
       - cargo test --locked

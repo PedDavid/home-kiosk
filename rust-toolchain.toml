@@ -1,0 +1,4 @@
+# Same toolchain locally, in CI and in the Dockerfile. Renovate can bump all three together.
+[toolchain]
+channel = "1.97"
+components = ["rustfmt", "clippy"]
