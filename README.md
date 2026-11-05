@@ -68,7 +68,7 @@ frontend embedded, and ships it on `distroless/cc` as non-root. Woodpecker
 ([`.woodpecker.yml`](.woodpecker.yml)) runs fmt, clippy and tests on every push, and builds and
 pushes the image on tags. It uses the `registry_*` secrets. While the repo lives on GitHub,
 GitHub Actions runs the same checks (`ci.yml`). On `v*` tags it also builds and pushes
-`ghcr.io/peddavid/home-kiosk` for amd64 and arm64, plus the Helm chart (`release.yml`).
+`ghcr.io/peddavid/home-kiosk` for amd64, plus the Helm chart (`release.yml`).
 
 ## Deployment
 
