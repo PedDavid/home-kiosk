@@ -26,6 +26,23 @@ extraEnv: []
 service:
   port: 80
 
+# A kubernetes.io/tls Secret (tls.crt, tls.key) turns on the app's own TLS listener on 8443.
+# The whole Secret is mounted, so a renewed certificate is picked up within a minute, no restart.
+tls:
+  existingSecret: ""
+
+# A second Service straight to the TLS listener: a dedicated LAN address for the dashboard that
+# reaches nothing else, so a firewall can allow a kiosk exactly this IP and port. Needs
+# tls.existingSecret. Pick the address through annotations, e.g. with MetalLB:
+#   metallb.io/loadBalancerIPs: 192.168.8.56
+lanService:
+  enabled: false
+  type: LoadBalancer
+  port: 443
+  # Local keeps the client's address (no SNAT), so logs show which device connected.
+  externalTrafficPolicy: Local
+  annotations: {}
+
 ingress:
   enabled: true
   className: traefik
@@ -45,6 +62,9 @@ resources:
 
 podSecurityContext:
   runAsNonRoot: true
+  # distroless's nonroot. Numeric, so runAsNonRoot can verify it.
+  runAsUser: 65532
+  runAsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 
