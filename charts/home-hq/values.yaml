@@ -13,6 +13,13 @@ key:
   existingSecret: ""
   secretKey: HQ_KEY
 
+# Calendar feeds (HQ_CALENDARS) come from an existing Secret, because the links are secrets:
+# a JSON list of { "url": "https://…/basic.ics", "people": ["alex"] | "all" }.
+# With no existingSecret the calendar shows demo events. It may be the same Secret as `key`.
+calendars:
+  existingSecret: ""
+  secretKey: HQ_CALENDARS
+
 # Household settings in upstream Home HQ's settings.json format (timezone, location, people,
 # bins, shopping, display). Rendered to JSON in a ConfigMap; any change rolls the pod.
 # Empty: the image's bundled example settings are used.
@@ -27,11 +34,39 @@ immich:
 
 logLevel: info
 
+# Weather. "open-meteo" fetches settings.location's forecast from Open-Meteo (no key, cached
+# 15 minutes), so the pod needs egress to api.open-meteo.com (or to openMeteoUrl's host); the
+# frame itself never calls it. "demo" serves the generated demo forecast and makes no calls.
+weather:
+  provider: open-meteo
+  # Empty: https://api.open-meteo.com/v1/forecast. Set for a self-hosted Open-Meteo.
+  openMeteoUrl: ""
+
 # Extra environment variables for the container (later deliveries: HA_TOKEN, calendar URLs, ...).
 extraEnv: []
 
 service:
   port: 80
+
+# A small writable volume for state that must survive restarts. Today that is the Immich device
+# grant from QR pairing, encrypted with a key derived from HQ_KEY. On by default, but only takes
+# effect with key.existingSecret: without HQ_KEY nothing would be written, so no claim is made.
+# Mounted at mountPath and passed to the app as HQ_STATE_DIR; the root filesystem stays read-only.
+# Needs a default StorageClass (or storageClass/existingClaim). Off: the grant lives in memory and
+# every restart or deploy needs pairing again.
+persistence:
+  enabled: true
+  # Use this PVC instead of creating one.
+  existingClaim: ""
+  # Empty: the cluster's default StorageClass (local-path on k3s).
+  storageClass: ""
+  # ReadWriteOnce is enough: one replica, and the Recreate strategy stops the old pod first.
+  accessMode: ReadWriteOnce
+  # local-path doesn't enforce sizes; the grant file is under 1 KiB.
+  size: 16Mi
+  mountPath: /data
+  # e.g. helm.sh/resource-policy: keep, to keep the claim on uninstall.
+  annotations: {}
 
 # A kubernetes.io/tls Secret (tls.crt, tls.key) turns on the app's own TLS listener on 8443.
 # The whole Secret is mounted, so a renewed certificate is picked up within a minute, no restart.

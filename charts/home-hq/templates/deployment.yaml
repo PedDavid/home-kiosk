@@ -26,8 +26,15 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- $podSecurityContext := deepCopy .Values.podSecurityContext }}
+      {{- if and (include "home-hq.persistence" .) (not (hasKey $podSecurityContext "fsGroup")) }}
+      {{- /* Lets the non-root user write to provisioners that honour fsGroup; local-path's
+             directories are world-writable already. */}}
+      {{- $_ := set $podSecurityContext "fsGroup" ($podSecurityContext.runAsGroup | default 65532) }}
+      {{- $_ := set $podSecurityContext "fsGroupChangePolicy" "OnRootMismatch" }}
+      {{- end }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml $podSecurityContext | nindent 8 }}
       containers:
         - name: home-hq
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -50,6 +57,14 @@ spec:
             - name: HQ_IMMICH_PUBLIC_URL
               value: {{ . | quote }}
             {{- end }}
+            {{- with .Values.weather.provider }}
+            - name: HQ_WEATHER
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.weather.openMeteoUrl }}
+            - name: HQ_OPEN_METEO_URL
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.key.existingSecret }}
             - name: HQ_KEY
               valueFrom:
@@ -57,16 +72,27 @@ spec:
                   name: {{ .Values.key.existingSecret }}
                   key: {{ .Values.key.secretKey }}
             {{- end }}
+            {{- if .Values.calendars.existingSecret }}
+            - name: HQ_CALENDARS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.calendars.existingSecret }}
+                  key: {{ .Values.calendars.secretKey }}
+            {{- end }}
             {{- if .Values.tls.existingSecret }}
             - name: HQ_TLS_CERT
               value: /tls/tls.crt
             - name: HQ_TLS_KEY
               value: /tls/tls.key
             {{- end }}
+            {{- if include "home-hq.persistence" . }}
+            - name: HQ_STATE_DIR
+              value: {{ .Values.persistence.mountPath | quote }}
+            {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- if or .Values.settings .Values.tls.existingSecret }}
+          {{- if or .Values.settings .Values.tls.existingSecret (include "home-hq.persistence" .) }}
           volumeMounts:
             {{- if .Values.settings }}
             - name: settings
@@ -78,6 +104,10 @@ spec:
             - name: tls
               mountPath: /tls
               readOnly: true
+            {{- end }}
+            {{- if include "home-hq.persistence" . }}
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
           {{- end }}
           readinessProbe:
@@ -95,7 +125,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-      {{- if or .Values.settings .Values.tls.existingSecret }}
+      {{- if or .Values.settings .Values.tls.existingSecret (include "home-hq.persistence" .) }}
       volumes:
         {{- if .Values.settings }}
         - name: settings
@@ -106,6 +136,11 @@ spec:
         - name: tls
           secret:
             secretName: {{ .Values.tls.existingSecret }}
+        {{- end }}
+        {{- if include "home-hq.persistence" . }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" (include "home-hq.fullname" .)) }}
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}

@@ -25,6 +25,12 @@ every route the frontend calls. The responses use upstream's shapes, filled with
 - The alert WebSocket (`/api/alerts/ws`) and the polling fallback (`/api/alerts`) answer with
   `seq: 0`, and nothing raises alerts yet.
 
+**Calendar (delivered).** With `HQ_CALENDARS` set, "Next up", the people lanes and the calendar
+views show real ICS feeds through the `CalendarSource` port ([`src/calendar/`](src/calendar/)),
+with recurrences, exceptions, timezones and per-person attribution. Reading iCalendar is its own
+crate, [`crates/ical-expand`](crates/ical-expand/), whose README explains why it isn't a library. Without it, the demo events
+stay.
+
 Each later delivery replaces one slice of `demo.rs` with a real port and adapter:
 
 | Delivery | Replaces |
@@ -56,8 +62,11 @@ empty `frontend/dist`.
 | `HQ_TLS_CERT` / `HQ_TLS_KEY` | unset (no TLS) | PEM certificate chain and key. Both set adds a TLS listener; the files are re-read every minute and a renewed certificate is used without a restart |
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
+| `HQ_CALENDARS` | unset (demo events) | Calendar feeds (secret): a JSON list of `{ "url": "…", "people": ["alex"] \| "all" }`. See [Calendars](charts/home-hq/README.md#calendars) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
 | `HQ_IMMICH_PUBLIC_URL` | unset (Share hidden) | Immich address phones open, e.g. `https://photos.example.com`. The Photos tab's Share button shows a QR code for `<url>/photos/<assetId>` (a plain link, no key) on photos from Immich. Must be `http(s)://host[/path]`, else startup fails |
+| `HQ_WEATHER` | `open-meteo` | `open-meteo` serves Open-Meteo's forecast for `settings.location`, cached 15 minutes; a failed refresh serves the last forecast. With no `location`, `/api/weather` answers `{ "none": true }`. Needs egress to `api.open-meteo.com`. `demo` serves the generated demo forecast and makes no outbound calls (CI, offline development) |
+| `HQ_OPEN_METEO_URL` | `https://api.open-meteo.com/v1/forecast` | Forecast endpoint, e.g. a self-hosted Open-Meteo |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
 
 `GET /healthz` returns `ok` without a key.
@@ -102,15 +111,25 @@ Open **Photos → Connect Immich** (or `/immich`), scan the QR code, compare the
 and approve on your phone. Home HQ requests `asset.read asset.view asset.update`, with a
 one-day lifetime capped by the broker. The device code and issued key stay on the backend;
 the QR image is generated locally. Polling respects the broker interval and `slow_down` responses.
-Once connected, use **Show favorite photos**. **Disconnect** revokes the issued key through
-the broker; if revocation fails, the grant is retained so you can retry.
+Once connected, use **Show favorite photos**. **Disconnect** asks the broker to revoke the
+issued key (`POST /device/revoke`); the key itself is the only credential needed. The broker
+accepts the request and deletes the key in Immich itself, retrying in the background if Immich
+is unavailable, so a successful Disconnect means the broker has the request, not that the key is
+already gone. Only if the broker can't be reached, or answers with an error, does Home HQ keep
+the grant so you can retry.
 
-A grant is shared by this Home HQ instance and all its frames. Grants are held in memory only:
-restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
+A grant is shared by this Home HQ instance and all its frames. By default it is held in memory
+only: restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
+To keep it across restarts, set `HQ_STATE_DIR` to a writable directory (the Helm chart's
+`persistence` option, on by default with a dashboard key, does this). Home HQ then stores the issued key, its expiry and scope in
+`$HQ_STATE_DIR/immich-grant.bin`, encrypted with AES-256-GCM under a key derived from `HQ_KEY` and
+bound to the two configured URLs, and reloads it on start. Without `HQ_KEY` nothing is written.
+A stored grant that has expired or can't be decrypted (a changed `HQ_KEY` or URL) is deleted on
+start, and the frame shows "disconnected". **Disconnect** deletes the file once the broker has accepted the revocation.
 Expired grants stop being used even if the broker is unavailable. There is no refresh token;
 return to `/immich` to approve again after expiry. Cancelling a pending request clears it locally;
-the broker expires abandoned approvals and revokes any uncollected keys. Read-only container
-filesystems need no extra writable volume. Helm users can pass the two URLs through `extraEnv`.
+the broker expires abandoned approvals and revokes any uncollected keys. Without `HQ_STATE_DIR`,
+read-only container filesystems need no writable volume. Helm users can pass the two URLs through `extraEnv`.
 
 The flow was tested end to end with the broker at commit
 `1af7484a9a71b3946f14b7f569c3c5d440f98563` and its mock identity provider/Immich server
@@ -162,6 +181,21 @@ the clock and cards fit. Screenshots use a fixed four-digit PM clock. This is a
 desktop Chromium layout check, not an Android WebView 106 emulator; device font
 rasterization and Android system bars can differ. The frame's density should be
 160, as described in `frontend/kiosk/README.md`.
+
+### Weather snapshot
+
+`tests/fixtures/weather/open-meteo-snapshot.json` is a real Open-Meteo response for the bundled
+example settings, together with the request that produced it. `cargo test` maps it offline. To
+fetch a new one, run `HQ_RECORD_WEATHER=1 cargo test --test weather_snapshot` (needs network), or
+run the CI workflow by hand with *record-weather-snapshot* ticked. CI records the snapshot by
+itself when the file is missing and commits it to the branch. The test fails when the request
+changes (fields, units, the example location) until the snapshot is recorded again.
+
+The `weather-open-meteo` screenshot test renders the card and hourly strip from this snapshot
+(`frontend/tests/screens/fixtures/weather-open-meteo.json`, written by `cargo run --example
+screen_fixtures`). Recording a new snapshot regenerates that fixture too, and CI commits both.
+Then run CI by hand with *update screenshots* ticked, which renders and commits the new
+`weather-open-meteo.png` baseline, and review it.
 
 ### Screenshot tests
 

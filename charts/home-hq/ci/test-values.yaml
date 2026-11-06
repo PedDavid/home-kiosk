@@ -2,6 +2,8 @@
 imagePullSecrets: [{ name: ghcr-pull }]
 key:
   existingSecret: home-hq
+calendars:
+  existingSecret: home-hq
 ingress:
   host: home-hq.lab.example.com
   tls:
@@ -18,8 +20,16 @@ settings:
     - { id: alex, name: Alex, color: "#2D5BFF", ha: person.alex }
 tls:
   existingSecret: home-hq-tls
+weather:
+  # CI never calls Open-Meteo. openMeteoUrl is set only so its env var renders.
+  provider: demo
+  openMeteoUrl: https://open-meteo.lab.example.com/v1/forecast
 lanService:
   enabled: true
   annotations:
     metallb.io/loadBalancerIPs: 192.168.8.56
     external-dns.kubernetes.io/hostname: home-hq.lab.example.com
+persistence:
+  storageClass: local-path
+  annotations:
+    helm.sh/resource-policy: keep
