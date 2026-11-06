@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{AppState, calendar, demo};
+use crate::{AppState, calendar, demo, travel};
 
 type ApiResult = Result<Response, ApiError>;
 
@@ -94,7 +94,10 @@ async fn state(State(app): State<AppState>) -> Response {
 async fn calendar(State(app): State<AppState>) -> Response {
     if app.calendar.configured() {
         let listing = app.calendar.list(calendar::Range::around(app.now())).await;
-        return ok(json!(listing));
+        let drives = app.drives.for_events(&listing.events).await;
+        let mut body = json!(listing);
+        travel::attach(&mut body, &drives);
+        return ok(body);
     }
     ok(app.demo.lock().await.calendar(app.now()))
 }

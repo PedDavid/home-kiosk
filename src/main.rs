@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, router, settings::Settings, tls};
+use home_hq::{AppState, calendar::fetch::Http, router, settings::Settings, tls};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,7 +27,12 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
+    // reqwest's rustls needs a crypto provider before any client is built.
+    tls::install_crypto_provider();
+    let drives = home_hq::travel::from_settings(&settings, Arc::new(Http::new()?), clock.clone())?;
+    tracing::info!(configured = drives.configured(), "travel times");
+    let state = AppState::new(settings, key, clock).with_drives(Arc::new(drives));
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.

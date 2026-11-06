@@ -24,6 +24,9 @@ pub struct Settings {
     pub shopping: Shopping,
     #[serde(default)]
     pub display: Display,
+    /// Drive times for "leave by" (`travel` module). Absent: not configured.
+    #[serde(default)]
+    pub travel: Option<crate::travel::TravelConfig>,
 }
 
 fn default_tz() -> String {
@@ -46,6 +49,9 @@ pub struct PersonConfig {
     pub color: Option<String>,
     #[serde(default)]
     pub ha: Option<String>,
+    /// Where this person's drives start, instead of home (`travel` module).
+    #[serde(default)]
+    pub origin: Option<crate::travel::Place>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
