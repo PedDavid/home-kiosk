@@ -1,7 +1,13 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, calendar::fetch::Http, router, settings::Settings, tls};
+use home_hq::{
+    AppState,
+    calendar::{self, CalendarSource, fetch::Http, ics::IcsSource},
+    router,
+    settings::Settings,
+    tls,
+};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,12 +33,15 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
-    // reqwest's rustls needs a crypto provider before any client is built.
+    // reqwest (calendar feeds) and the TLS listener share rustls's ring provider.
     tls::install_crypto_provider();
+    let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
+    let calendar = calendars(&settings, clock.clone())?;
     let drives = home_hq::travel::from_settings(&settings, Arc::new(Http::new()?), clock.clone())?;
     tracing::info!(configured = drives.configured(), "travel times");
-    let state = AppState::new(settings, key, clock).with_drives(Arc::new(drives));
+    let state = AppState::new(settings, key, clock)
+        .with_calendar(calendar)
+        .with_drives(Arc::new(drives));
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.
@@ -54,7 +63,6 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    tls::install_crypto_provider();
     let (config, pem) = tls::load(&files).await?;
     let addr: SocketAddr = tls_listen
         .parse()
@@ -80,6 +88,26 @@ async fn main() -> anyhow::Result<()> {
     reloader.abort();
     result?;
     Ok(())
+}
+
+/// The calendar from `HQ_CALENDARS` (ICS feeds); unset keeps the demo calendar.
+fn calendars(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Arc<dyn CalendarSource>> {
+    let value = std::env::var("HQ_CALENDARS").ok();
+    let people: Vec<String> = settings.people.iter().map(|p| p.id.clone()).collect();
+    let fetch = Arc::new(calendar::fetch::Http::new()?);
+    let tz = settings.tz()?;
+    Ok(
+        match IcsSource::from_env_value(value.as_deref(), &people, tz, fetch, clock) {
+            Some(source) => {
+                tracing::info!(calendars = source.len(), "calendar: ICS feeds");
+                Arc::new(source)
+            }
+            None => {
+                tracing::info!("calendar: HQ_CALENDARS is not set, serving the demo calendar");
+                Arc::new(calendar::NotConfigured)
+            }
+        },
+    )
 }
 
 async fn stopped(mut stop: watch::Receiver<bool>) {

@@ -109,7 +109,7 @@ pub struct Event {
     pub when: When,
     /// `LOCATION` (`loc` on the wire).
     pub location: Option<String>,
-    /// `DESCRIPTION` as plain text, at most 280 characters.
+    /// `DESCRIPTION` as plain text; longer than 280 characters, cut to 277 plus "…" (as upstream).
     pub notes: Option<String>,
     /// Minutes, from "Travel: 15" in the description: the leave-by fallback.
     pub travel: Option<u32>,

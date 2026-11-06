@@ -2,6 +2,8 @@
 imagePullSecrets: [{ name: ghcr-pull }]
 key:
   existingSecret: home-hq
+calendars:
+  existingSecret: home-hq
 ingress:
   host: home-hq.lab.example.com
   tls:

@@ -161,6 +161,15 @@ impl IcsSource {
         })
     }
 
+    /// How many feeds are configured.
+    pub fn len(&self) -> usize {
+        self.feeds.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.feeds.is_empty()
+    }
+
     /// Changes the cache lifetime (tests).
     pub fn with_ttl(mut self, ttl: Duration) -> Self {
         self.ttl = ttl;

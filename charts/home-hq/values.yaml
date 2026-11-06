@@ -13,6 +13,13 @@ key:
   existingSecret: ""
   secretKey: HQ_KEY
 
+# Calendar feeds (HQ_CALENDARS) come from an existing Secret, because the links are secrets:
+# a JSON list of { "url": "https://…/basic.ics", "people": ["alex"] | "all" }.
+# With no existingSecret the calendar shows demo events. It may be the same Secret as `key`.
+calendars:
+  existingSecret: ""
+  secretKey: HQ_CALENDARS
+
 # Household settings in upstream Home HQ's settings.json format (timezone, location, people,
 # bins, shopping, display). Rendered to JSON in a ConfigMap; any change rolls the pod.
 # Empty: the image's bundled example settings are used.
