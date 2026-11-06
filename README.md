@@ -27,7 +27,8 @@ every route the frontend calls. The responses use upstream's shapes, filled with
 
 **Calendar (delivered).** With `HQ_CALENDARS` set, "Next up", the people lanes and the calendar
 views show real ICS feeds through the `CalendarSource` port ([`src/calendar/`](src/calendar/)),
-with recurrences, exceptions, timezones and per-person attribution. Without it, the demo events
+with recurrences, exceptions, timezones and per-person attribution. Reading iCalendar is its own
+crate, [`crates/ical-expand`](crates/ical-expand/), whose README explains why it isn't a library. Without it, the demo events
 stay.
 
 Each later delivery replaces one slice of `demo.rs` with a real port and adapter:

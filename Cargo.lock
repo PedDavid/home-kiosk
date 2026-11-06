@@ -633,11 +633,11 @@ dependencies = [
  "chrono-tz",
  "futures-util",
  "http-body-util",
+ "ical-expand",
  "mime_guess",
  "rcgen",
  "regex",
  "reqwest",
- "rrule",
  "rust-embed",
  "rustls",
  "serde",
@@ -789,6 +789,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "ical-expand"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "chrono-tz",
+ "rrule",
 ]
 
 [[package]]

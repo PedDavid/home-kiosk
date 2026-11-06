@@ -1,9 +1,15 @@
+[workspace]
+members = [".", "crates/ical-expand"]
+# `cargo test`, `clippy` and `build` at the root cover the crate too, so CI needs no change.
+default-members = [".", "crates/ical-expand"]
+
 [package]
 name = "home-hq"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+ical-expand = { path = "crates/ical-expand" }
 anyhow = "1.0.104"
 async-trait = "0.1"
 axum = { version = "0.8.9", features = ["ws", "macros"] }
@@ -14,7 +20,6 @@ futures-util = "0.3"
 mime_guess = "2.0.5"
 regex = "1"
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "charset", "http2"] }
-rrule = "0.14"
 rust-embed = "8.13.0"
 rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 serde = { version = "1.0.229", features = ["derive"] }

@@ -14,8 +14,9 @@
 //!   "checked": 1762450200000 }
 //! ```
 //!
-//! The parsing and recurrence expansion shared by every iCalendar-speaking adapter lives in
-//! [`engine`], which is pure: it never fetches or reads the clock.
+//! Reading iCalendar (parsing, recurrences, timezones) is the `ical-expand` crate
+//! (`crates/ical-expand`). [`engine`] turns its occurrences into attributed, merged [`Event`]s
+//! for every iCalendar-speaking adapter; both are pure: they never fetch or read the clock.
 //!
 //! Every adapter must pass the shared contract suite in `tests/support/calendar_contract.rs`.
 
@@ -87,6 +88,15 @@ impl When {
         match *self {
             When::Timed { start, end } => (start, end),
             When::AllDay { start, end } => (engine::midnight(start, tz), engine::midnight(end, tz)),
+        }
+    }
+}
+
+impl From<ical_expand::Time> for When {
+    fn from(t: ical_expand::Time) -> Self {
+        match t {
+            ical_expand::Time::Timed { start, end } => When::Timed { start, end },
+            ical_expand::Time::AllDay { start, end } => When::AllDay { start, end },
         }
     }
 }
