@@ -70,8 +70,8 @@ use the existing configurable rest timeout before entering the same image-only a
 Night and screen-off schedules still take precedence, and open dialogs keep the normal timeout.
 Photo colours stay unchanged at night; only the dashboard UI receives the night tint.
 
-Use **Full screen** in Photos to keep the current slideshow on screen until you exit.
-Only **Exit full screen** remains visible; Escape or navigating away also exits. This mode
+Use the circular expand icon at the top left in Photos to keep the current slideshow on screen
+until you exit. Only the subtle circular shrink icon remains visible at the top left; Escape or navigating away also exits. This mode
 suspends the app's idle, night/scheduled-off and everyone-away sleep transitions, and postpones
 automatic deploy reloads. Normal timers resume from the time you exit. The browser's native
 full-screen API and screen wake lock are used where available; unsupported or denied browser
@@ -167,6 +167,15 @@ the clock and cards fit. Screenshots use a fixed four-digit PM clock. This is a
 desktop Chromium layout check, not an Android WebView 106 emulator; device font
 rasterization and Android system bars can differ. The frame's density should be
 160, as described in `frontend/kiosk/README.md`.
+
+### Screenshot tests
+
+`cd frontend && npm run test:screens:docker` renders the wall view at the frame's 1280×800 with
+mocked API data, compares it with `frontend/tests/screens/screenshots/`, and checks that nothing
+overflows the frame. `npm run test:screens:docker:update` rewrites the baselines. CI's `screens`
+job runs the same in the same image and uploads the results as the `screenshots` artifact. See
+[`frontend/tests/screens/README.md`](frontend/tests/screens/README.md), which also covers how to
+put screenshots in a pull request.
 
 ## Container image
 

@@ -2,3 +2,7 @@
 /data
 frontend/node_modules
 frontend/dist
+
+# Screenshot tests (frontend/tests/screens): failures and the HTML report
+frontend/test-results
+frontend/playwright-report

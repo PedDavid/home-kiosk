@@ -60,9 +60,22 @@
 .ph-connect[hidden] { display: none; }
 
 /* Explicit viewing mode: preserve the slide, remove chrome, and keep one way out. */
-.ph-exit { display: none; position: absolute; top: 20px; right: 20px; z-index: 5; }
+.ph-screen {
+  position: absolute; top: 20px; left: 20px; z-index: 5;
+  width: 52px; height: 52px; min-width: 52px; padding: 0; border-radius: 50%;
+  background: rgba(0, 0, 0, .18); color: rgba(255, 255, 255, .85);
+}
+/* Extra touch area without enlarging or darkening the visible circle. */
+.ph-screen::before { content: ''; position: absolute; inset: -14px; }
+.ph-screen .i { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .45)); }
+.ph-screen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.ph-exit { display: none; background: rgba(0, 0, 0, .1); color: rgba(255, 255, 255, .7); }
+@media (hover: hover) {
+  .ph-screen:hover { background: rgba(0, 0, 0, .25); color: #fff; }
+}
 .stage.is-photo-fullscreen > .rail { display: none; }
 .stage.is-photo-fullscreen > .views { grid-column: 1 / -1; grid-row: 1; }
+.stage.is-photo-fullscreen .ph-enter,
 .stage.is-photo-fullscreen .ph-top,
 .stage.is-photo-fullscreen .ph-bottom,
 .stage.is-photo-fullscreen .ph-zone,
