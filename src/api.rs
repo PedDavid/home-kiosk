@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{AppState, demo};
+use crate::{AppState, demo, share};
 
 type ApiResult = Result<Response, ApiError>;
 
@@ -88,7 +88,9 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn state(State(app): State<AppState>) -> Response {
-    ok(app.demo.lock().await.state(app.now()))
+    let mut s = app.demo.lock().await.state(app.now());
+    share::annotate(&mut s["photos"], app.immich_public_url.as_deref());
+    ok(s)
 }
 
 async fn calendar(State(app): State<AppState>) -> Response {

@@ -57,6 +57,7 @@ empty `frontend/dist`.
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
+| `IMMICH_PUBLIC_URL` | unset (Share hidden) | Immich address phones open, e.g. `https://photos.example.com`. The Photos tab's Share button shows a QR code for `<url>/photos/<assetId>` (a plain link, no key) on photos from Immich. Must be `http(s)://host[/path]`, else startup fails |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
 
 `GET /healthz` returns `ok` without a key.

@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, router, settings::Settings, tls};
+use home_hq::{AppState, router, settings::Settings, share::ImmichPublicUrl, tls};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,7 +27,13 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    let immich_public_url = ImmichPublicUrl::parse(&std::env::var("IMMICH_PUBLIC_URL").unwrap_or_default())?;
+    match &immich_public_url {
+        Some(u) => tracing::info!(immich_public_url = u.as_str(), "photo sharing on"),
+        None => tracing::info!("IMMICH_PUBLIC_URL is not set: the Share button is hidden"),
+    }
+
+    let state = AppState::new(settings, key, Arc::new(chrono::Utc::now)).with_immich_public_url(immich_public_url);
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.

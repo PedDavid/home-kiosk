@@ -5,6 +5,7 @@ pub mod assets;
 pub mod auth;
 pub mod demo;
 pub mod settings;
+pub mod share;
 pub mod tls;
 
 use std::sync::Arc;
@@ -21,6 +22,8 @@ pub struct AppState {
     pub key: Option<Arc<str>>,
     pub demo: Arc<Mutex<demo::Demo>>,
     pub clock: Clock,
+    /// Where phones open Immich (`IMMICH_PUBLIC_URL`). `None` hides the frame's Share button.
+    pub immich_public_url: Option<Arc<share::ImmichPublicUrl>>,
 }
 
 impl AppState {
@@ -30,7 +33,13 @@ impl AppState {
             key: key.filter(|k| !k.is_empty()).map(Arc::from),
             demo: Arc::new(Mutex::new(demo)),
             clock,
+            immich_public_url: None,
         }
+    }
+
+    pub fn with_immich_public_url(mut self, url: Option<share::ImmichPublicUrl>) -> Self {
+        self.immich_public_url = url.map(Arc::new);
+        self
     }
 
     pub fn now(&self) -> DateTime<Utc> {
