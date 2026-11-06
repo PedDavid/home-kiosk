@@ -83,7 +83,7 @@ Photo colours stay unchanged at night; only the dashboard UI receives the night 
 Use the circular expand icon at the top left in Photos to keep the current slideshow on screen
 until you exit. Only the subtle circular shrink icon remains visible at the top left; Escape or navigating away also exits. This mode
 suspends the app's idle, night/scheduled-off and everyone-away sleep transitions, and postpones
-automatic deploy reloads. Normal timers resume from the time you exit. The browser's native
+deploy update notices. Normal timers resume from the time you exit. The browser's native
 full-screen API and screen wake lock are used where available; unsupported or denied browser
 APIs still allow the UI-only full-screen view. The Android kiosk already keeps the screen awake.
 This mode is local to the current page and is not restored after reload.
