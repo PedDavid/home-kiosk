@@ -55,10 +55,11 @@
 .ph-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; font-size: 44px; line-height: 1.2; background: #111; }
 .ph-empty i { font-size: 26px; opacity: .7; }
 .ph-empty[hidden] { display: none; }
-/* Remove-from-favourites confirmation: the photo on the left, the question on the right. */
-.sheet--unfav { width: 760px; }
-.ph-unfav { display: flex; gap: 28px; align-items: center; }
-.ph-unfav-img { flex: none; width: 220px; height: 220px; object-fit: cover; border-radius: 18px; background: var(--paper-2); }
-.ph-unfav > div { padding-right: 40px; }
-.ph-unfav .sheet-h { font-size: 46px; }
-.ph-unfav .sheet-actions { justify-content: flex-start; }
+/* Press-and-hold to remove a favourite: the pink drains left to right over the hold (--hold, App.hold). */
+.ph-btn--fav { position: relative; overflow: hidden; }
+.ph-btn--fav > * { position: relative; z-index: 1; }
+.ph-btn--fav::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 0;
+  background: rgba(0, 0, 0, .55); transition: width .15s ease-out;
+}
+.ph-btn--fav.is-holding::before { width: 100%; transition: width var(--hold, 1s) linear; }
