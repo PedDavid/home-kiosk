@@ -5,11 +5,16 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.104"
+async-trait = "0.1"
 axum = { version = "0.8.9", features = ["ws", "macros"] }
 axum-server = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
 chrono = "0.4.45"
 chrono-tz = "0.10.4"
+futures-util = "0.3"
 mime_guess = "2.0.5"
+regex = "1"
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "charset", "http2"] }
+rrule = "0.14"
 rust-embed = "8.13.0"
 rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 serde = { version = "1.0.229", features = ["derive"] }
@@ -21,7 +26,6 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 
 [dev-dependencies]
-futures-util = "0.3.34"
 http-body-util = "0.1.5"
 rcgen = { version = "0.14.10", default-features = false, features = ["crypto", "pem", "ring"] }
 tokio-rustls = { version = "0.26.4", default-features = false, features = ["ring", "tls12"] }

@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{AppState, demo};
+use crate::{AppState, calendar, demo};
 
 type ApiResult = Result<Response, ApiError>;
 
@@ -92,7 +92,17 @@ async fn state(State(app): State<AppState>) -> Response {
 }
 
 async fn calendar(State(app): State<AppState>) -> Response {
+    if app.calendar.configured() {
+        let listing = app.calendar.list(calendar::Range::around(app.now())).await;
+        return ok(json!(listing));
+    }
     ok(app.demo.lock().await.calendar(app.now()))
+}
+
+/// While a configured calendar is read-only, the frame can't add or remove events.
+fn calendar_read_only(app: &AppState) -> Option<ApiError> {
+    (app.calendar.configured() && !app.calendar.can_write())
+        .then_some(ApiError("the calendar is read-only", StatusCode::METHOD_NOT_ALLOWED))
 }
 
 async fn weather(State(app): State<AppState>) -> Response {
@@ -100,6 +110,9 @@ async fn weather(State(app): State<AppState>) -> Response {
 }
 
 async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
+    if let Some(e) = calendar_read_only(&app) {
+        return Err(e);
+    }
     app.demo
         .lock()
         .await
@@ -108,9 +121,12 @@ async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
     Ok(ok(json!({ "ok": true })))
 }
 
-async fn delete_event(State(app): State<AppState>, Path(id): Path<String>) -> Response {
+async fn delete_event(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
+    if let Some(e) = calendar_read_only(&app) {
+        return Err(e);
+    }
     app.demo.lock().await.delete_event(&id);
-    ok(json!({ "ok": true }))
+    Ok(ok(json!({ "ok": true })))
 }
 
 async fn bins_out(State(app): State<AppState>, b: Bytes) -> ApiResult {
