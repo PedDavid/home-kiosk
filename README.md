@@ -111,7 +111,7 @@ the grant so you can retry.
 A grant is shared by this Home HQ instance and all its frames. By default it is held in memory
 only: restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
 To keep it across restarts, set `HQ_STATE_DIR` to a writable directory (the Helm chart's
-`persistence` option does this). Home HQ then stores the issued key, its expiry and scope in
+`persistence` option, on by default with a dashboard key, does this). Home HQ then stores the issued key, its expiry and scope in
 `$HQ_STATE_DIR/immich-grant.bin`, encrypted with AES-256-GCM under a key derived from `HQ_KEY` and
 bound to the two configured URLs, and reloads it on start. Without `HQ_KEY` nothing is written.
 A stored grant that has expired or can't be decrypted (a changed `HQ_KEY` or URL) is deleted on

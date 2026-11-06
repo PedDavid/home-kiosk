@@ -142,28 +142,32 @@ WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a cl
 
 With Immich QR pairing (`HQ_IMMICH_DEVICE_AUTH_URL` in `extraEnv`), the issued key lives in
 memory unless the chart gives the app a volume, so every restart or deploy means pairing the
-frame again, and the old key lingers in Immich until the broker revokes it at expiry. Turn on
-`persistence` to keep it:
+frame again, and the old key lingers in Immich until the broker revokes it at expiry.
+`persistence` keeps it, and is **on by default** whenever `key.existingSecret` is set:
 
 ```yaml
   values:
     key:
       existingSecret: home-hq # required: the grant is encrypted with a key derived from HQ_KEY
-    persistence:
-      enabled: true
-      # storageClass: local-path   # empty uses the cluster default (local-path on k3s)
+    # persistence:            # on by default; only needed to change or turn it off
+    #   storageClass: local-path   # empty uses the cluster default (local-path on k3s)
+    #   enabled: false             # keep the grant in memory only, as before 0.3.0
     extraEnv:
       - { name: HQ_IMMICH_URL, value: https://photos.example.com/api }
       - { name: HQ_IMMICH_DEVICE_AUTH_URL, value: https://device.photos.example.com }
 ```
 
-This creates a `ReadWriteOnce` PVC (`<release>-data`, 16Mi; or set `existingClaim`), mounts it at
+With a key Secret, this creates a `ReadWriteOnce` PVC (`<release>-data`, 16Mi; or set `existingClaim`), mounts it at
 `/data` and sets `HQ_STATE_DIR`. The root filesystem stays read-only. The app stores the issued
 key, its expiry and scope in `/data/immich-grant.bin`, encrypted with AES-256-GCM under a key
 derived from `HQ_KEY` (HKDF-SHA256) and bound to the configured broker and Immich URLs.
 
-- Without `HQ_KEY` the app writes nothing and logs a warning: pairing behaves as with persistence
-  off.
+- Without `key.existingSecret` no PVC is created, since the app would write nothing without
+  `HQ_KEY`. Pairing then behaves as with persistence off, and NOTES says so.
+- The PVC needs a default StorageClass, or set `persistence.storageClass` or `existingClaim`.
+  Otherwise the claim, and so the pod, stays Pending. Set `persistence.enabled: false` to run
+  without a volume.
+- local-path volumes live on one node, so the pod then only schedules on that node.
 - On start, a grant that has expired, or that can't be decrypted because `HQ_KEY` or one of the
   URLs changed, is deleted and the frame shows "disconnected". Rotating `HQ_KEY` therefore means
   pairing again; the old key expires at the broker as before.
@@ -188,7 +192,7 @@ old pod before the new one mounts the claim, which a single-node `ReadWriteOnce`
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
 | `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |
 | `lanService.enabled`, `type`, `port`, `externalTrafficPolicy`, `annotations` | `false`, `LoadBalancer`, `443`, `Local`, `{}` | A Service straight to the TLS listener: a dedicated LAN address. Needs `tls.existingSecret` |
-| `persistence.enabled`, `existingClaim`, `storageClass`, `accessMode`, `size`, `mountPath`, `annotations` | `false`, `""`, `""` (cluster default), `ReadWriteOnce`, `16Mi`, `/data`, `{}` | A PVC for state that must survive restarts: the encrypted Immich device grant. Needs `key.existingSecret` |
+| `persistence.enabled`, `existingClaim`, `storageClass`, `accessMode`, `size`, `mountPath`, `annotations` | `true`, `""`, `""` (cluster default), `ReadWriteOnce`, `16Mi`, `/data`, `{}` | A PVC for state that must survive restarts: the encrypted Immich device grant. Only created with `key.existingSecret` |
 | `extraEnv` | `[]` | Extra env vars (HA token and adapter credentials in later deliveries) |
 | `logLevel` | `info` | `RUST_LOG` |
 | `resources`, `podSecurityContext`, `securityContext`, `nodeSelector`, `tolerations`, `affinity`, `podAnnotations` | small, non-root, read-only root filesystem | The usual |

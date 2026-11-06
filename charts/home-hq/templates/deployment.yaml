@@ -27,7 +27,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- $podSecurityContext := deepCopy .Values.podSecurityContext }}
-      {{- if and .Values.persistence.enabled (not (hasKey $podSecurityContext "fsGroup")) }}
+      {{- if and (include "home-hq.persistence" .) (not (hasKey $podSecurityContext "fsGroup")) }}
       {{- /* Lets the non-root user write to provisioners that honour fsGroup; local-path's
              directories are world-writable already. */}}
       {{- $_ := set $podSecurityContext "fsGroup" ($podSecurityContext.runAsGroup | default 65532) }}
@@ -66,14 +66,14 @@ spec:
             - name: HQ_TLS_KEY
               value: /tls/tls.key
             {{- end }}
-            {{- if .Values.persistence.enabled }}
+            {{- if include "home-hq.persistence" . }}
             - name: HQ_STATE_DIR
               value: {{ .Values.persistence.mountPath | quote }}
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- if or .Values.settings .Values.tls.existingSecret .Values.persistence.enabled }}
+          {{- if or .Values.settings .Values.tls.existingSecret (include "home-hq.persistence" .) }}
           volumeMounts:
             {{- if .Values.settings }}
             - name: settings
@@ -86,7 +86,7 @@ spec:
               mountPath: /tls
               readOnly: true
             {{- end }}
-            {{- if .Values.persistence.enabled }}
+            {{- if include "home-hq.persistence" . }}
             - name: data
               mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
@@ -106,7 +106,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-      {{- if or .Values.settings .Values.tls.existingSecret .Values.persistence.enabled }}
+      {{- if or .Values.settings .Values.tls.existingSecret (include "home-hq.persistence" .) }}
       volumes:
         {{- if .Values.settings }}
         - name: settings
@@ -118,7 +118,7 @@ spec:
           secret:
             secretName: {{ .Values.tls.existingSecret }}
         {{- end }}
-        {{- if .Values.persistence.enabled }}
+        {{- if include "home-hq.persistence" . }}
         - name: data
           persistentVolumeClaim:
             claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" (include "home-hq.fullname" .)) }}
