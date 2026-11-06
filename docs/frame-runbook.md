@@ -11,7 +11,9 @@ WebView to 106, firmware quirks):
 - `docs/allwinner-a33-mainline-uboot.md`
 
 Both are in [sambartle/photo-frame-dashboard](https://github.com/sambartle/photo-frame-dashboard).
-The kiosk app's own README is vendored at [`frontend/kiosk/README.md`](../frontend/kiosk/README.md).
+The kiosk app's own README is vendored at [`android/README.md`](../android/README.md) (wesbos
+upstream plus the patches in [PATCHES.md](../PATCHES.md)). `frontend/kiosk/` is sambartle's
+diverged copy and is not the one to build.
 
 ## Before you start
 
@@ -150,18 +152,21 @@ CA store.
 
 ## 3. Kiosk app
 
-Upstream's kiosk APK is a full-screen WebView with a two-finger menu, screen-off modes and
-reload after a deploy.
+The kiosk APK is a full-screen WebView with screen-off modes and reload after a deploy. Its
+controls open with a one-finger pull down from the top edge: drag until the bubble lights up,
+then let go. (The two-finger hold also exists, but this panel's touchscreen merges two-finger
+touches, so it is unreliable here.)
 
-1. **Build it** with [`frontend/kiosk/build.sh`](../frontend/kiosk/build.sh) (JDK 17, Android
-   build-tools 34; the script header lists the packages), then install it:
+1. **Build it** with [`android/build.sh`](../android/build.sh) (JDK 17, Android build-tools 34;
+   the script header lists the packages), then install it. Reuse the same signing key
+   (`~/.android/debug.keystore`) for every later update, or `install -r` is refused:
 
    ```bash
-   frontend/kiosk/build.sh
+   android/build.sh
    ```
 
    ```bash
-   adb -d install -r frontend/kiosk/build/homehq.apk
+   adb -d install -r android/build/homehq.apk
    ```
 
 2. **Make it the Home app.** Allwinner firmware filters boot broadcasts, so a kiosk only comes
@@ -205,7 +210,7 @@ reload after a deploy.
       fully black, and a tap brings it back.
 - [ ] **Deploy pickup.** After the next image tag is deployed, the frame reloads by itself
       within about 5 minutes of being idle (it compares `/build.json`).
-- [ ] **Isolation.** The frame can't reach the internet, from the kiosk's two-finger menu →
+- [ ] **Isolation.** The frame can't reach the internet, from the kiosk's controls (pull down from the top) →
       Android settings → any online check, or from `adb -d shell ping -c1 1.1.1.1`. From
       another IoT client, the frame's port 5555 is unreachable.
 

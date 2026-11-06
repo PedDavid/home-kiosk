@@ -75,6 +75,8 @@ GitHub Actions runs the same checks (`ci.yml`). On `v*` tags it also builds and 
 - [`charts/home-hq/`](charts/home-hq/): the Helm chart, published to
   `oci://ghcr.io/peddavid/charts/home-hq` on each `v*` tag, together with the image of the same
   version. Its README has the `HelmRelease` for the Flux repo and the bootstrap steps.
+- [`android/`](android/): the kiosk APK installed on the frame, a full-screen WebView
+  (`com.wesbos.homehq`). See [Updating the vendored kiosk APK](#updating-the-vendored-kiosk-apk).
 - [`docs/frame-runbook.md`](docs/frame-runbook.md): the one-time PF1007L setup (router rules,
   ISRG roots in the trust store, kiosk app, checks).
 
@@ -91,6 +93,25 @@ git subtree pull --prefix=frontend --squash FETCH_HEAD -m "Update vendored front
 
 Then check the API usage (`grep -rn "App.api\|App.write\|/api/" frontend/js`) against
 [`src/api.rs`](src/api.rs). Local changes to the frontend are listed in [PATCHES.md](PATCHES.md).
+
+## Updating the vendored kiosk APK
+
+[`android/`](android/) is a squashed `git subtree` of
+[wesbos/photo-frame-dashboard](https://github.com/wesbos/photo-frame-dashboard)'s
+`dashboard/kiosk` folder. It is the APK the frame runs. The frontend's own
+`frontend/kiosk/` comes from sambartle's fork, which has diverged (screen admin instead of the
+boot receiver, captive-portal and lifecycle work), and is not built or installed. To update
+`android/`:
+
+```bash
+git clone https://github.com/wesbos/photo-frame-dashboard /tmp/upstream-kiosk
+git -C /tmp/upstream-kiosk subtree split --prefix=dashboard/kiosk -b kiosk-split
+git fetch /tmp/upstream-kiosk kiosk-split
+git subtree pull --prefix=android --squash FETCH_HEAD -m "Update vendored kiosk APK"
+```
+
+Then rebuild, run `python3 android/test-navigation.py` and `python3 android/test-lifecycle.py`,
+and check that the patches in [PATCHES.md](PATCHES.md) survived.
 
 ## Licence
 
