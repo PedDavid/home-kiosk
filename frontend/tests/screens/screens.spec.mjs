@@ -17,10 +17,6 @@ test.describe('tabs', () => {
   });
 
   test('home layout', async ({ page }) => {
-    // Known: on main the right-hand column of Today is wider than the frame (the bins card's
-    // button and the Home tile are cut off). fix/frame-layout-offline-fonts fixes it; once that
-    // lands this test "passes unexpectedly": drop the test.fail line and update home.png.
-    test.fail(true, 'Today’s right column overflows the 1280×800 frame on main');
     await open(page, 'home');
     await fits(page);
   });

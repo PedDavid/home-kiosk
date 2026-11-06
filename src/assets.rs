@@ -16,6 +16,7 @@ fn resolve(path: &str) -> String {
     let p = path.trim_start_matches('/');
     match p {
         "" => "index.html".into(),
+        "immich" | "immich/" => "immich.html".into(),
         "m" | "m/" => "m.html".into(),
         "upload" | "upload/" => "upload.html".into(),
         _ => p.to_string(),

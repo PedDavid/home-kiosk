@@ -61,6 +61,107 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+### Photo frame behaviour
+
+After eight seconds without interaction in Photos, the daytime frame shows only an
+edge-to-edge slideshow: navigation, captions, notes, clock, weather and controls are hidden.
+The first touch restores the Photos controls without triggering a photo action. Other views
+use the existing configurable rest timeout before entering the same image-only ambient mode.
+Night and screen-off schedules still take precedence, and open dialogs keep the normal timeout.
+Photo colours stay unchanged at night; only the dashboard UI receives the night tint.
+
+Use the circular expand icon at the top left in Photos to keep the current slideshow on screen
+until you exit. Only the subtle circular shrink icon remains visible at the top left; Escape or navigating away also exits. This mode
+suspends the app's idle, night/scheduled-off and everyone-away sleep transitions, and postpones
+automatic deploy reloads. Normal timers resume from the time you exit. The browser's native
+full-screen API and screen wake lock are used where available; unsupported or denied browser
+APIs still allow the UI-only full-screen view. The Android kiosk already keeps the screen awake.
+This mode is local to the current page and is not restored after reload.
+
+### Connect Immich by QR code
+
+Home HQ supports [`PedDavid/immich-device-auth`](https://github.com/PedDavid/immich-device-auth)
+as an alternative to configuring a static Immich API key. Deploy the broker alongside Immich,
+enable Immich OIDC sign-in, and register the broker's OAuth callback with your identity provider
+as described in that repository. Then configure Home HQ:
+
+```sh
+HQ_IMMICH_URL=https://photos.example.com/api
+HQ_IMMICH_DEVICE_AUTH_URL=https://device.photos.example.com
+```
+
+Leave `HQ_IMMICH_API_KEY` unset in device-auth mode. Both URLs are server configuration;
+the browser cannot supply a broker or change where Home HQ sends a key. The configured
+Immich URL must address the same server as the broker, and includes `/api` (the broker URL
+does not). Internal service URLs are supported; the broker must return an approval URL reachable
+from your phone. Use HTTPS in deployment and set `HQ_KEY` to restrict dashboard and pairing access.
+With no dashboard key, pairing management is open just like the rest of the dashboard.
+
+Open **Photos → Connect Immich** (or `/immich`), scan the QR code, compare the displayed code,
+and approve on your phone. Home HQ requests `asset.read asset.view asset.update`, with a
+one-day lifetime capped by the broker. The device code and issued key stay on the backend;
+the QR image is generated locally. Polling respects the broker interval and `slow_down` responses.
+Once connected, use **Show favorite photos**. **Disconnect** revokes the issued key through
+the broker; if revocation fails, the grant is retained so you can retry.
+
+A grant is shared by this Home HQ instance and all its frames. Grants are held in memory only:
+restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
+Expired grants stop being used even if the broker is unavailable. There is no refresh token;
+return to `/immich` to approve again after expiry. Cancelling a pending request clears it locally;
+the broker expires abandoned approvals and revokes any uncollected keys. Read-only container
+filesystems need no extra writable volume. Helm users can pass the two URLs through `extraEnv`.
+
+The flow was tested end to end with the broker at commit
+`1af7484a9a71b3946f14b7f569c3c5d440f98563` and its mock identity provider/Immich server
+(extended locally with fixture photo endpoints). Real Immich/OIDC deployment validation is still
+required; the broker's README lists its current proof-of-concept limitations.
+
+### Immich favorites
+
+Set both `HQ_IMMICH_URL` (the Immich API base URL, e.g. `https://photos.example.com/api`)
+and `HQ_IMMICH_API_KEY` to replace demo photos with the API key owner's favorite images.
+Keep the key in a secret/environment binding; never put it in household settings or browser code.
+Use HTTPS outside local development. The key needs Immich asset search, view and update
+permissions (`asset.read`, `asset.view`, `asset.update` on versions with scoped keys).
+In Helm, pass these variables through `extraEnv`, using `secretKeyRef` for the key.
+
+The adapter follows metadata search pagination (up to 10,000 images), caches the list for
+60 seconds, and provides thumbnail/preview images through the authenticated dashboard API.
+Video assets are excluded. Capture date, city, orientation and favorite status feed the existing
+slideshow; favorites changed in the dashboard update Immich and invalidate the list cache.
+Unfavoriting removes that photo from the next list. Other Immich changes appear after the cache
+expires. Only listed favorite assets can be fetched or changed through this integration.
+An empty library shows no photos; upstream errors return a generic 502 rather than demo images.
+Images have a 20 MiB limit and upstream requests have a 15-second timeout. Redirects are disabled.
+The API URL must include `/api`; incomplete configuration prevents startup. With neither variable
+set, demo mode is unchanged. Albums and memories are not yet implemented.
+
+Run `cargo test --locked --test immich` for the mock-server integration checks. These do not
+require an Immich account; deployment should also be checked against your Immich version.
+The adapter uses the metadata-search page API supported by Immich v2; current upstream
+also exposes it but marks these search filters/pagination deprecated as of v3.2.
+
+### Check the frame layout without deploying
+
+With the built Rust server running, run from `frontend/`:
+
+```bash
+npx playwright install chromium  # once, unless using an installed Chromium
+npm run test:layout
+npm run test:photo-colours
+npm run test:photo-fullscreen
+```
+
+For an installed browser, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:layout`.
+`LAYOUT_BASE_URL` overrides the default server address (`http://127.0.0.1:8080`);
+`LAYOUT_OUTPUT` overrides the screenshot directory (`/tmp/home-hq-layout`).
+The check covers the PF1007L's 1280×800 viewport, smaller viewports and a wider
+screen. It blocks external requests, verifies bundled fonts load, and checks that
+the clock and cards fit. Screenshots use a fixed four-digit PM clock. This is a
+desktop Chromium layout check, not an Android WebView 106 emulator; device font
+rasterization and Android system bars can differ. The frame's density should be
+160, as described in `frontend/kiosk/README.md`.
+
 ### Screenshot tests
 
 `cd frontend && npm run test:screens:docker` renders the wall view at the frame's 1280×800 with
