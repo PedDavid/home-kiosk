@@ -70,8 +70,8 @@ use the existing configurable rest timeout before entering the same image-only a
 Night and screen-off schedules still take precedence, and open dialogs keep the normal timeout.
 Photo colours stay unchanged at night; only the dashboard UI receives the night tint.
 
-Use **Full screen** in Photos to keep the current slideshow on screen until you exit.
-Only **Exit full screen** remains visible; Escape or navigating away also exits. This mode
+Use the circular expand icon at the top left in Photos to keep the current slideshow on screen
+until you exit. Only the subtle circular shrink icon remains visible at the top left; Escape or navigating away also exits. This mode
 suspends the app's idle, night/scheduled-off and everyone-away sleep transitions, and postpones
 automatic deploy reloads. Normal timers resume from the time you exit. The browser's native
 full-screen API and screen wake lock are used where available; unsupported or denied browser

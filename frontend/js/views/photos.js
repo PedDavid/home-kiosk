@@ -70,7 +70,8 @@
         V.el = el;
         el.innerHTML = '<div class="photos">' +
           '<div class="ph-stage"></div>' +
-          '<button class="ph-btn ph-exit" data-photo-exit aria-label="Exit full screen">Exit full screen</button>' +
+          '<button class="ph-btn ph-screen ph-enter" data-photo-fullscreen aria-label="Full screen" title="Full screen">' + App.icon('expand', 24) + '</button>' +
+          '<button class="ph-btn ph-screen ph-exit" data-photo-exit aria-label="Exit full screen" title="Exit full screen">' + App.icon('shrink', 24) + '</button>' +
           '<div class="ph-empty serif" hidden>No photos yet.<br><i>Add some from your phone at <b>' + location.host + '/upload</b></i></div>' +
           '<button class="ph-zone ph-zone--l" data-prev aria-label="Previous"></button>' +
           '<button class="ph-zone ph-zone--c" data-loud aria-label="Show details"></button>' +
@@ -79,7 +80,6 @@
             return '<button data-layout="' + l[0] + '" class="' + (l[0] === V.layout ? 'is-on' : '') + '">' + l[1] + '</button>';
           }).join('') + '</div></div>' +
           '<div class="ph-bottom">' +
-          '  <button class="ph-btn" data-photo-fullscreen>Full screen</button>' +
           '  <button class="ph-btn" data-prev>' + App.icon('left', 30) + '</button>' +
           '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favourite</span></button>' +
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
