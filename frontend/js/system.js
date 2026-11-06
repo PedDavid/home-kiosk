@@ -222,9 +222,22 @@
       '<div class="demo-sec" id="demoAdb"></div>' +
       '<div class="demo-sec"><div class="label label--light">Frames</div><div class="demo-frames" id="demoFrames"><p class="demo-note">Checking…</p></div></div>' +
       '<div class="demo-sec"><div class="label label--light">Status</div><p class="demo-note">' + status() + '</p>' +
+      '<div class="demo-note demo-weather">' + weatherLocation() + '</div>' +
       '<p class="demo-note">Version ' + __APP_VERSION__ + '</p></div>' +
       '<p class="demo-note">Keyboard: <b>D</b> controls · <b>A</b> ambient · <b>1–6</b> views</p>' +
       '</div>';
+  }
+  function weatherLocation() {
+    var loc = D.weatherLocation;
+    if (!loc || typeof loc.lat !== 'number' || typeof loc.lon !== 'number' || !isFinite(loc.lat) || !isFinite(loc.lon)) return 'No weather location configured.';
+    var coords = loc.lat.toFixed(4) + ', ' + loc.lon.toFixed(4);
+    var url = 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(loc.lat) + '&mlon=' + encodeURIComponent(loc.lon) + '#map=12/' + encodeURIComponent(loc.lat) + '/' + encodeURIComponent(loc.lon);
+    var name = typeof loc.name === 'string' ? loc.name.trim() : '';
+    return '<p>Weather location · ' + (name ? '<b class="demo-weather-city">' + App.esc(name) + '</b> · ' : '') +
+      'Open-Meteo' + (name ? ' · City: © OpenStreetMap contributors' : '') + '<br>Latitude, longitude: <b>' + App.esc(coords) + '</b> · ' +
+      '<button class="demo-weather-toggle" data-weather-map data-map-url="' + App.esc(url) + '" aria-expanded="false" aria-controls="demoWeatherMap">Show QR</button></p>' +
+      '<div id="demoWeatherMap" hidden><p>Scan to view the map on your phone. Your phone needs internet access.</p>' +
+      '<div class="demo-weather-qr" role="img" aria-label="QR code to open the weather location in OpenStreetMap"></div></div>';
   }
   // [id, label]: Home Assistant alerts only when it's set up; weather and bins work without it.
   function tests() {
@@ -302,6 +315,14 @@
     var b = e.target.closest('button');
     if (!b) { if (e.target === $('#demo')) closeDemo(); return; }
     if (b.hasAttribute('data-demo-close')) return closeDemo();
+    if (b.hasAttribute('data-weather-map')) {
+      var map = $('#demoWeatherMap'), show = map.hidden;
+      if (show && !map.querySelector('svg')) map.querySelector('.demo-weather-qr').innerHTML = App.share.qrSvg(b.getAttribute('data-map-url'), 180);
+      map.hidden = !show;
+      b.setAttribute('aria-expanded', String(show));
+      b.textContent = show ? 'Hide QR' : 'Show QR';
+      return;
+    }
     if (b.hasAttribute('data-adb')) {
       var kk = App.kiosk(), K = window.HomeHQKiosk;
       if (kk && K && K.setAdb) {

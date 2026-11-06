@@ -71,6 +71,15 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+The Status debug section at the bottom of Display Controls shows weather coordinates and a city
+resolved automatically from those coordinates by Nominatim (OpenStreetMap). The backend looks it
+up in the background and caches the name in memory until restart; unavailable lookups retry every
+15 minutes. The kiosk needs no internet. If the backend has no internet or restarts offline, the
+coordinates still appear. `HQ_WEATHER=demo` disables this lookup as well as live weather.
+`HQ_GEOCODING_URL` overrides the reverse-geocoding endpoint for self-hosting (Nominatim format).
+Backend egress to `nominatim.openstreetmap.org` is needed for the default provider.
+Click **Show QR** to reveal a locally generated QR code for opening the map on an online phone.
+
 ### Photo frame behaviour
 
 After eight seconds without interaction in Photos, the daytime frame shows only an
