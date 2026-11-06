@@ -53,7 +53,10 @@ image CI's `screens` job uses. The `:docker` scripts run there, and their result
 plain scripts are fine for quick runs and for the layout checks, but their screenshots can differ
 from the baselines. Don't commit baselines from them. Behind a proxy, pass it through, for example
 `DOCKER_FLAGS="--network host -e HTTPS_PROXY -e HTTP_PROXY"`. Without Docker, run the CI workflow
-by hand with *update screenshots* ticked and take the PNGs from its `screenshots` artifact.
+on your branch by hand with *update screenshots* ticked: the `screens` job renders the baselines in
+CI's image and the `screenshots-commit` job commits the new or changed ones to the branch (the
+`screenshots` artifact has them too). That commit doesn't start CI by itself; run the workflow
+again unticked, or push, to check it.
 
 When a test fails, `test-results/screens/` has `*-actual.png` and `*-diff.png` for each mismatch.
 CI uploads those, the HTML report and the baselines as the `screenshots` artifact. Bump

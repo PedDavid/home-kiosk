@@ -186,7 +186,8 @@ changes (fields, units, the example location) until the snapshot is recorded aga
 The `weather-open-meteo` screenshot test renders the card and hourly strip from this snapshot
 (`frontend/tests/screens/fixtures/weather-open-meteo.json`, written by `cargo run --example
 screen_fixtures`). Recording a new snapshot regenerates that fixture too, and CI commits both.
-Then render the new `weather-open-meteo.png` baseline (*update screenshots*) and review it.
+Then run CI by hand with *update screenshots* ticked, which renders and commits the new
+`weather-open-meteo.png` baseline, and review it.
 
 ### Screenshot tests
 

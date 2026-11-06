@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       update-screenshots:
-        description: Render new screenshot baselines (download them from the run's screenshots artifact)
+        description: Render new screenshot baselines in CI's image and commit them to this branch
         type: boolean
         default: false
       record-weather-snapshot:
@@ -139,6 +139,34 @@ jobs:
             const mine = comments.find(c => c.user.type === 'Bot' && c.body.startsWith('<!-- screens -->'));
             if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
             else await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+
+  # Commits the baselines the screens job rendered on a manual run with update-screenshots ticked.
+  # Separate so that only this job, which runs no project code, holds a write token. Baselines must
+  # come from CI's image, so this is how a change without Docker gets them. A push with
+  # GITHUB_TOKEN doesn't start a new CI run: run the workflow again (unticked) or push to check.
+  screenshots-commit:
+    needs: screens
+    if: ${{ inputs.update-screenshots && github.ref_type == 'branch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: screenshots
+          # Paths in the artifact are relative to frontend/; only its baselines are taken.
+          path: ${{ runner.temp }}/screenshots
+      - name: Commit new or changed baselines
+        run: |
+          cp "$RUNNER_TEMP"/screenshots/tests/screens/screenshots/*.png frontend/tests/screens/screenshots/
+          git add frontend/tests/screens/screenshots
+          if git diff --cached --quiet; then echo "Baselines unchanged"; exit 0; fi
+          git diff --cached --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update screenshot baselines (rendered in CI)"
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
 
   # Commits a snapshot the test job recorded (and tested) back to the branch. Separate so that
   # only this job, which runs no project code, holds a write token. Pull request runs skip it:
