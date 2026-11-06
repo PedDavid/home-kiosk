@@ -64,6 +64,41 @@
     b.querySelector('span').textContent = on ? 'Favorite' : 'Favorite';
   }
 
+  function setFav(p, fav) {
+    p.fav = fav;
+    heart();
+    App.write('state', 'PATCH', '/photos/' + p.id, { fav: fav });
+    App.toast(fav ? 'Added to favorites · it’ll show up more often' : 'Removed from favorites', { icon: 'heart', ms: 2500 });
+  }
+
+  // Removing a favorite asks first, and the Remove button has to be held for a second: with
+  // Immich it unfavorites the asset in the library too, and a wall frame gets brushed past. The
+  // slideshow holds still while the sheet is open, so the question is always about the photo on
+  // screen. Cancel, the close button, the scrim, the idle timeout (which closes sheets) and a short
+  // tap on Remove all leave the photo a favorite; only a completed hold acts.
+  function confirmUnfav(p) {
+    V.show.stop();
+    var immich = !!(window.DATA.photoAuth && window.DATA.photoAuth.status === 'connected');
+    App.sheet('<div class="sheet-pad ph-unfav">' +
+      '<img class="ph-unfav-img" src="' + App.photoSrc(p) + '" alt="">' +
+      '<div><div class="label">Favorites</div><h2 class="serif sheet-h">Remove from favorites?</h2>' +
+      '<p class="sheet-p">' + (immich ? 'It’s also removed from your favorites in Immich.' : 'It will show up less often on this frame.') + '</p>' +
+      '<div class="sheet-actions"><button class="btn btn--solid" data-close data-cancel>Cancel</button><button class="btn btn--ghost ph-hold" data-remove><span>Hold to remove</span></button></div>' +
+      '<p class="ph-unfav-hint" hidden>Keep holding Remove for a second.</p></div>' +
+      '</div>', {
+      cls: 'sheet--unfav',
+      onMount: function (s, close) {
+        s.querySelector('[data-cancel]').focus();
+        App.hold(s.querySelector('[data-remove]'), 1000, {
+          done: function () { close(); setFav(p, false); },
+          cancel: function () { s.querySelector('.ph-unfav-hint').hidden = false; }
+        });
+      },
+      // Resume only if the Photos tab is still showing; leaving it stops the slideshow anyway.
+      onClose: function () { if (App.current === 'photos') V.show.start(); }
+    });
+  }
+
   App.register('photos', {
     show: function (el) {
       if (!V.el) {
@@ -101,10 +136,7 @@
           if (t.hasAttribute('data-fav')) {
             var p = V.show.current && V.show.current.photos[0];
             if (!p) return;
-            p.fav = !p.fav;
-            heart();
-            App.write('state', 'PATCH', '/photos/' + p.id, { fav: p.fav });
-            App.toast(p.fav ? 'Added to favorites · it’ll show up more often' : 'Removed from favorites', { icon: 'heart', ms: 2500 });
+            if (p.fav) confirmUnfav(p); else setFav(p, true);
           }
         });
       }
