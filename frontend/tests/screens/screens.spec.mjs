@@ -45,9 +45,9 @@ test.describe('photos', () => {
     test.use({ api: only('demo2') });
     test('photos-portrait', async ({ page }) => {
       await open(page, 'photos');
-      // Auto shows a lone portrait as a polaroid; Cover fits it over a blurred fill.
+      // Auto shows a lone portrait as a polaroid; Fit contains the entire image.
       await page.locator('#view-photos [data-layout=cover]').click();
-      await expect(page.locator('#view-photos .slide--fit')).toBeVisible();
+      await expect(page.locator('#view-photos .slide--cover')).toBeVisible();
       await settle(page);
       await expect(page).toHaveScreenshot('photos-portrait.png');
       await fits(page);

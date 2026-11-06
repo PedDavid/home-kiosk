@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var V = { el: null, show: null, layout: 'auto', loud: false };
-  var LAYOUTS = [['auto', 'Auto'], ['cover', 'Cover'], ['pair', 'Pair'], ['collage', 'Collage'], ['polaroid', 'Polaroid']];
+  var LAYOUTS = [['auto', 'Auto'], ['cover', 'Fit'], ['pair', 'Pair'], ['collage', 'Collage'], ['polaroid', 'Polaroid']];
 
   var nativeRequested = false, nativeEntered = false, wakeLock = null, wakePending = false;
 

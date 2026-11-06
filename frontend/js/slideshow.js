@@ -41,9 +41,6 @@
   var BUILD = {
     cover: function (ps, o) {
       var p = ps[0];
-      if (p.o === 'p') {
-        return '<div class="slide slide--fit"><img class="blurfill" src="' + src(p) + '" alt=""><img class="fitimg" src="' + src(p, true) + '" alt="">' + (o.captions ? caption(ps) : '') + '</div>';
-      }
       return '<div class="slide slide--cover">' + kb(p) + (o.captions ? caption(ps) : '') + '</div>';
     },
     pair: function (ps, o) {

@@ -7,8 +7,8 @@ check that nothing spills out of the 1280×800 frame.
 | Test | Screen |
 |---|---|
 | `home`, `calendar`, `shopping`, `control`, `media` | the rail's tabs (Today, Calendar, Shopping, Home, Media) |
-| `photos-landscape` | Photos with only a landscape photo (Cover) |
-| `photos-portrait`, `photos-portrait-polaroid` | Photos with only a portrait photo: Cover (fitted on a blurred fill) and Auto (polaroid) |
+| `photos-landscape` | Photos with only a landscape photo (Fit) |
+| `photos-portrait`, `photos-portrait-polaroid` | Photos with only a portrait photo: Fit (full image, with letterboxing where needed) and Auto (polaroid) |
 | `photos-idle` | the idle photo screen (ambient mode, as `App.rest()` leaves it) |
 | `night` | the dim night clock |
 | `note-sheet` | the New note sheet over Calendar |
@@ -94,3 +94,5 @@ PR's own branch:
    under `.github/pr-screenshots/pr-<N>/` and link it the same way
    (`tests/screens/pr-markdown.sh ../.github/pr-screenshots/pr-<N>/*.png`). For a state the frame
    can reach, prefer adding a test (above), so the next change is checked against it.
+
+`photo-fit.spec.mjs` checks panoramic and tall portrait fixtures in every layout, in normal and full-screen modes at 1280×800 and 800×1100. It also captures full-screen Polaroid baselines.

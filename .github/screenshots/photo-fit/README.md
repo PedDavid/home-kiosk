@@ -1,0 +1,3 @@
+These are review illustrations generated with local Chromium, using synthetic panoramic/portrait fixtures with colored edges. They show the responsive Polaroid frame and complete, uncropped image. They are not Playwright CI baselines.
+
+CI baselines must be rendered in `mcr.microsoft.com/playwright:v1.65.0-noble`, as required by `frontend/tests/screens/README.md`. That image's download host was blocked during preparation of this branch. Regenerate the affected existing screenshots and the two new full-screen Polaroid baselines with `npm run test:screens:docker:update`, then run `npm run test:screens:docker` before marking this PR ready.
