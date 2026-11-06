@@ -49,14 +49,20 @@ jobs:
           HQ_RECORD_WEATHER: "1"
         run: |
           cargo test --locked --test weather_snapshot
+          cargo run --quiet --locked --example screen_fixtures
           echo "recorded=true" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         if: ${{ steps.weather.outputs.recorded == 'true' }}
         with:
+          # The snapshot and the screen fixture rendered from it (frontend/tests/screens/fixtures/).
           name: weather-snapshot
-          path: tests/fixtures/weather/open-meteo-snapshot.json
+          path: |
+            tests/fixtures/weather/open-meteo-snapshot.json
+            frontend/tests/screens/fixtures/weather-open-meteo.json
       - run: cargo test --locked
       - name: Screenshot fixtures are up to date with src/demo.rs
+        # A new recording changes weather-open-meteo.json on purpose; the commit job takes it.
+        if: ${{ steps.weather.outputs.recorded != 'true' }}
         run: |
           cargo run --quiet --locked --example screen_fixtures
           git diff --exit-code frontend/tests/screens/fixtures
@@ -149,10 +155,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: weather-snapshot
-          path: tests/fixtures/weather
+          # upload-artifact keeps paths relative to the files' common parent: the repository root.
+          path: .
       - name: Commit the snapshot
         run: |
-          git add tests/fixtures/weather/open-meteo-snapshot.json
+          git add tests/fixtures/weather/open-meteo-snapshot.json frontend/tests/screens/fixtures/weather-open-meteo.json
           if git diff --cached --quiet; then echo "Snapshot unchanged"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898341+github-actions[bot]@users.noreply.github.com"

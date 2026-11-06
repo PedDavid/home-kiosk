@@ -183,6 +183,11 @@ run the CI workflow by hand with *record-weather-snapshot* ticked. CI records th
 itself when the file is missing and commits it to the branch. The test fails when the request
 changes (fields, units, the example location) until the snapshot is recorded again.
 
+The `weather-open-meteo` screenshot test renders the card and hourly strip from this snapshot
+(`frontend/tests/screens/fixtures/weather-open-meteo.json`, written by `cargo run --example
+screen_fixtures`). Recording a new snapshot regenerates that fixture too, and CI commits both.
+Then render the new `weather-open-meteo.png` baseline (*update screenshots*) and review it.
+
 ### Screenshot tests
 
 `cd frontend && npm run test:screens:docker` renders the wall view at the frame's 1280×800 with

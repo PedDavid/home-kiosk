@@ -1,6 +1,6 @@
 // Screenshots of the wall view at the PF1007L's 1280×800, compared with tests/screens/screenshots/.
 // Each test also runs the layout check: nothing may spill out of the 1280×800 frame.
-import { test, expect, open, settle } from './kiosk.mjs';
+import { test, expect, open, settle, fixture } from './kiosk.mjs';
 import { layoutProblems } from './layout.mjs';
 
 // The demo library has landscape photos (demo0, "on this day") and portrait ones (demo2).
@@ -88,4 +88,17 @@ test('note-sheet', async ({ page }) => {
   await settle(page);
   await expect(page).toHaveScreenshot('note-sheet.png');
   await fits(page);
+});
+
+// The weather card and hourly strip on a real Open-Meteo forecast: the recorded snapshot
+// (tests/fixtures/weather/open-meteo-snapshot.json) as the backend serves it. The clock is noon on
+// the snapshot's day, so the strip starts mid-day whenever the snapshot was recorded.
+test.describe('weather', () => {
+  const forecast = fixture('weather-open-meteo');
+  test.use({ api: { weather: () => forecast }, now: forecast.day + 'T12:00:00Z' });
+  test('weather-open-meteo', async ({ page }) => {
+    await open(page, 'home');
+    await expect(page.locator('.h-wx-hours')).toBeVisible();
+    await expect(page.locator('.h-weather')).toHaveScreenshot('weather-open-meteo.png');
+  });
 });

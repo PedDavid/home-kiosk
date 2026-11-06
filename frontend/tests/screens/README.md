@@ -12,6 +12,7 @@ check that nothing spills out of the 1280×800 frame.
 | `photos-idle` | the idle photo screen (ambient mode, as `App.rest()` leaves it) |
 | `night` | the dim night clock |
 | `note-sheet` | the New note sheet over Calendar |
+| `weather-open-meteo` | the weather card and hourly strip on a real Open-Meteo forecast: the recorded snapshot in `tests/fixtures/weather/`, served as the backend serves it, at noon on the snapshot's day |
 | `home layout` | the layout check on Today: its right column must fit inside the 1280×800 frame |
 
 ## How the page is set up
