@@ -58,3 +58,19 @@
 
 .ph-connect { text-decoration: none; margin-bottom: 12px; justify-self: end; }
 .ph-connect[hidden] { display: none; }
+
+/* Explicit viewing mode: preserve the slide, remove chrome, and keep one way out. */
+.ph-exit { display: none; position: absolute; top: 20px; right: 20px; z-index: 5; }
+.stage.is-photo-fullscreen > .rail { display: none; }
+.stage.is-photo-fullscreen > .views { grid-column: 1 / -1; grid-row: 1; }
+.stage.is-photo-fullscreen .ph-top,
+.stage.is-photo-fullscreen .ph-bottom,
+.stage.is-photo-fullscreen .ph-zone,
+.stage.is-photo-fullscreen .photos .cap,
+.stage.is-photo-fullscreen .photos .polaroid figcaption,
+.stage.is-photo-fullscreen .notes,
+.stage.is-photo-fullscreen .banners,
+.stage.is-photo-fullscreen > .toasts,
+.stage.is-photo-fullscreen > .demo { display: none; }
+.stage.is-photo-fullscreen .photos .slide::after { display: none; }
+.stage.is-photo-fullscreen .ph-exit { display: inline-flex; }

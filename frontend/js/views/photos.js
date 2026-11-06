@@ -4,6 +4,59 @@
   var V = { el: null, show: null, layout: 'auto', loud: false };
   var LAYOUTS = [['auto', 'Auto'], ['cover', 'Cover'], ['pair', 'Pair'], ['collage', 'Collage'], ['polaroid', 'Polaroid']];
 
+  var nativeRequested = false, nativeEntered = false, wakeLock = null, wakePending = false;
+
+  function holdScreen() {
+    if (!App.photoFullscreen || document.visibilityState !== 'visible' || wakeLock || wakePending || !navigator.wakeLock) return;
+    wakePending = true;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      if (!App.photoFullscreen) { lock.release().catch(function () {}); return; }
+      wakeLock = lock;
+      lock.addEventListener('release', function () { if (wakeLock === lock) wakeLock = null; });
+    }).catch(function () {}).finally(function () { wakePending = false; }); // Kiosk/WebView may already keep the screen awake or lack this API.
+  }
+
+  App.setPhotoFullscreen = function (on) {
+    on = !!on;
+    if (on === App.photoFullscreen || (on && App.current !== 'photos')) return;
+    App.photoFullscreen = on;
+    App.$('#stage').classList.toggle('is-photo-fullscreen', on);
+    App.emit('photo-fullscreen', on);
+    App.resetIdle();
+    if (on) {
+      App.closeSheet();
+      App.setMode('day');
+      holdScreen();
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        nativeRequested = true;
+        try {
+          document.documentElement.requestFullscreen().then(function () {
+            if (App.photoFullscreen && document.fullscreenElement === document.documentElement) nativeEntered = true;
+            if (!App.photoFullscreen && document.fullscreenElement === document.documentElement) {
+              document.exitFullscreen().catch(function () {});
+            }
+          }).catch(function () { nativeRequested = false; });
+        } catch (e) { nativeRequested = false; }
+      }
+      App.$('[data-photo-exit]').focus({ preventScroll: true });
+    } else {
+      var exitNative = (nativeEntered || nativeRequested) && document.fullscreenElement === document.documentElement;
+      nativeEntered = false;
+      nativeRequested = false;
+      if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+      if (exitNative && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+      if (App.current === 'photos') App.$('[data-photo-fullscreen]').focus({ preventScroll: true });
+    }
+  };
+  document.addEventListener('fullscreenchange', function () {
+    if (nativeRequested && document.fullscreenElement === document.documentElement) nativeEntered = true;
+    else if (nativeEntered && !document.fullscreenElement) App.setPhotoFullscreen(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (App.photoFullscreen && e.key === 'Escape') { e.preventDefault(); App.setPhotoFullscreen(false); }
+  });
+  document.addEventListener('visibilitychange', holdScreen);
+
   function heart() {
     var s = V.show && V.show.current, on = s && s.photos[0].fav;
     var b = V.el.querySelector('[data-fav]');
@@ -17,6 +70,7 @@
         V.el = el;
         el.innerHTML = '<div class="photos">' +
           '<div class="ph-stage"></div>' +
+          '<button class="ph-btn ph-exit" data-photo-exit aria-label="Exit full screen">Exit full screen</button>' +
           '<div class="ph-empty serif" hidden>No photos yet.<br><i>Add some from your phone at <b>' + location.host + '/upload</b></i></div>' +
           '<button class="ph-zone ph-zone--l" data-prev aria-label="Previous"></button>' +
           '<button class="ph-zone ph-zone--c" data-loud aria-label="Show details"></button>' +
@@ -25,6 +79,7 @@
             return '<button data-layout="' + l[0] + '" class="' + (l[0] === V.layout ? 'is-on' : '') + '">' + l[1] + '</button>';
           }).join('') + '</div></div>' +
           '<div class="ph-bottom">' +
+          '  <button class="ph-btn" data-photo-fullscreen>Full screen</button>' +
           '  <button class="ph-btn" data-prev>' + App.icon('left', 30) + '</button>' +
           '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favourite</span></button>' +
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
@@ -33,6 +88,8 @@
         el.addEventListener('click', function (e) {
           var t = e.target.closest('button');
           if (!t) return;
+          if (t.hasAttribute('data-photo-fullscreen')) { App.setPhotoFullscreen(true); return; }
+          if (t.hasAttribute('data-photo-exit')) { App.setPhotoFullscreen(false); return; }
           if (t.hasAttribute('data-next')) V.show.next();
           if (t.hasAttribute('data-prev')) V.show.prev();
           if (t.hasAttribute('data-loud')) { V.loud = !V.loud; el.querySelector('.photos').classList.toggle('is-loud', V.loud); }
@@ -61,6 +118,6 @@
       if (App.current === 'photos') App.resetIdle();
     },
     resume: function () { this.show(V.el); },
-    hide: function () { if (V.show) V.show.stop(); }
+    hide: function () { App.setPhotoFullscreen(false); if (V.show) V.show.stop(); }
   });
 })();

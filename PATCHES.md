@@ -11,5 +11,6 @@ Keep this list short. Every patch here has to be carried across `git subtree pul
 | Frame grid sizing | `frontend/css/base.css`, `frontend/css/views/home.css` | Prevent intrinsic card widths from expanding the home grid beyond the 1280×800 frame |
 | Offline layout regression check | `frontend/tools/check-layout.mjs`, `frontend/package.json`, `frontend/package-lock.json` | Capture frame-sized screenshots and check font loading, clock spacing and card bounds without deployment |
 | Preserve photo colours at night | `frontend/css/base.css`, `frontend/js/app.js`, `frontend/tools/check-photo-colours.mjs`, `frontend/package.json` | Apply the night filter to UI regions rather than the shared view container, preserving slideshow and home-tile image colours. |
+| Explicit photo full screen | `frontend/js/app.js`, `frontend/js/device.js`, `frontend/js/views/photos.js`, `frontend/css/views/photos.css`, `frontend/tools/check-photo-fullscreen.mjs`, `frontend/package.json` | Keep the current slide/layout with only an exit control; suppress automatic sleep and reloads until exit, with native full-screen and wake-lock support where available. |
 
 Planned: hide tabs whose capability `/api/state` reports as unavailable (PRD 002).

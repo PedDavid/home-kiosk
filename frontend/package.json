@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test:layout": "node tools/check-layout.mjs",
     "test:photo-colours": "node tools/check-photo-colours.mjs",
+    "test:photo-fullscreen": "node tools/check-photo-fullscreen.mjs",
     "db:migrate": "node tools/wr.mjs d1 migrations apply home-hq --remote",
     "db:migrate:local": "wrangler d1 migrations apply home-hq --local",
     "deploy": "vite build && node tools/wr.mjs deploy",

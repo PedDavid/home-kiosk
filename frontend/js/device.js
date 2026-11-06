@@ -31,6 +31,7 @@
   }
   App.everyoneAway = function () { return !!D.homeOnline && everyoneAway(); };
   App.on('minute', function () {
+    if (App.photoFullscreen) { awaySince = null; return; }
     if (!D.awayOffMinutes || !D.homeOnline) {
       awaySince = null;
       if (App.mode === 'off' && autoOff) { App.setMode('day'); App.go('home'); } // can't tell who's home: wake
@@ -116,7 +117,7 @@
   App.on('ready', function () { setInterval(checkBuild, 5 * 60e3); });
   App.on('minute', function () {
     // Not while the screen is off: a reload would light it. It reloads once it wakes.
-    var busy = App.mode === 'off' || App.idleFor() < 60 || $('#takeover').classList.contains('is-open') || $('#sheetLayer').classList.contains('is-open');
+    var busy = App.photoFullscreen || App.mode === 'off' || App.idleFor() < 60 || $('#takeover').classList.contains('is-open') || $('#sheetLayer').classList.contains('is-open');
     if (newBuild && !busy) location.reload();
   });
 })();
