@@ -12,7 +12,7 @@ check that nothing spills out of the 1280×800 frame.
 | `photos-idle` | the idle photo screen (ambient mode, as `App.rest()` leaves it) |
 | `night` | the dim night clock |
 | `note-sheet` | the New note sheet over Calendar |
-| `home layout` | the layout check on Today. It's expected to fail on `main`, where the right column is wider than the frame (fixed on `fix/frame-layout-offline-fonts`). Once that fix lands, remove the `test.fail` line. |
+| `home layout` | the layout check on Today: its right column must fit inside the 1280×800 frame |
 
 ## How the page is set up
 
