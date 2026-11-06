@@ -10,6 +10,7 @@ pub mod grant_store;
 pub mod immich;
 pub mod settings;
 pub mod tls;
+pub mod weather;
 
 use std::sync::Arc;
 
@@ -27,6 +28,8 @@ pub struct AppState {
     pub immich: Option<Arc<immich::Immich>>,
     pub demo: Arc<Mutex<demo::Demo>>,
     pub clock: Clock,
+    /// Live weather. `None` keeps the demo forecast.
+    pub weather: Option<Arc<weather::Weather>>,
     /// Calendar events. Not configured: `/api/calendar` serves the demo calendar.
     pub calendar: Arc<dyn calendar::CalendarSource>,
 }
@@ -40,8 +43,14 @@ impl AppState {
             key: key.filter(|k| !k.is_empty()).map(Arc::from),
             demo: Arc::new(Mutex::new(demo)),
             clock,
+            weather: None,
             calendar: Arc::new(calendar::NotConfigured),
         }
+    }
+
+    pub fn with_weather(mut self, weather: weather::Weather) -> Self {
+        self.weather = Some(Arc::new(weather));
+        self
     }
 
     /// Uses `source` for the calendar (when it reports itself configured).

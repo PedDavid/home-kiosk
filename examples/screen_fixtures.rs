@@ -16,6 +16,7 @@ use chrono::{DateTime, Utc};
 use home_hq::{
     AppState, router,
     settings::{EXAMPLE, Settings},
+    weather::{self, Fetch, Weather},
 };
 use http_body_util::BodyExt;
 use serde_json::Value;
@@ -79,5 +80,34 @@ async fn main() {
         let svg = get(&app, &format!("/api/ha/camera?id={id}")).await;
         std::fs::write(dir.join("photos").join(format!("{id}.svg")), svg).unwrap();
     }
+    // The recorded Open-Meteo snapshot through the real /api/weather, for the weather-open-meteo
+    // test. It changes only when the snapshot is recorded again.
+    let snapshot: Value = serde_json::from_str(
+        &std::fs::read_to_string(
+            [
+                env!("CARGO_MANIFEST_DIR"),
+                "tests",
+                "fixtures",
+                "weather",
+                "open-meteo-snapshot.json",
+            ]
+            .iter()
+            .collect::<PathBuf>(),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let response = snapshot["response"].to_string();
+    let fetch: Fetch = Arc::new(move |_| {
+        let body = response.clone();
+        Box::pin(async move { Ok(body) })
+    });
+    let settings = Settings::parse(EXAMPLE).unwrap();
+    let clock: home_hq::Clock = Arc::new(move || now);
+    let live = Weather::new(&settings, weather::OPEN_METEO_URL, fetch, clock.clone()).unwrap();
+    let app = router(AppState::new(settings, None, clock).with_weather(live));
+    let body = pretty(&get(&app, "/api/weather").await);
+    std::fs::write(dir.join("weather-open-meteo.json"), body).unwrap();
+
     println!("wrote {}", dir.display());
 }

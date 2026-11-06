@@ -93,12 +93,14 @@ function seedRandom(seed) {
 export const test = base.extend({
   // Per-test fixture overrides: { state: s => ({ ...s, photos: [...] }) }.
   api: [{}, { option: true }],
+  // The pinned moment, for a test whose fixtures come from another day (e.g. a recorded forecast).
+  now: [NOW, { option: true }],
   // Requests that tried to leave the fake origin (the frame is LAN-only); asserted empty.
   external: async ({}, use) => { await use([]); },
-  page: async ({ page, api, external }, use) => {
+  page: async ({ page, api, now, external }, use) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.clock.setFixedTime(new Date(NOW));
+    await page.clock.setFixedTime(new Date(now));
     await page.addInitScript(seedRandom, 20261105);
     await page.addInitScript(css => {
       document.addEventListener('DOMContentLoaded', () => {
