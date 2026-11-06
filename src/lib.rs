@@ -9,6 +9,7 @@ pub mod device_auth;
 pub mod grant_store;
 pub mod immich;
 pub mod settings;
+pub mod share;
 pub mod tls;
 pub mod weather;
 
@@ -28,6 +29,8 @@ pub struct AppState {
     pub immich: Option<Arc<immich::Immich>>,
     pub demo: Arc<Mutex<demo::Demo>>,
     pub clock: Clock,
+    /// Where phones open Immich (`HQ_IMMICH_PUBLIC_URL`). `None` hides the frame's Share button.
+    pub immich_public_url: Option<Arc<share::ImmichPublicUrl>>,
     /// Live weather. `None` keeps the demo forecast.
     pub weather: Option<Arc<weather::Weather>>,
     /// Calendar events. Not configured: `/api/calendar` serves the demo calendar.
@@ -43,9 +46,15 @@ impl AppState {
             key: key.filter(|k| !k.is_empty()).map(Arc::from),
             demo: Arc::new(Mutex::new(demo)),
             clock,
+            immich_public_url: None,
             weather: None,
             calendar: Arc::new(calendar::NotConfigured),
         }
+    }
+
+    pub fn with_immich_public_url(mut self, url: Option<share::ImmichPublicUrl>) -> Self {
+        self.immich_public_url = url.map(Arc::new);
+        self
     }
 
     pub fn with_weather(mut self, weather: weather::Weather) -> Self {

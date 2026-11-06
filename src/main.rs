@@ -6,6 +6,7 @@ use home_hq::{
     calendar::{self, CalendarSource, ics::IcsSource},
     router,
     settings::Settings,
+    share::ImmichPublicUrl,
     tls, weather,
 };
 use tokio::sync::watch;
@@ -33,12 +34,20 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
+    let immich_public_url = ImmichPublicUrl::parse(&std::env::var("HQ_IMMICH_PUBLIC_URL").unwrap_or_default())?;
+    match &immich_public_url {
+        Some(u) => tracing::info!(immich_public_url = u.as_str(), "photo sharing on"),
+        None => tracing::info!("HQ_IMMICH_PUBLIC_URL is not set: the Share button is hidden"),
+    }
+
     // reqwest (calendar, Immich, weather) and the TLS listener share rustls's ring provider.
     tls::install_crypto_provider();
     let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
     let calendar = calendars(&settings, clock.clone())?;
     let weather = weather_from_env(&settings, clock.clone())?;
-    let mut state = AppState::new(settings, key, clock).with_calendar(calendar);
+    let mut state = AppState::new(settings, key, clock)
+        .with_calendar(calendar)
+        .with_immich_public_url(immich_public_url);
     if let Some(w) = weather {
         state = state.with_weather(w);
     }

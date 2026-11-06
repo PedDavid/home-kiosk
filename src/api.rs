@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{AppState, calendar, demo};
+use crate::{AppState, calendar, demo, share};
 
 type ApiResult = Result<Response, ApiError>;
 
@@ -107,6 +107,7 @@ async fn state(State(app): State<AppState>) -> Response {
             state["photos"] = json!([]);
         }
     }
+    share::annotate(&mut state["photos"], app.immich_public_url.as_deref());
     ok(state)
 }
 

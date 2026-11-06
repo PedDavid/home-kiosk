@@ -8,6 +8,8 @@ ingress:
   host: home-hq.lab.example.com
   tls:
     secretName: wildcard-tls
+immich:
+  publicUrl: https://photos.lab.example.com
 extraEnv:
   - name: EXAMPLE
     value: "1"

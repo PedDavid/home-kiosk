@@ -10,6 +10,7 @@ use home_hq::{
     immich::Immich,
     router,
     settings::{EXAMPLE, Settings},
+    share::ImmichPublicUrl,
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -66,6 +67,9 @@ async fn update(State(mock): State<Mock>, headers: HeaderMap, Json(body): Json<V
     Json(json!({"id":"asset-1"}))
 }
 async fn fixture() -> (Router, Mock, tokio::task::JoinHandle<()>) {
+    fixture_sharing(None).await
+}
+async fn fixture_sharing(public_url: Option<&str>) -> (Router, Mock, tokio::task::JoinHandle<()>) {
     let mock = Mock::default();
     mock.favorite.store(true, Ordering::SeqCst);
     let upstream = Router::new()
@@ -78,7 +82,8 @@ async fn fixture() -> (Router, Mock, tokio::task::JoinHandle<()>) {
     let task = tokio::spawn(async move {
         axum::serve(listener, upstream).await.unwrap();
     });
-    let mut state = AppState::new(Settings::parse(EXAMPLE).unwrap(), None, Arc::new(chrono::Utc::now));
+    let mut state = AppState::new(Settings::parse(EXAMPLE).unwrap(), None, Arc::new(chrono::Utc::now))
+        .with_immich_public_url(public_url.map(|u| ImmichPublicUrl::parse(u).unwrap().unwrap()));
     state.immich = Some(Arc::new(Immich::new(&url, "test-key").unwrap()));
     (router(state), mock, task)
 }
@@ -110,7 +115,7 @@ async fn favorites_are_paginated_cached_proxied_and_updated() {
     let state: Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(
         state["photos"],
-        json!([{"id":"asset-1","o":"p","date":"2020-06-12","place":"Lisbon","from":null,"fav":true,"tag":"2020-06-12"}])
+        json!([{"id":"asset-1","immichId":"asset-1","o":"p","date":"2020-06-12","place":"Lisbon","from":null,"fav":true,"tag":"2020-06-12"}])
     );
     for (path, expected) in [("/api/photos/asset-1?s=1", b"small"), ("/api/photos/asset-1", b"large")] {
         let (status, headers, bytes) = request(&app, "GET", path, "").await;
@@ -135,6 +140,20 @@ async fn favorites_are_paginated_cached_proxied_and_updated() {
     assert!(!mock.favorite.load(Ordering::SeqCst));
     task.abort();
 }
+#[tokio::test]
+async fn immich_photos_get_a_share_link_with_the_public_url_and_no_key() {
+    let (app, _, task) = fixture_sharing(Some("https://photos.example.com/")).await;
+    let (status, _, bytes) = request(&app, "GET", "/api/state", "").await;
+    assert_eq!(status, StatusCode::OK);
+    let state: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(
+        state["photos"][0]["shareUrl"],
+        "https://photos.example.com/photos/asset-1"
+    );
+    assert!(!String::from_utf8(bytes).unwrap().contains("test-key"));
+    task.abort();
+}
+
 #[tokio::test]
 async fn upstream_failure_is_sanitized_and_never_returns_demo_photos() {
     let (app, mock, task) = fixture().await;

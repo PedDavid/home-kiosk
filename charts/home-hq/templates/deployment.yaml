@@ -53,6 +53,10 @@ spec:
             - name: HQ_SETTINGS
               value: /config/settings.json
             {{- end }}
+            {{- with .Values.immich.publicUrl }}
+            - name: HQ_IMMICH_PUBLIC_URL
+              value: {{ . | quote }}
+            {{- end }}
             {{- with .Values.weather.provider }}
             - name: HQ_WEATHER
               value: {{ . | quote }}
