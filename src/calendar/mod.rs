@@ -14,8 +14,9 @@
 //!   "checked": 1762450200000 }
 //! ```
 //!
-//! The parsing and recurrence expansion shared by every iCalendar-speaking adapter lives in
-//! [`engine`], which is pure: it never fetches or reads the clock.
+//! Reading iCalendar (parsing, recurrences, timezones) is the `ical-expand` crate
+//! (`crates/ical-expand`). [`engine`] turns its occurrences into attributed, merged [`Event`]s
+//! for every iCalendar-speaking adapter; both are pure: they never fetch or read the clock.
 //!
 //! Every adapter must pass the shared contract suite in `tests/support/calendar_contract.rs`.
 
@@ -91,6 +92,15 @@ impl When {
     }
 }
 
+impl From<ical_expand::Time> for When {
+    fn from(t: ical_expand::Time) -> Self {
+        match t {
+            ical_expand::Time::Timed { start, end } => When::Timed { start, end },
+            ical_expand::Time::AllDay { start, end } => When::AllDay { start, end },
+        }
+    }
+}
+
 /// One occurrence of an event, as the frontend draws it. Recurring events arrive expanded: every
 /// occurrence is its own `Event` with its own `id`.
 #[derive(Debug, Clone, PartialEq)]
@@ -102,7 +112,7 @@ pub struct Event {
     /// (`<uid>|<start>`). The same invite on two people's calendars shares a key and is merged
     /// into one event listing both people ([`engine::merge`]). Not sent to the frontend.
     pub key: String,
-    /// `SUMMARY`, or `(busy)` when the feed hides it.
+    /// `SUMMARY`, or `(busy)` when the .ics file hides it.
     pub title: String,
     /// Person ids from the settings; never empty for an attributed event.
     pub people: Vec<String>,

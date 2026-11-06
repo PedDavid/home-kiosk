@@ -116,7 +116,8 @@ jobs:
       - uses: azure/setup-helm@v4
       - run: helm lint charts/home-hq
       - run: helm lint charts/home-hq -f charts/home-hq/ci/test-values.yaml
-      - name: Render with defaults and with every option on
+      - name: Render with defaults, with every option on, and with persistence turned off
         run: |
           helm template home-hq charts/home-hq > /dev/null
           helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml
+          helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml --set persistence.enabled=false > /dev/null

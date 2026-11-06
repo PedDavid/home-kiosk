@@ -5,6 +5,9 @@ pub mod assets;
 pub mod auth;
 pub mod calendar;
 pub mod demo;
+pub mod device_auth;
+pub mod grant_store;
+pub mod immich;
 pub mod settings;
 pub mod tls;
 pub mod travel;
@@ -21,6 +24,8 @@ pub type Clock = Arc<dyn Fn() -> DateTime<Utc> + Send + Sync>;
 pub struct AppState {
     /// The dashboard key. `None` leaves the dashboard open (development and demo only).
     pub key: Option<Arc<str>>,
+    pub device_auth: Option<Arc<device_auth::DeviceAuth>>,
+    pub immich: Option<Arc<immich::Immich>>,
     pub demo: Arc<Mutex<demo::Demo>>,
     pub clock: Clock,
     /// Calendar events. Not configured: `/api/calendar` serves the demo calendar.
@@ -34,6 +39,8 @@ impl AppState {
         let demo = demo::Demo::new(settings, clock());
         let drives = Arc::new(travel::Drives::not_configured(chrono_tz::UTC, clock.clone()));
         AppState {
+            immich: None,
+            device_auth: None,
             key: key.filter(|k| !k.is_empty()).map(Arc::from),
             demo: Arc::new(Mutex::new(demo)),
             clock,
@@ -52,6 +59,14 @@ impl AppState {
     pub fn with_drives(mut self, drives: Arc<travel::Drives>) -> Self {
         self.drives = drives;
         self
+    }
+
+    pub async fn photo_source(&self) -> Option<Arc<immich::Immich>> {
+        if let Some(auth) = &self.device_auth {
+            auth.source().await
+        } else {
+            self.immich.clone()
+        }
     }
 
     pub fn now(&self) -> DateTime<Utc> {

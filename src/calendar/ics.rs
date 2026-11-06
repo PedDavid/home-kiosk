@@ -8,6 +8,9 @@
 //!   { "url": "webcal://p01-caldav.icloud.com/published/2/…", "people": "all" } ]
 //! ```
 //!
+//! Terms: a **feed** is one entry, a calendar link; the **.ics file** is what the link returns,
+//! the iCalendar text that [`engine::parse_feed`] reads.
+//!
 //! `people` is a list of person ids from the settings, one id, or `"all"`. Feeds are read
 //! together and cached for [`TTL`]. A feed that fails keeps the events it had and reports
 //! "Calendar N: …" (never its URL) in [`Listing::errors`].
