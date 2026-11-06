@@ -1,0 +1,173 @@
+{
+  "name": "Market",
+  "extras": {},
+  "createdAt": "2026-11-04T18:12:31.402871Z",
+  "updatedAt": "2026-11-04T18:12:31.402871Z",
+  "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+  "userId": "5e5e0000-0000-4000-8000-000000000001",
+  "id": "9a1f0c3e-6b2d-4e8a-9c41-1f2e3d4c5b02",
+  "listItems": [
+    {
+      "quantity": 4,
+      "unit": null,
+      "food": {
+        "id": "f00d0000-0000-4000-8000-000000000007",
+        "name": "Tomatoes",
+        "pluralName": null,
+        "description": "",
+        "extras": {},
+        "labelId": "c0ffee00-0000-4000-8000-000000000001",
+        "aliases": [],
+        "householdsWithIngredientFood": [],
+        "label": {
+          "name": "Produce",
+          "color": "#4CAF50",
+          "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+          "id": "c0ffee00-0000-4000-8000-000000000001"
+        },
+        "createdAt": "2026-11-04T18:12:31.402871Z",
+        "updatedAt": "2026-11-04T18:12:31.402871Z"
+      },
+      "referencedRecipe": null,
+      "note": "",
+      "display": "4 Tomatoes",
+      "shoppingListId": "9a1f0c3e-6b2d-4e8a-9c41-1f2e3d4c5b02",
+      "checked": false,
+      "position": 0,
+      "foodId": "f00d0000-0000-4000-8000-000000000007",
+      "labelId": "c0ffee00-0000-4000-8000-000000000001",
+      "unitId": null,
+      "extras": {},
+      "id": "1e3a0000-0000-4000-8000-00000000000b",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "householdId": "4d5c6b7a-0000-4000-8000-0000000000bb",
+      "label": {
+        "name": "Produce",
+        "color": "#4CAF50",
+        "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+        "id": "c0ffee00-0000-4000-8000-000000000001"
+      },
+      "recipeReferences": [],
+      "createdAt": "2026-11-04T18:12:31.402871Z",
+      "updatedAt": "2026-11-04T18:12:31.402871Z"
+    },
+    {
+      "quantity": 1.0,
+      "unit": null,
+      "food": {
+        "id": "f00d0000-0000-4000-8000-000000000008",
+        "name": "Cod",
+        "pluralName": null,
+        "description": "",
+        "extras": {},
+        "labelId": "c0ffee00-0000-4000-8000-000000000003",
+        "aliases": [],
+        "householdsWithIngredientFood": [],
+        "label": {
+          "name": "Meat & Fish",
+          "color": "#E57373",
+          "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+          "id": "c0ffee00-0000-4000-8000-000000000003"
+        },
+        "createdAt": "2026-11-04T18:12:31.402871Z",
+        "updatedAt": "2026-11-04T18:12:31.402871Z"
+      },
+      "referencedRecipe": null,
+      "note": "for Friday",
+      "display": "1 Cod for Friday",
+      "shoppingListId": "9a1f0c3e-6b2d-4e8a-9c41-1f2e3d4c5b02",
+      "checked": false,
+      "position": 1,
+      "foodId": "f00d0000-0000-4000-8000-000000000008",
+      "labelId": "c0ffee00-0000-4000-8000-000000000003",
+      "unitId": null,
+      "extras": {},
+      "id": "1e3a0000-0000-4000-8000-00000000000c",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "householdId": "4d5c6b7a-0000-4000-8000-0000000000bb",
+      "label": {
+        "name": "Meat & Fish",
+        "color": "#E57373",
+        "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+        "id": "c0ffee00-0000-4000-8000-000000000003"
+      },
+      "recipeReferences": [],
+      "createdAt": "2026-11-04T18:12:31.402871Z",
+      "updatedAt": "2026-11-04T18:12:31.402871Z"
+    },
+    {
+      "quantity": 1.0,
+      "unit": null,
+      "food": {
+        "id": "f00d0000-0000-4000-8000-000000000009",
+        "name": "Strawberries",
+        "pluralName": null,
+        "description": "",
+        "extras": {},
+        "labelId": "c0ffee00-0000-4000-8000-000000000001",
+        "aliases": [],
+        "householdsWithIngredientFood": [],
+        "label": {
+          "name": "Produce",
+          "color": "#4CAF50",
+          "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+          "id": "c0ffee00-0000-4000-8000-000000000001"
+        },
+        "createdAt": "2026-11-04T18:12:31.402871Z",
+        "updatedAt": "2026-11-04T18:12:31.402871Z"
+      },
+      "referencedRecipe": null,
+      "note": "",
+      "display": "1 Strawberries",
+      "shoppingListId": "9a1f0c3e-6b2d-4e8a-9c41-1f2e3d4c5b02",
+      "checked": true,
+      "position": 2,
+      "foodId": "f00d0000-0000-4000-8000-000000000009",
+      "labelId": "c0ffee00-0000-4000-8000-000000000001",
+      "unitId": null,
+      "extras": {},
+      "id": "1e3a0000-0000-4000-8000-00000000000d",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "householdId": "4d5c6b7a-0000-4000-8000-0000000000bb",
+      "label": {
+        "name": "Produce",
+        "color": "#4CAF50",
+        "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+        "id": "c0ffee00-0000-4000-8000-000000000001"
+      },
+      "recipeReferences": [],
+      "createdAt": "2026-11-04T18:12:31.402871Z",
+      "updatedAt": "2026-11-04T18:12:31.402871Z"
+    },
+    {
+      "quantity": 1.0,
+      "unit": null,
+      "food": null,
+      "referencedRecipe": null,
+      "note": "Queijo da Serra",
+      "display": "1 Queijo da Serra",
+      "shoppingListId": "9a1f0c3e-6b2d-4e8a-9c41-1f2e3d4c5b02",
+      "checked": false,
+      "position": 3,
+      "foodId": null,
+      "labelId": "c0ffee00-0000-4000-8000-000000000004",
+      "unitId": null,
+      "extras": {},
+      "id": "1e3a0000-0000-4000-8000-00000000000e",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "householdId": "4d5c6b7a-0000-4000-8000-0000000000bb",
+      "label": {
+        "name": "Dairy & Eggs",
+        "color": "#90CAF9",
+        "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+        "id": "c0ffee00-0000-4000-8000-000000000004"
+      },
+      "recipeReferences": [],
+      "createdAt": "2026-11-04T18:12:31.402871Z",
+      "updatedAt": "2026-11-04T18:12:31.402871Z"
+    }
+  ],
+  "householdId": "4d5c6b7a-0000-4000-8000-0000000000bb",
+  "recipeReferences": [],
+  "labelSettings": []
+}

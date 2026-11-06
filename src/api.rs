@@ -88,7 +88,11 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn state(State(app): State<AppState>) -> Response {
-    ok(app.demo.lock().await.state(app.now()))
+    let mut s = app.demo.lock().await.state(app.now());
+    if let Some(g) = &app.groceries {
+        s["groceries"] = g.state(app.now()).await;
+    }
+    ok(s)
 }
 
 async fn calendar(State(app): State<AppState>) -> Response {
@@ -191,7 +195,21 @@ async fn restore_note(State(app): State<AppState>, Path(id): Path<String>) -> Re
     ok(json!({ "ok": true, "notes": notes }))
 }
 
+/// A shopping port failure, as `{ "error": "..." }` with its status.
+fn shopping_failed(f: crate::shopping::Failure) -> Response {
+    bad(
+        &f.message,
+        StatusCode::from_u16(f.status).unwrap_or(StatusCode::BAD_GATEWAY),
+    )
+}
+
 async fn put_grocery(State(app): State<AppState>, b: Bytes) -> ApiResult {
+    if let Some(g) = &app.groceries {
+        return Ok(match g.put(&body(&b)).await {
+            Ok(()) => ok(json!({ "ok": true })),
+            Err(f) => shopping_failed(f),
+        });
+    }
     app.demo
         .lock()
         .await
@@ -209,6 +227,12 @@ async fn clear_groceries(State(app): State<AppState>, b: Bytes) -> Response {
         .filter_map(|v| v.as_str().map(String::from))
         .take(500)
         .collect();
+    if let Some(g) = &app.groceries {
+        return match g.clear(ids, b["cleared"] == json!(false)).await {
+            Ok(()) => ok(json!({ "ok": true })),
+            Err(f) => shopping_failed(f),
+        };
+    }
     app.demo
         .lock()
         .await

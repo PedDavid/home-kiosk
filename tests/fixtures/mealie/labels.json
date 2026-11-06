@@ -1,0 +1,58 @@
+{
+  "page": 1,
+  "perPage": -1,
+  "total": 8,
+  "totalPages": 1,
+  "items": [
+    {
+      "name": "Produce",
+      "color": "#4CAF50",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000001"
+    },
+    {
+      "name": "Bakery",
+      "color": "#D7A86E",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000002"
+    },
+    {
+      "name": "Meat & Fish",
+      "color": "#E57373",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000003"
+    },
+    {
+      "name": "Dairy & Eggs",
+      "color": "#90CAF9",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000004"
+    },
+    {
+      "name": "Pantry",
+      "color": "#FFB74D",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000005"
+    },
+    {
+      "name": "Frozen",
+      "color": "#80DEEA",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000006"
+    },
+    {
+      "name": "Household",
+      "color": "#B0BEC5",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000007"
+    },
+    {
+      "name": "Spices",
+      "color": "#A1887F",
+      "groupId": "4d5c6b7a-0000-4000-8000-0000000000aa",
+      "id": "c0ffee00-0000-4000-8000-000000000008"
+    }
+  ],
+  "next": null,
+  "previous": null
+}

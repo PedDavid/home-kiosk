@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, router, settings::Settings, tls};
+use home_hq::{AppState, router, settings::Settings, shopping, tls};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,7 +27,11 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    let shopping = shopping::from_env(&settings)?;
+    let mut state = AppState::new(settings.clone(), key, Arc::new(chrono::Utc::now));
+    if let Some(port) = shopping {
+        state = state.with_shopping(port, &settings);
+    }
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.

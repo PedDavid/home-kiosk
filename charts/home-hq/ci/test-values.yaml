@@ -2,6 +2,8 @@
 imagePullSecrets: [{ name: ghcr-pull }]
 key:
   existingSecret: home-hq
+mealie:
+  existingSecret: home-hq
 ingress:
   host: home-hq.lab.example.com
   tls:
@@ -14,6 +16,14 @@ settings:
   location: { lat: 38.7223, lon: -9.1393, units: celsius }
   people:
     - { id: alex, name: Alex, color: "#2D5BFF", ha: person.alex }
+  shopping:
+    stores:
+      - { id: grocer, name: Supermarket }
+      - { id: market, name: Market }
+    categories: [Produce, Dairy & Eggs, Pantry]
+    mealie:
+      list: Groceries
+      storeLists: { market: Market }
 tls:
   existingSecret: home-hq-tls
 lanService:
