@@ -282,6 +282,7 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .demo-x { width: var(--tap); height: var(--tap); border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .1); }
 .demo-sec { margin-bottom: 22px; }
 .demo-note { font-size: 16px; color: rgba(255, 255, 255, .6); }
+.demo-note a { color: #fff; }
 .demo-test { display: flex; gap: 8px; margin-top: 10px; }
 .demo-frames { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .demo-sound { display: flex; align-items: center; gap: 14px; margin: 10px 0 8px; }

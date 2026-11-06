@@ -59,6 +59,16 @@ async fn json_of(app: &Router, req: Request<Body>) -> Value {
 // ------------------------------------------------------------------ auth
 
 #[tokio::test]
+async fn state_exposes_configured_weather_location_without_fetching_weather() {
+    for location in [json!({"lat": 0.0, "lon": -9.1393}), Value::Null] {
+        let settings = Settings::parse(&json!({"location": location}).to_string()).unwrap();
+        let app = router(AppState::new(settings, None, Arc::new(Utc::now)));
+        let state = json_of(&app, get("/api/state")).await;
+        assert_eq!(state["weatherLocation"], location);
+    }
+}
+
+#[tokio::test]
 async fn api_is_locked_without_a_key() {
     let app = app(Some(KEY));
     let (status, _, body) = send(&app, Request::get("/api/state").body(Body::empty()).unwrap()).await;
