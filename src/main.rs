@@ -35,6 +35,10 @@ async fn main() -> anyhow::Result<()> {
     if let Some(w) = weather {
         state = state.with_weather(w);
     }
+    state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
+    if state.device_auth.is_none() {
+        state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);
+    }
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.

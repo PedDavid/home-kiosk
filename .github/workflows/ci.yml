@@ -170,3 +170,7 @@ jobs:
         run: |
           helm template home-hq charts/home-hq > /dev/null
           helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml
+      - name: Weather is Open-Meteo by default and demo in the CI values
+        run: |
+          helm template home-hq charts/home-hq | grep -A1 'name: HQ_WEATHER' | grep -q '"open-meteo"'
+          helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml | grep -A1 'name: HQ_WEATHER' | grep -q '"demo"'
