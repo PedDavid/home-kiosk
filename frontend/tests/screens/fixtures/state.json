@@ -444,5 +444,8 @@
       "expires": null
     }
   ],
-  "awayOffMinutes": 0
+  "awayOffMinutes": 0,
+  "capabilities": {
+    "addEvents": true
+  }
 }
