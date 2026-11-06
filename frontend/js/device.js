@@ -122,7 +122,9 @@
       updateNotice.setAttribute('role', 'status');
       var refresh = document.createElement('button');
       refresh.type = 'button';
-      refresh.textContent = 'Update available — tap to refresh';
+      refresh.setAttribute('aria-label', 'Update available — tap to refresh');
+      refresh.title = 'Update available — tap to refresh';
+      refresh.innerHTML = '<svg class="update-burst" viewBox="0 0 112 112" aria-hidden="true"><polygon class="update-depth" points="50.00,4.00 59.32,15.23 73.00,10.16 75.46,24.54 89.84,27.00 84.77,40.68 96.00,50.00 84.77,59.32 89.84,73.00 75.46,75.46 73.00,89.84 59.32,84.77 50.00,96.00 40.68,84.77 27.00,89.84 24.54,75.46 10.16,73.00 15.23,59.32 4.00,50.00 15.23,40.68 10.16,27.00 24.54,24.54 27.00,10.16 40.68,15.23" transform="translate(4 14)"/><polygon class="update-face" points="50.00,4.00 59.32,15.23 73.00,10.16 75.46,24.54 89.84,27.00 84.77,40.68 96.00,50.00 84.77,59.32 89.84,73.00 75.46,75.46 73.00,89.84 59.32,84.77 50.00,96.00 40.68,84.77 27.00,89.84 24.54,75.46 10.16,73.00 15.23,59.32 4.00,50.00 15.23,40.68 10.16,27.00 24.54,24.54 27.00,10.16 40.68,15.23" transform="translate(4 4)"/><g transform="translate(4 4)" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M29 43a23 23 0 0 1 40-8l4 5m0-15v15H58M71 57a23 23 0 0 1-40 8l-4-5m0 15V60h15"/></g><circle cx="89" cy="23" r="15" fill="#850044"/><circle cx="89" cy="19" r="15" fill="#FFB5DE"/><path d="M89 11v10" stroke="#111" stroke-width="4" stroke-linecap="round"/><circle cx="89" cy="27" r="2.2" fill="#111"/></svg>';
       refresh.addEventListener('click', function () { location.reload(); });
       updateNotice.appendChild(refresh);
       $('#stage').appendChild(updateNotice);

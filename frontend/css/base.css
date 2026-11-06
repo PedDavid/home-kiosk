@@ -354,7 +354,16 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   }
 }
 
-/* A persistent deploy notice; shown only when the frame can be interacted with. */
-.update-notice { position: absolute; right: 20px; bottom: 20px; z-index: 65; max-width: calc(100% - 96px); }
+/* The update button floats above the dashboard until someone chooses to refresh. */
+.update-notice { position: absolute; left: 75%; top: 47%; transform: translate(-50%, -50%); z-index: 65; }
 .update-notice[hidden] { display: none; }
-.update-notice button { min-height: 48px; padding: 12px 20px; border: 1px solid currentColor; border-radius: 24px; background: var(--ink); color: var(--paper, #F2EEE6); font: inherit; cursor: pointer; box-shadow: 0 4px 18px #0003; }
+.update-notice button { position: relative; display: block; width: 88px; height: 88px; padding: 0; border: 0; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.update-notice button::before { content: ''; position: absolute; left: 15px; right: 12px; bottom: 0; height: 12px; border-radius: 50%; background: #26001955; filter: blur(5px); animation: update-shadow 3.6s ease-in-out infinite; }
+.update-burst { position: relative; display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(2px 5px 2px #21001644); transform: translateY(-6px); animation: update-float 3.6s ease-in-out infinite; }
+.update-depth { fill: #870044; stroke: #650035; stroke-width: 1; }
+.update-face { fill: #ED008C; }
+.update-notice button:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; border-radius: 50%; }
+.update-notice button:active .update-burst { animation: none; transform: translateY(0) scale(.94); }
+@keyframes update-float { 0%, 100% { transform: translateY(-6px); } 50% { transform: translateY(-18px); } }
+@keyframes update-shadow { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: .3; transform: scale(.8); } }
+@media (prefers-reduced-motion: reduce) { .update-burst, .update-notice button::before { animation: none; } }
