@@ -11,6 +11,7 @@ use chrono::{TimeZone, Utc};
 use home_hq::{
     AppState, router,
     settings::{EXAMPLE, Settings},
+    share::ImmichPublicUrl,
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -339,6 +340,83 @@ async fn photos_and_cameras_are_images() {
 }
 
 // ------------------------------------------------------------------ alerts
+
+// ------------------------------------------------------------------ photo sharing
+
+const ASSET: &str = "9b2d8a4e-3f1c-4e7a-b0d5-6c8f1e2a3b4c";
+
+/// An app whose demo0 photo is an Immich asset, with or without `HQ_IMMICH_PUBLIC_URL`.
+async fn sharing_app(public_url: Option<&str>) -> Router {
+    let now = Utc.with_ymd_and_hms(2026, 11, 5, 17, 30, 0).unwrap();
+    let state = AppState::new(
+        Settings::parse(EXAMPLE).unwrap(),
+        Some(KEY.into()),
+        Arc::new(move || now),
+    )
+    .with_immich_public_url(public_url.map(|u| ImmichPublicUrl::parse(u).unwrap().unwrap()));
+    state.demo.lock().await.set_immich_id("demo0", ASSET);
+    router(state)
+}
+
+fn share_urls(state: &Value) -> Vec<(String, Option<String>)> {
+    state["photos"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| {
+            (
+                p["id"].as_str().unwrap().to_string(),
+                p["shareUrl"].as_str().map(String::from),
+            )
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn immich_photos_get_a_share_url_when_the_public_url_is_set() {
+    let app = sharing_app(Some("https://photos.example.com/")).await;
+    let urls = share_urls(&json_of(&app, get("/api/state")).await);
+    for (id, url) in urls {
+        if id == "demo0" {
+            assert_eq!(
+                url.as_deref(),
+                Some(&*format!("https://photos.example.com/photos/{ASSET}"))
+            );
+        } else {
+            assert_eq!(url, None, "{id} has no Immich asset ID");
+        }
+    }
+}
+
+#[tokio::test]
+async fn no_share_url_without_the_public_url() {
+    let app = sharing_app(None).await;
+    let urls = share_urls(&json_of(&app, get("/api/state")).await);
+    assert!(!urls.is_empty());
+    assert!(urls.iter().all(|(_, u)| u.is_none()), "{urls:?}");
+}
+
+#[tokio::test]
+async fn demo_photos_have_no_share_url() {
+    let now = Utc.with_ymd_and_hms(2026, 11, 5, 17, 30, 0).unwrap();
+    let state = AppState::new(
+        Settings::parse(EXAMPLE).unwrap(),
+        Some(KEY.into()),
+        Arc::new(move || now),
+    )
+    .with_immich_public_url(ImmichPublicUrl::parse("https://photos.example.com").unwrap());
+    let urls = share_urls(&json_of(&router(state), get("/api/state")).await);
+    assert!(urls.iter().all(|(_, u)| u.is_none()), "{urls:?}");
+}
+
+#[tokio::test]
+async fn the_state_holds_no_key_next_to_the_share_url() {
+    let app = sharing_app(Some("https://photos.example.com")).await;
+    let (_, _, body) = send(&app, get("/api/state")).await;
+    let body = String::from_utf8(body).unwrap();
+    assert!(body.contains("/photos/"));
+    assert!(!body.contains(KEY));
+}
 
 #[tokio::test]
 async fn alert_poll_returns_the_counter() {

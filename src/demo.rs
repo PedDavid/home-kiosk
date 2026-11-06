@@ -616,7 +616,15 @@ impl Demo {
         ))
     }
 
-    pub fn set_favourite(&mut self, id: &str, fav: bool) {
+    /// Marks a demo photo as an Immich asset, as the Immich adapter's photos will be. Demo photos
+    /// have no asset ID of their own, so this is for tests and previews only.
+    pub fn set_immich_id(&mut self, id: &str, asset_id: &str) {
+        if let Some(p) = self.photos.iter_mut().find(|p| p["id"] == id) {
+            p["immichId"] = asset_id.into();
+        }
+    }
+
+    pub fn set_favorite(&mut self, id: &str, fav: bool) {
         if let Some(p) = self.photos.iter_mut().find(|p| p["id"] == id) {
             p["fav"] = fav.into();
         }

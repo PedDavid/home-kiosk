@@ -5,6 +5,7 @@ import './app.js';
 import './sync.js';
 import './system.js';
 import './slideshow.js';
+import './share.js';
 import './device.js';
 import './sound.js';
 import './views/home.js';

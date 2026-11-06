@@ -83,10 +83,13 @@
     for (var i = 0; i < this.queue.length; i++) if (!pred || pred(this.queue[i])) return this.queue.splice(i, 1)[0];
     return null;
   };
-  S.pick = function () {
+  // `forced` (optional): the photo to lead with, e.g. the one tapped on the home tile. It is shown
+  // on its own in auto layout, and taken out of the queue so it doesn't come straight back.
+  S.pick = function (forced) {
     var layout = this.o.layout, n = this.count++;
-    var first = this.take();
+    var first = forced ? this.take(function (x) { return x === forced; }) || forced : this.take();
     if (!first) return null;
+    if (forced && layout === 'auto') layout = 'cover';
     var self = this;
     function sibling(pred) {
       return self.take(pred) || D.photos.filter(function (x) { return x !== first && pred(x); })[0];
@@ -97,7 +100,7 @@
     }
     var ps = [first], orig = first;
     if (layout === 'pair') {
-      if (first.o !== 'p') { first = sibling(function (x) { return x.o === 'p'; }) || orig; ps = [first]; }
+      if (first.o !== 'p' && !forced) { first = sibling(function (x) { return x.o === 'p'; }) || orig; ps = [first]; }
       ps.push(sibling(function (x) { return x !== first && x.o === 'p' && x.tag === first.tag; }) || sibling(function (x) { return x !== first && x.o === 'p'; }));
     }
     if (layout === 'collage') {
@@ -141,6 +144,17 @@
     if (this.current) this.history.push(this.current);
     this.render(s);
     this.restart();
+  };
+  // Jump to a specific photo (by id) now; next/prev and the timer carry on from there as usual.
+  S.showPhoto = function (id) {
+    var p = D.photos.filter(function (x) { return String(x.id) === String(id); })[0];
+    if (!p) return false;
+    var s = this.pick(p);
+    if (!s) return false;
+    if (this.current) this.history.push(this.current);
+    this.render(s);
+    this.restart();
+    return true;
   };
   S.prev = function () {
     if (!this.history.length) return;

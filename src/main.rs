@@ -6,7 +6,8 @@ use home_hq::{
     calendar::{self, CalendarSource},
     router,
     settings::Settings,
-    tls,
+    share::ImmichPublicUrl,
+    tls, weather,
 };
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
@@ -33,11 +34,27 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    // reqwest (calendar feeds) and the TLS listener share rustls's ring provider.
+    let immich_public_url = ImmichPublicUrl::parse(&std::env::var("HQ_IMMICH_PUBLIC_URL").unwrap_or_default())?;
+    match &immich_public_url {
+        Some(u) => tracing::info!(immich_public_url = u.as_str(), "photo sharing on"),
+        None => tracing::info!("HQ_IMMICH_PUBLIC_URL is not set: the Share button is hidden"),
+    }
+
+    // reqwest (calendar, Immich, weather) and the TLS listener share rustls's ring provider.
     tls::install_crypto_provider();
     let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
     let calendar = calendars(&settings, clock.clone())?;
-    let state = AppState::new(settings, key, clock).with_calendar(calendar);
+    let weather = weather_from_env(&settings, clock.clone())?;
+    let mut state = AppState::new(settings, key, clock)
+        .with_calendar(calendar)
+        .with_immich_public_url(immich_public_url);
+    if let Some(w) = weather {
+        state = state.with_weather(w);
+    }
+    state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
+    if state.device_auth.is_none() {
+        state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);
+    }
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.
@@ -84,6 +101,27 @@ async fn main() -> anyhow::Result<()> {
     reloader.abort();
     result?;
     Ok(())
+}
+
+/// Live weather from Open-Meteo by default (`HQ_OPEN_METEO_URL` overrides the endpoint);
+/// `HQ_WEATHER=demo` serves the demo forecast instead and makes no outbound calls.
+fn weather_from_env(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Option<weather::Weather>> {
+    match std::env::var("HQ_WEATHER").unwrap_or_default().as_str() {
+        "demo" => Ok(None),
+        "" | "open-meteo" => {
+            let url = std::env::var("HQ_OPEN_METEO_URL")
+                .ok()
+                .filter(|u| !u.is_empty())
+                .unwrap_or_else(|| weather::OPEN_METEO_URL.into());
+            let w = weather::Weather::new(settings, &url, weather::http_fetch()?, clock)?;
+            match w.request_url() {
+                Some(_) => tracing::info!(endpoint = %url, "weather from Open-Meteo"),
+                None => tracing::warn!("settings have no location: weather is off"),
+            }
+            Ok(Some(w))
+        }
+        other => anyhow::bail!("HQ_WEATHER must be open-meteo or demo, not {other:?}"),
+    }
 }
 
 /// The calendar from `HQ_CALENDARS` (ICS feeds); unset keeps the demo calendar.

@@ -3,7 +3,8 @@
 This chart deploys the Home HQ dashboard: a single-replica Deployment with the Recreate
 strategy, a Service, an Ingress, and the household settings as a ConfigMap. Changing the settings
 rolls the pod. Optionally the app terminates TLS itself behind a dedicated LAN address (see
-[Dedicated LAN address](#dedicated-lan-address)).
+[Dedicated LAN address](#dedicated-lan-address)), and keeps the Immich pairing on a small volume
+(see [Persistence](#persistence)).
 
 Each `v*` tag in this repo publishes the chart and the image with the same version:
 
@@ -49,6 +50,8 @@ spec:
       existingSecret: home-hq # holds HQ_KEY, created per RFC 004
     ingress:
       host: home-hq.prdv.cloud
+    # immich:
+    #   publicUrl: https://photos.example.com # shows the Share button (QR to the photo in Immich)
     settings:
       timezone: Europe/Lisbon
       location: { lat: 38.7223, lon: -9.1393, units: celsius }
@@ -183,6 +186,48 @@ Local` (the default here) keeps client addresses in the logs.
 The listener is rustls: TLS 1.2 and 1.3, AEAD suites only (AES-GCM, ChaCha20). Android 6 with
 WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a client is that old.
 
+## Persistence
+
+With Immich QR pairing (`HQ_IMMICH_DEVICE_AUTH_URL` in `extraEnv`), the issued key lives in
+memory unless the chart gives the app a volume, so every restart or deploy means pairing the
+frame again, and the old key lingers in Immich until the broker revokes it at expiry.
+`persistence` keeps it, and is **on by default** whenever `key.existingSecret` is set:
+
+```yaml
+  values:
+    key:
+      existingSecret: home-hq # required: the grant is encrypted with a key derived from HQ_KEY
+    # persistence:            # on by default; only needed to change or turn it off
+    #   storageClass: local-path   # empty uses the cluster default (local-path on k3s)
+    #   enabled: false             # keep the grant in memory only, as before 0.3.0
+    extraEnv:
+      - { name: HQ_IMMICH_URL, value: https://photos.example.com/api }
+      - { name: HQ_IMMICH_DEVICE_AUTH_URL, value: https://device.photos.example.com }
+```
+
+With a key Secret, this creates a `ReadWriteOnce` PVC (`<release>-data`, 16Mi; or set `existingClaim`), mounts it at
+`/data` and sets `HQ_STATE_DIR`. The root filesystem stays read-only. The app stores the issued
+key, its expiry and scope in `/data/immich-grant.bin`, encrypted with AES-256-GCM under a key
+derived from `HQ_KEY` (HKDF-SHA256) and bound to the configured broker and Immich URLs.
+
+- Without `key.existingSecret` no PVC is created, since the app would write nothing without
+  `HQ_KEY`. Pairing then behaves as with persistence off, and NOTES says so.
+- The PVC needs a default StorageClass, or set `persistence.storageClass` or `existingClaim`.
+  Otherwise the claim, and so the pod, stays Pending. Set `persistence.enabled: false` to run
+  without a volume.
+- local-path volumes live on one node, so the pod then only schedules on that node.
+- On start, a grant that has expired, or that can't be decrypted because `HQ_KEY` or one of the
+  URLs changed, is deleted and the frame shows "disconnected". Rotating `HQ_KEY` therefore means
+  pairing again; the old key expires at the broker as before.
+- **Disconnect** asks the broker to revoke the key, then deletes the file. The broker deletes
+  the key in Immich itself (retrying if Immich is down). If the broker can't be reached, the grant
+  and the file are kept so Disconnect can be retried.
+
+When `persistence` is on and `podSecurityContext` has no `fsGroup`, the chart sets it to the
+run-as group, so provisioners that honour `fsGroup` give the non-root user a writable volume.
+local-path doesn't need it (its directories are world-writable). The Recreate strategy stops the
+old pod before the new one mounts the claim, which a single-node `ReadWriteOnce` volume needs.
+
 ## Values
 
 | Value | Default | Meaning |
@@ -192,13 +237,17 @@ WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a cl
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
 | `calendars.existingSecret` / `calendars.secretKey` | `""` / `HQ_CALENDARS` | Secret holding the calendar list (ICS links, CalDAV URLs and passwords). Unset means the demo calendar |
 | `settings` | `{}` | Household settings. Empty means the bundled example |
+| `immich.publicUrl` | `""` | `HQ_IMMICH_PUBLIC_URL`: the Immich address phones open from the Photos tab's Share QR code. Empty hides the Share button |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
 | `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |
 | `lanService.enabled`, `type`, `port`, `externalTrafficPolicy`, `annotations` | `false`, `LoadBalancer`, `443`, `Local`, `{}` | A Service straight to the TLS listener: a dedicated LAN address. Needs `tls.existingSecret` |
+| `weather.provider` | `open-meteo` | `open-meteo` serves the real forecast for `settings.location` (needs egress to `api.open-meteo.com`). `demo` serves the generated demo forecast and makes no calls |
+| `weather.openMeteoUrl` | `""` | Forecast endpoint for a self-hosted Open-Meteo. Empty means `https://api.open-meteo.com/v1/forecast` |
+| `persistence.enabled`, `existingClaim`, `storageClass`, `accessMode`, `size`, `mountPath`, `annotations` | `true`, `""`, `""` (cluster default), `ReadWriteOnce`, `16Mi`, `/data`, `{}` | A PVC for state that must survive restarts: the encrypted Immich device grant. Only created with `key.existingSecret` |
 | `extraEnv` | `[]` | Extra env vars (HA token and adapter credentials in later deliveries) |
 | `logLevel` | `info` | `RUST_LOG` |
 | `resources`, `podSecurityContext`, `securityContext`, `nodeSelector`, `tolerations`, `affinity`, `podAnnotations` | small, non-root, read-only root filesystem | The usual |
 
-Later deliveries add a small PVC (dashboard-owned state), a ServiceMonitor (once `/metrics`
-exists), and Keycloak client settings ([auth RFC](../../docs/rfc-device-auth.md)).
+Later deliveries add more dashboard-owned state to the `persistence` volume, a ServiceMonitor
+(once `/metrics` exists), and Keycloak client settings ([auth RFC](../../docs/rfc-device-auth.md)).

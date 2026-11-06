@@ -1,7 +1,6 @@
 // Sticky notes: short notes for the household, pinned on every frame until someone taps Done or
 // they expire. On Today they float bottom-left over the person lanes (three at most, newest on
-// top); on other tabs a small pill; in ambient mode the newest shows small on the photo; hidden at
-// night and with the screen off. Written here (the rail's note button) or on the phone page.
+// top); on other tabs a small pill; hidden in ambient mode, at night and with the screen off. Written here (the rail's note button) or on the phone page.
 (function () {
   'use strict';
   var D = window.DATA, $ = App.$;
@@ -28,10 +27,6 @@
     var el = $('#notes');
     if (!el) return;
     var list = D.notes, home = App.current === 'home';
-    // Ambient: the newest, small, on the photo (and nothing once the last one is cleared).
-    var amb = $('#ambient .amb-note');
-    if (!amb && $('#ambient')) { amb = document.createElement('div'); amb.className = 'amb-note'; $('#ambient').appendChild(amb); }
-    if (amb) amb.innerHTML = list[0] ? '<span class="serif">' + App.esc(list[0].text) + '</span><small>– ' + App.esc(App.person(list[0].from).name) + '</small>' : '';
     el.className = 'notes' + (list.length ? '' : ' is-empty') + (home ? ' is-home' : ' is-pill');
     if (!list.length) { el.innerHTML = ''; return; }
     if (home) {

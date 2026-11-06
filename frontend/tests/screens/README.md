@@ -12,7 +12,8 @@ check that nothing spills out of the 1280×800 frame.
 | `photos-idle` | the idle photo screen (ambient mode, as `App.rest()` leaves it) |
 | `night` | the dim night clock |
 | `note-sheet` | the New note sheet over Calendar |
-| `home layout` | the layout check on Today. It's expected to fail on `main`, where the right column is wider than the frame (fixed on `fix/frame-layout-offline-fonts`). Once that fix lands, remove the `test.fail` line. |
+| `weather-open-meteo` | the weather card and hourly strip on a real Open-Meteo forecast: the recorded snapshot in `tests/fixtures/weather/`, served as the backend serves it, at noon on the snapshot's day |
+| `home layout` | the layout check on Today: its right column must fit inside the 1280×800 frame |
 
 ## How the page is set up
 
@@ -52,7 +53,10 @@ image CI's `screens` job uses. The `:docker` scripts run there, and their result
 plain scripts are fine for quick runs and for the layout checks, but their screenshots can differ
 from the baselines. Don't commit baselines from them. Behind a proxy, pass it through, for example
 `DOCKER_FLAGS="--network host -e HTTPS_PROXY -e HTTP_PROXY"`. Without Docker, run the CI workflow
-by hand with *update screenshots* ticked and take the PNGs from its `screenshots` artifact.
+on your branch by hand with *update screenshots* ticked: the `screens` job renders the baselines in
+CI's image and the `screenshots-commit` job commits the new or changed ones to the branch (the
+`screenshots` artifact has them too). That commit doesn't start CI by itself; run the workflow
+again unticked, or push, to check it.
 
 When a test fails, `test-results/screens/` has `*-actual.png` and `*-diff.png` for each mismatch.
 CI uploads those, the HTML report and the baselines as the `screenshots` artifact. Bump

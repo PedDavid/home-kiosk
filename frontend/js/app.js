@@ -58,19 +58,21 @@
   // idle. A mode picked in the display controls (manual) stays until the next tap.
   App.scheduledOff = false;
   App.restMode = function () { return App.isScheduledOff() ? 'off' : App.isNight() ? 'night' : 'ambient'; };
-  // The whole UI is dimmed and amber-tinted (css: data-night) for as long as it's night, whatever
+  // UI chrome is dimmed and amber-tinted (css: data-night), with photos left in their original colours, whatever
   // the mode, so a tap in the night doesn't flash a bright screen. Outside the hours it's normal.
   App.applyNight = function () { var st = $('#stage'); if (st) st.dataset.night = App.isNight() ? '1' : '0'; };
+  App.photoFullscreen = false;
   App.rest = function () {
+    if (App.photoFullscreen) return;
     var m = App.restMode();
     App.closeSheet();
-    App.go('home');
+    if (App.current !== 'photos') App.go('home');
     App.setMode(m);
     App.scheduledOff = m === 'off';
   };
   App.syncNightMode = function () {
     App.applyNight();
-    if (App.manualMode) return;
+    if (App.manualMode || App.photoFullscreen) return;
     var m = App.mode, t = App.restMode();
     if (!(m === 'ambient' || m === 'night' || (m === 'off' && App.scheduledOff)) || t === m) return;
     if (t === 'off' && $('#takeover').classList.contains('is-open')) return;
@@ -241,7 +243,7 @@
     App.current = name;
     var view = App.views[name];
     if (!view._built || view._dirty || opts.rerender || (view.minutely && view._min !== minuteKey())) build(name, opts);
-    else if (view.resume) view.resume($('#view-' + name));
+    else if (view.resume) view.resume($('#view-' + name), opts);
     if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
     App.emit('view', name);
   };
@@ -384,7 +386,10 @@
   function onIdleTick() {
     idleSec++;
     var blocked = $('#takeover').classList.contains('is-open');
-    if (App.mode !== 'day' || blocked) return;
+    if (App.mode !== 'day' || blocked || App.photoFullscreen) return;
+    // Open dialogs keep their normal timeout; idle photos become an image-only frame.
+    var dialog = $('#sheetLayer').classList.contains('is-open') || $('#demo').classList.contains('is-open');
+    if (App.current === 'photos' && window.DATA.photos.length && idleSec >= 8 && !dialog) { App.rest(); return; }
     if (idleSec === App.idle.home && App.current !== 'home') { App.closeSheet(); App.go('home'); }
     if (idleSec >= (App.isNight() ? App.idle.peek : App.idle.rest)) App.rest();
   }
@@ -397,11 +402,13 @@
   var STAGE_H = 800, STAGE_MIN_W = 1280;
   function fit() {
     var stage = $('#stage');
-    var w = Math.max(STAGE_MIN_W, Math.round(STAGE_H * window.innerWidth / window.innerHeight));
+    var w = Math.max(App.photoFullscreen ? 1 : STAGE_MIN_W, Math.round(STAGE_H * window.innerWidth / window.innerHeight));
     stage.style.setProperty('--stage-w', w + 'px');
     var s = Math.min(window.innerWidth / w, window.innerHeight / STAGE_H);
     stage.style.transform = Math.abs(s - 1) < 0.01 ? '' : 'scale(' + s + ')';
   }
+
+  App.on('photo-fullscreen', fit);
 
   // ------------------------------------------------------------ clock tick
   var lastMin = -1;
