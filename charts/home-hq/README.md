@@ -175,9 +175,10 @@ live traffic: OSRM's times come from OpenStreetMap road speeds.
 Neither ships with this chart; run them next to it (a `routing` namespace, say). Both need the
 data prepared once, which is the heavy part.
 
-**OSRM** ([osrm-backend](https://github.com/Project-OSRM/osrm-backend)), for a country extract
-from Geofabrik (Portugal is about 350 MB; preparing it wants roughly 2–4 GB of RAM once, and
-serving it a few hundred MB):
+**OSRM** ([osrm-backend](https://github.com/Project-OSRM/osrm-backend), see its
+[Using Docker](https://github.com/Project-OSRM/osrm-backend#using-docker) section), for a country
+extract from [Geofabrik](https://download.geofabrik.de/) (Portugal is about 350 MB; preparing it
+wants roughly 2–4 GB of RAM once, and serving it a few hundred MB):
 
 ```bash
 wget https://download.geofabrik.de/europe/portugal-latest.osm.pbf
@@ -193,16 +194,28 @@ Deployment works). Check it with
 `curl "http://osrm:5000/route/v1/driving/-9.1393,38.7223;-9.3817,38.8029?overview=false"`.
 
 **Photon** ([komoot/photon](https://github.com/komoot/photon)) is the lighter geocoder: a Java
-service with a prebuilt per-country index from GraphHopper's download server, no database to run.
-Download and unpack the country's index next to `photon.jar` and run `java -jar photon.jar`
-(port 2322); community images such as `rtuszik/photon-docker` do the download for you from a
-country code. Check it with `curl "http://photon:2322/api?q=Sintra&limit=1"`.
+service with a prebuilt index, no database to run. Its README explains downloading the prebuilt
+indexes from [GraphHopper's download server](https://download1.graphhopper.com/public/) (the
+planet, or smaller extracts), then running `java -jar photon.jar` (port 2322). The unofficial
+[rtuszik/photon-docker](https://github.com/rtuszik/photon-docker) image does the download for
+you: set `REGION` to a country code (e.g. `pt`), a region name, or `planet`. Check it with
+`curl "http://photon:2322/api?q=Sintra&limit=1"`.
 
-**Nominatim** instead of Photon (`travel.nominatim`) is also supported, for example with the
-`mediagis/nominatim` image and the same Geofabrik extract. It needs PostgreSQL and much more
-disk and import time; prefer it only if you already run one. The public
-`nominatim.openstreetmap.org` works for a try-out (the daily cap keeps the load low), but its
-usage policy is not meant for an always-on dashboard.
+**Nominatim** instead of Photon (`travel.nominatim`) is also supported, for example with
+[mediagis/nominatim-docker](https://github.com/mediagis/nominatim-docker) (`mediagis/nominatim`,
+with `PBF_URL` set to the same Geofabrik extract). It needs PostgreSQL and much more disk and
+import time; prefer it only if you already run one. The public `nominatim.openstreetmap.org`
+works for a try-out (the daily cap keeps the load low), but its
+[usage policy](https://operations.osmfoundation.org/policies/nominatim/) is not meant for an
+always-on dashboard.
+
+#### Reference
+
+| Project | Setup | What this app calls |
+|---|---|---|
+| OSRM | [osrm-backend: Using Docker](https://github.com/Project-OSRM/osrm-backend#using-docker); data from [Geofabrik](https://download.geofabrik.de/) | [`route` service](https://project-osrm.org/docs/v5.24.0/api/#route-service): `GET /route/v1/driving/{lon},{lat};{lon},{lat}?overview=false` |
+| Photon | [komoot/photon](https://github.com/komoot/photon) (install, prebuilt indexes); [rtuszik/photon-docker](https://github.com/rtuszik/photon-docker) | `GET /api?q=…&limit=1&lat=…&lon=…` (search with a location bias, in the Photon README) |
+| Nominatim | [Installation](https://nominatim.org/release-docs/latest/admin/Installation/); [mediagis/nominatim-docker](https://github.com/mediagis/nominatim-docker) | [`/search`](https://nominatim.org/release-docs/latest/api/Search/): `GET /search?q=…&format=jsonv2&limit=1&viewbox=…` |
 
 The frame never talks to either: only the pod does, so the frame's firewall rule doesn't change.
 
