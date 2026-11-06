@@ -114,6 +114,24 @@ and check before deploying code that needs them**: in 1.14 the notes migration h
 (`migrations` in `wrangler.jsonc`, `new_sqlite_classes`, the kind the free plan allows), applied by
 the deploy.
 
+### Photo slideshows
+
+`js/slideshow.js` drives three slideshows: the Home tile, the Photos view and the night (ambient)
+screen. Each has its own queue (every photo once, favourites twice, shuffled, today's "on this day"
+photos first), plus its own history and timer. Tapping the Home tile passes the id of the photo on
+it (`App.go('photos', { photo })`), and Photos jumps to it with `showPhoto(id)`. In Auto layout the
+photo is shown on its own; a layout picked explicitly is kept, with that photo first. Previous,
+next and the timer then carry on from Photos' own queue (#7).
+
+**The queues are separate on purpose, for now.** Sharing one queue between Home and Photos would make
+them feel like one slideshow (Photos carrying on with what Home would show next, no repeats across
+the two). It is a small change, but Pair and Collage take two or three photos from the queue for each
+slide. Time spent in Photos would then make the Home tile skip ahead through the shared queue. If it is
+ever shared, keep the night screen on its own queue.
+
+Browser test: `npm run test:e2e` (after `npx vite build`; needs Playwright with Chromium). It drives
+the built app in Chromium against a mocked API with fake timers. The `browser` CI job runs it.
+
 ## The free plan's CPU budget
 
 Cloudflare's free plan allows **10 ms of CPU per request** (waiting for I/O is free) and 100,000
