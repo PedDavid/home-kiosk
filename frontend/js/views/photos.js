@@ -8,7 +8,7 @@
     var s = V.show && V.show.current, on = s && s.photos[0].fav;
     var b = V.el.querySelector('[data-fav]');
     b.classList.toggle('is-on', !!on);
-    b.querySelector('span').textContent = on ? 'Favourite' : 'Favourite';
+    b.querySelector('span').textContent = on ? 'Favorite' : 'Favorite';
   }
 
   function setFav(p, fav) {
@@ -16,21 +16,21 @@
     heart();
     App.write('state', 'PATCH', '/photos/' + p.id, { fav: fav });
     var immich = !!(window.DATA && window.DATA.immich);
-    App.toast(fav ? 'Added to favourites · it’ll show up more often' : 'Removed from favourites' + (immich ? ' · and in Immich' : ''), { icon: 'heart', ms: 2500 });
+    App.toast(fav ? 'Added to favorites · it’ll show up more often' : 'Removed from favorites' + (immich ? ' · and in Immich' : ''), { icon: 'heart', ms: 2500 });
   }
 
-  // Removing a favourite asks first, and the Remove button has to be held for a second: with
-  // Immich it unfavourites the asset in the library too, and a wall frame gets brushed past. The
+  // Removing a favorite asks first, and the Remove button has to be held for a second: with
+  // Immich it unfavorites the asset in the library too, and a wall frame gets brushed past. The
   // slideshow holds still while the sheet is open, so the question is always about the photo on
   // screen. Cancel, the close button, the scrim, the idle timeout (which closes sheets) and a short
-  // tap on Remove all leave the photo a favourite; only a completed hold acts.
+  // tap on Remove all leave the photo a favorite; only a completed hold acts.
   function confirmUnfav(p) {
     V.show.stop();
     var immich = !!(window.DATA && window.DATA.immich);
     App.sheet('<div class="sheet-pad ph-unfav">' +
       '<img class="ph-unfav-img" src="' + App.photoSrc(p) + '" alt="">' +
-      '<div><div class="label">Favourites</div><h2 class="serif sheet-h">Remove from favourites?</h2>' +
-      '<p class="sheet-p">It will show up less often on this frame.' + (immich ? ' It’s also removed from your favourites in Immich.' : '') + '</p>' +
+      '<div><div class="label">Favorites</div><h2 class="serif sheet-h">Remove from favorites?</h2>' +
+      '<p class="sheet-p">It will show up less often on this frame.' + (immich ? ' It’s also removed from your favorites in Immich.' : '') + '</p>' +
       '<div class="sheet-actions"><button class="btn btn--solid" data-close data-cancel>Cancel</button><button class="btn btn--ghost ph-hold" data-remove><span>Hold to remove</span></button></div>' +
       '<p class="ph-unfav-hint" hidden>Keep holding Remove for a second.</p></div>' +
       '</div>', {
@@ -62,7 +62,7 @@
           }).join('') + '</div></div>' +
           '<div class="ph-bottom">' +
           '  <button class="ph-btn" data-prev>' + App.icon('left', 30) + '</button>' +
-          '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favourite</span></button>' +
+          '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favorite</span></button>' +
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
           '</div></div>';
         V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: V.layout, interval: 15000, onChange: function () { setTimeout(heart); } });
