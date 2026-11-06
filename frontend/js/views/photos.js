@@ -19,20 +19,31 @@
     App.toast(fav ? 'Added to favourites · it’ll show up more often' : 'Removed from favourites' + (immich ? ' · and in Immich' : ''), { icon: 'heart', ms: 2500 });
   }
 
-  // Adding a favourite is one tap; removing one is press-and-hold. With Immich, removing also
-  // unfavourites the asset in the library, and a wall frame gets brushed past. The photo is
-  // captured when the press starts; if the slide changes mid-hold, nothing is removed.
-  // A short tap on a favourite only explains the gesture.
-  function holdToRemove(btn) {
-    var held = null;
-    App.hold(btn, 1000, {
-      enabled: function () { held = V.show.current && V.show.current.photos[0]; return !!(held && held.fav); },
-      done: function () {
-        V.lastHold = Date.now();
-        var cur = V.show.current && V.show.current.photos[0];
-        if (held && held.fav && held === cur) setFav(held, false);
+  // Removing a favourite asks first, and the Remove button has to be held for a second: with
+  // Immich it unfavourites the asset in the library too, and a wall frame gets brushed past. The
+  // slideshow holds still while the sheet is open, so the question is always about the photo on
+  // screen. Cancel, the close button, the scrim, the idle timeout (which closes sheets) and a short
+  // tap on Remove all leave the photo a favourite; only a completed hold acts.
+  function confirmUnfav(p) {
+    V.show.stop();
+    var immich = !!(window.DATA && window.DATA.immich);
+    App.sheet('<div class="sheet-pad ph-unfav">' +
+      '<img class="ph-unfav-img" src="' + App.photoSrc(p) + '" alt="">' +
+      '<div><div class="label">Favourites</div><h2 class="serif sheet-h">Remove from favourites?</h2>' +
+      '<p class="sheet-p">It will show up less often on this frame.' + (immich ? ' It’s also removed from your favourites in Immich.' : '') + '</p>' +
+      '<div class="sheet-actions"><button class="btn btn--solid" data-close data-cancel>Cancel</button><button class="btn btn--ghost ph-hold" data-remove><span>Hold to remove</span></button></div>' +
+      '<p class="ph-unfav-hint" hidden>Keep holding Remove for a second.</p></div>' +
+      '</div>', {
+      cls: 'sheet--unfav',
+      onMount: function (s, close) {
+        s.querySelector('[data-cancel]').focus();
+        App.hold(s.querySelector('[data-remove]'), 1000, {
+          done: function () { close(); setFav(p, false); },
+          cancel: function () { s.querySelector('.ph-unfav-hint').hidden = false; }
+        });
       },
-      cancel: function () { App.toast('Hold to remove from favourites', { icon: 'heart', ms: 2200 }); }
+      // Resume only if the Photos tab is still showing; leaving it stops the slideshow anyway.
+      onClose: function () { if (App.current === 'photos') V.show.start(); }
     });
   }
 
@@ -54,7 +65,6 @@
           '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favourite</span></button>' +
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
           '</div></div>';
-        holdToRemove(el.querySelector('[data-fav]'));
         V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: V.layout, interval: 15000, onChange: function () { setTimeout(heart); } });
         el.addEventListener('click', function (e) {
           var t = e.target.closest('button');
@@ -70,8 +80,7 @@
           if (t.hasAttribute('data-fav')) {
             var p = V.show.current && V.show.current.photos[0];
             if (!p) return;
-            // Removing is press-and-hold (holdToRemove); ignore the click that ends a completed hold.
-            if (!p.fav && Date.now() - (V.lastHold || 0) > 800) setFav(p, true);
+            if (p.fav) confirmUnfav(p); else setFav(p, true);
           }
         });
       }
