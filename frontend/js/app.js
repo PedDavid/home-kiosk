@@ -243,7 +243,7 @@
     App.current = name;
     var view = App.views[name];
     if (!view._built || view._dirty || opts.rerender || (view.minutely && view._min !== minuteKey())) build(name, opts);
-    else if (view.resume) view.resume($('#view-' + name));
+    else if (view.resume) view.resume($('#view-' + name), opts);
     if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
     App.emit('view', name);
   };

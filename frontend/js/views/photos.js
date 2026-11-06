@@ -64,6 +64,10 @@
     b.querySelector('span').textContent = on ? 'Favorite' : 'Favorite';
   }
 
+  function open(opts) {
+    if (!(opts && opts.photo != null && V.show.showPhoto(opts.photo))) V.show.start();
+  }
+
   function setFav(p, fav) {
     p.fav = fav;
     heart();
@@ -100,7 +104,8 @@
   }
 
   App.register('photos', {
-    show: function (el) {
+    // opts.photo: id of the photo to open on (the home tile passes the one it is showing).
+    show: function (el, opts) {
       if (!V.el) {
         V.el = el;
         el.innerHTML = '<div class="photos">' +
@@ -146,10 +151,10 @@
         ? 'No favorite photos yet.<br><i>Connect Immich above, then mark photos as favorites in Immich.</i>'
         : 'No photos yet.<br><i>Add some from your phone at <b>' + location.host + '/upload</b></i>';
       el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length;
-      V.show.start();
+      open(opts);
       if (App.current === 'photos') App.resetIdle();
     },
-    resume: function () { this.show(V.el); },
+    resume: function (el, opts) { this.show(V.el, opts); },
     hide: function () { App.setPhotoFullscreen(false); if (V.show) V.show.stop(); }
   });
 })();
