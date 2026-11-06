@@ -68,21 +68,25 @@ with `npm run test:screens:docker:update` and commit it.
 
 ## Screenshots in a pull request (for agents too)
 
-Any PR that changes what the frame shows should show it:
+Any PR that changes what the frame shows should show it. None of this needs a push beyond the
+PR's own branch:
 
-1. Run `npm run test:screens:docker:update`. Commit the changed PNGs in `screenshots/`;
-   GitHub's diff then shows the before and after.
-2. Embed them in the PR description. Images are pushed to an orphan branch, so `main` never
-   carries them:
+1. Run `npm run test:screens:docker:update` and commit the changed PNGs in `screenshots/` on the
+   PR branch. GitHub's diff then shows the before and after.
+2. **CI links them for you.** On a pull request from this repository, the `screens` job keeps one
+   comment up to date (marked `<!-- screens -->`). It holds the result, a link to the
+   `screenshots` artifact (baselines, plus `-actual`/`-diff` PNGs on failure), and the baselines
+   the PR adds or changes, embedded from its head commit. The run's summary has the same.
+3. To embed them in the description as well, print the Markdown after pushing:
 
    ```bash
-   tests/screens/publish-pr.sh <PR number>                        # all baselines
-   tests/screens/publish-pr.sh <PR number> tests/screens/screenshots/home.png test-results/...
+   tests/screens/pr-markdown.sh --changed     # baselines changed since origin/main
+   tests/screens/pr-markdown.sh               # all baselines
    ```
 
-   The script pushes the PNGs to `screenshots/pr-<N>` (replacing it on a re-run) and prints
-   Markdown with `https://raw.githubusercontent.com/<owner>/<repo>/screenshots/pr-<N>/<name>.png`
-   links to paste into the description. Delete the branch once the PR is merged or closed:
-   `git push origin --delete screenshots/pr-<N>`.
-3. For a state no test covers, add a test (above) rather than a one-off capture, so the next
-   change is checked against it.
+   The links are `https://raw.githubusercontent.com/<owner>/<repo>/<commit>/<path>` and point at
+   the pushed HEAD commit, so they keep showing that version.
+4. For an image no test produces (a device photo, a one-off state), commit it to the PR branch
+   under `.github/pr-screenshots/pr-<N>/` and link it the same way
+   (`tests/screens/pr-markdown.sh ../.github/pr-screenshots/pr-<N>/*.png`). For a state the frame
+   can reach, prefer adding a test (above), so the next change is checked against it.
