@@ -38,9 +38,8 @@
 .h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); }
 .h-hr { display: grid; grid-template-rows: 18px 34px 20px; justify-items: center; gap: 2px; font-size: 16px; }
 .h-hr-l { font-size: var(--fs-min); line-height: 18px; font-weight: 700; color: var(--mute); text-transform: uppercase; }
-/* The temperature curve lifts icons by up to 8px. Reserve that space inside
-   their row so they never rise into the hour label above. */
-.h-hr-i { height: 26px; align-self: end; display: grid; place-items: center; }
+/* Keep every icon on the same row, with breathing room below the hour. */
+.h-hr-i { height: 26px; align-self: center; display: grid; place-items: center; }
 .h-hr b { font-weight: 800; font-stretch: 70%; }
 .h-hr.is-wet .h-hr-i { color: #1F6FEB; }
 

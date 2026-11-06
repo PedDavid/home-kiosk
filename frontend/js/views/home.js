@@ -28,8 +28,6 @@
     var w = App.weatherNow();
     if (!w) return '<div class="h-wx-say"><b>No forecast yet.</b> Set <i>location</i> in settings.json.</div>';
     var hours = App.hourly(7);
-    var tmin = Math.min.apply(null, hours.map(function (h) { return h.t; }));
-    var tmax = Math.max.apply(null, hours.map(function (h) { return h.t; }));
     return '<div class="h-wx-top">' +
       '<span class="h-wx-icon">' + App.icon(w.cond, 60) + '</span>' +
       '<span class="h-wx-temp num">' + w.temp + '°</span>' +
@@ -37,9 +35,8 @@
       '</div>' +
       (warning() || '<div class="h-wx-say"><b>' + w.summary + '.</b> ' + w.advice + '.</div>') +
       '<div class="h-wx-hours">' + hours.map(function (h) {
-        var lift = tmax === tmin ? 0 : Math.round((h.t - tmin) / (tmax - tmin) * 8);
         return '<div class="h-hr' + (h.p >= 50 ? ' is-wet' : '') + '"><span class="h-hr-l">' + h.label + '</span>' +
-          '<span class="h-hr-i" style="transform:translateY(' + -lift + 'px)">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
+          '<span class="h-hr-i">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
       }).join('') + '</div>';
   }
 

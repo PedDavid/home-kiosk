@@ -47,6 +47,10 @@ try {
         const icon = hour.querySelector('.h-hr-i').getBoundingClientRect();
         if (label.bottom > icon.top) failures.push('Weather hour overlaps icon');
       }
+      for (const selector of ['.h-hr-l', '.h-hr-i', '.h-hr > b']) {
+        const tops = [...document.querySelectorAll(selector)].map(el => el.getBoundingClientRect().top);
+        if (Math.max(...tops) - Math.min(...tops) > 0.1) failures.push(`${selector} is not aligned across forecast hours`);
+      }
       if (innerWidth === 1280 && innerHeight === 800) {
         for (const selector of ['.h-presence', '.h-side', '.h-shop', '.h-status']) {
           const r = rect(selector);
