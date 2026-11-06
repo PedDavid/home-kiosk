@@ -196,7 +196,6 @@
       '<select id="demoMode" aria-label="Mode to show"><option value="ambient">Ambient</option><option value="off">Screen off</option></select>' +
       '<button data-modego>Show</button>' +
       '<button class="demo-icon" data-reload aria-label="Refresh data">' + App.icon('refresh', 26) + '</button></div></div>' +
-      '<div class="demo-sec"><div class="label label--light">Weather location</div><div class="demo-note">' + weatherLocation() + '</div></div>' +
       (tests().length ? '<div class="demo-sec"><div class="label label--light">Test alerts (nothing is sent to the house)</div><div class="demo-test">' +
       '<select id="demoAlert" aria-label="Alert to test">' + tests().map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('') + '</select>' +
       '<button data-test>Show</button></div></div>' : '') +
@@ -223,6 +222,7 @@
       '<div class="demo-sec" id="demoAdb"></div>' +
       '<div class="demo-sec"><div class="label label--light">Frames</div><div class="demo-frames" id="demoFrames"><p class="demo-note">Checking…</p></div></div>' +
       '<div class="demo-sec"><div class="label label--light">Status</div><p class="demo-note">' + status() + '</p>' +
+      '<div class="demo-note demo-weather">' + weatherLocation() + '</div>' +
       '<p class="demo-note">Version ' + __APP_VERSION__ + '</p></div>' +
       '<p class="demo-note">Keyboard: <b>D</b> controls · <b>A</b> ambient · <b>1–6</b> views</p>' +
       '</div>';
@@ -233,10 +233,11 @@
     var coords = loc.lat.toFixed(4) + ', ' + loc.lon.toFixed(4);
     var url = 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(loc.lat) + '&mlon=' + encodeURIComponent(loc.lon) + '#map=12/' + encodeURIComponent(loc.lat) + '/' + encodeURIComponent(loc.lon);
     var name = typeof loc.name === 'string' ? loc.name.trim() : '';
-    return '<div class="demo-weather"><div>' + (name ? '<b class="demo-weather-city">' + App.esc(name) + '</b>' : '') +
-      '<p>Open-Meteo<br>Latitude, longitude:<br><b>' + App.esc(coords) + '</b></p>' +
-      '<p>Scan to view the map on your phone.<br>Your phone needs internet access.</p></div>' +
-      '<div class="demo-weather-qr" role="img" aria-label="QR code to open the weather location in OpenStreetMap">' + App.share.qrSvg(url, 180) + '</div></div>';
+    return '<p>Weather location · ' + (name ? '<b class="demo-weather-city">' + App.esc(name) + '</b> · ' : '') +
+      'Open-Meteo<br>Latitude, longitude: <b>' + App.esc(coords) + '</b></p>' +
+      '<div class="demo-test"><button data-weather-map data-map-url="' + App.esc(url) + '" aria-expanded="false" aria-controls="demoWeatherMap">Show map QR code</button></div>' +
+      '<div id="demoWeatherMap" hidden><p>Scan to view the map on your phone. Your phone needs internet access.</p>' +
+      '<div class="demo-weather-qr" role="img" aria-label="QR code to open the weather location in OpenStreetMap"></div></div>';
   }
   // [id, label]: Home Assistant alerts only when it's set up; weather and bins work without it.
   function tests() {
@@ -314,6 +315,14 @@
     var b = e.target.closest('button');
     if (!b) { if (e.target === $('#demo')) closeDemo(); return; }
     if (b.hasAttribute('data-demo-close')) return closeDemo();
+    if (b.hasAttribute('data-weather-map')) {
+      var map = $('#demoWeatherMap'), show = map.hidden;
+      if (show && !map.querySelector('svg')) map.querySelector('.demo-weather-qr').innerHTML = App.share.qrSvg(b.getAttribute('data-map-url'), 180);
+      map.hidden = !show;
+      b.setAttribute('aria-expanded', String(show));
+      b.textContent = show ? 'Hide map QR code' : 'Show map QR code';
+      return;
+    }
     if (b.hasAttribute('data-adb')) {
       var kk = App.kiosk(), K = window.HomeHQKiosk;
       if (kk && K && K.setAdb) {
