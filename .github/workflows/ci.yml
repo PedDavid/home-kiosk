@@ -3,6 +3,12 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update-screenshots:
+        description: Render new screenshot baselines (download them from the run's screenshots artifact)
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -25,8 +31,44 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
+      - name: Screenshot fixtures are up to date with src/demo.rs
+        run: |
+          cargo run --quiet --locked --example screen_fixtures
+          git diff --exit-code frontend/tests/screens/fixtures
+          test -z "$(git status --porcelain frontend/tests/screens/fixtures)"
       - name: Build release binary (frontend embedded)
         run: cargo build --release --locked
+
+  screens:
+    # Screenshot tests of the wall view (frontend/tests/screens). The same image as
+    # `npm run test:screens:docker` (browsers and fonts included), so baselines rendered on any
+    # machine with Docker match CI pixel for pixel. Keep its tag in step with @playwright/test.
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - run: npm ci --no-audit --no-fund
+      - name: Screenshots and layout at 1280x800
+        if: ${{ !inputs.update-screenshots }}
+        run: npm run test:screens
+      - name: Render new baselines
+        if: ${{ inputs.update-screenshots }}
+        run: npm run test:screens:update
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          # The baselines (or the new ones), and on failure each -actual/-diff PNG and the report.
+          name: screenshots
+          path: |
+            frontend/tests/screens/screenshots/
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
 
   chart:
     runs-on: ubuntu-latest

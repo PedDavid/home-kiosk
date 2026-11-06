@@ -1,0 +1,193 @@
+{
+  "online": true,
+  "rooms": [
+    {
+      "id": "kitchen",
+      "name": "Kitchen"
+    },
+    {
+      "id": "living",
+      "name": "Living room"
+    },
+    {
+      "id": "entry",
+      "name": "Entry"
+    }
+  ],
+  "devices": [
+    {
+      "id": "cover.kitchen_blind",
+      "room": "kitchen",
+      "name": "Blind",
+      "offline": false,
+      "type": "blind",
+      "pos": 60
+    },
+    {
+      "id": "light.kitchen",
+      "room": "kitchen",
+      "name": "Pendants",
+      "offline": false,
+      "type": "light",
+      "on": true,
+      "level": 80,
+      "dims": true
+    },
+    {
+      "id": "light.kitchen_counter",
+      "room": "kitchen",
+      "name": "Counter",
+      "offline": false,
+      "type": "light",
+      "on": false,
+      "level": 100,
+      "dims": false
+    },
+    {
+      "id": "light.living_lamp",
+      "room": "living",
+      "name": "Lamp",
+      "offline": false,
+      "type": "light",
+      "on": false,
+      "level": 100,
+      "dims": true
+    },
+    {
+      "id": "light.living_room",
+      "room": "living",
+      "name": "Ceiling",
+      "offline": false,
+      "type": "light",
+      "on": true,
+      "level": 45,
+      "dims": true
+    },
+    {
+      "id": "switch.tv_backlight",
+      "room": "living",
+      "name": "TV backlight",
+      "offline": false,
+      "type": "light",
+      "on": false,
+      "level": 100,
+      "dims": false
+    },
+    {
+      "id": "light.porch",
+      "room": "entry",
+      "name": "Porch",
+      "offline": false,
+      "type": "light",
+      "on": false,
+      "level": 100,
+      "dims": false
+    },
+    {
+      "id": "lock.front_door",
+      "room": "entry",
+      "name": "Front door",
+      "offline": false,
+      "type": "lock",
+      "locked": true
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene.movie_night",
+      "name": "Movie night",
+      "icon": "film"
+    },
+    {
+      "id": "scene.good_night",
+      "name": "Good night",
+      "icon": "moon"
+    },
+    {
+      "id": "scene.all_off",
+      "name": "All off",
+      "icon": "bolt"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "camera.front_door",
+      "name": "Front door"
+    },
+    {
+      "id": "camera.garden",
+      "name": "Garden"
+    }
+  ],
+  "climate": {
+    "current": 20.5,
+    "set": 21.0,
+    "mode": "heat",
+    "modes": [
+      "off",
+      "heat",
+      "auto"
+    ],
+    "humidity": 54,
+    "step": 0.5,
+    "min": 7,
+    "max": 30
+  },
+  "presence": [
+    {
+      "id": "alex",
+      "home": true,
+      "status": "Home"
+    },
+    {
+      "id": "sam",
+      "home": false,
+      "status": "Work"
+    }
+  ],
+  "sensors": {
+    "doorbell": null,
+    "leak": false,
+    "smoke": [],
+    "garageOpenSince": null
+  },
+  "energy": {
+    "cost": 1.84,
+    "currency": "€",
+    "watts": 640,
+    "high": false
+  },
+  "players": [
+    {
+      "id": "media_player.living_room",
+      "name": "Living room speaker",
+      "state": "paused",
+      "title": "Demo track",
+      "artist": "Demo artist",
+      "app": "Music",
+      "loaded": true,
+      "volume": 35,
+      "muted": false,
+      "art": null,
+      "features": 0
+    }
+  ],
+  "checks": {
+    "leaksOffline": [],
+    "leakTotal": 2,
+    "smokeOffline": [],
+    "smokeTotal": 2,
+    "valveClosed": null,
+    "lowBattery": []
+  },
+  "via": "demo",
+  "viaAt": 1793899800000,
+  "alertConfig": {
+    "doorbell": false,
+    "doorbellCamera": null,
+    "doorbellLock": null,
+    "waterValve": false,
+    "smoke": true,
+    "garageOpenMinutes": 0
+  }
+}

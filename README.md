@@ -61,6 +61,15 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+### Screenshot tests
+
+`cd frontend && npm run test:screens:docker` renders the wall view at the frame's 1280×800 with
+mocked API data, compares it with `frontend/tests/screens/screenshots/`, and checks that nothing
+overflows the frame. `npm run test:screens:docker:update` rewrites the baselines. CI's `screens`
+job runs the same in the same image and uploads the results as the `screenshots` artifact. See
+[`frontend/tests/screens/README.md`](frontend/tests/screens/README.md), which also covers how to
+put screenshots in a pull request.
+
 ## Container image
 
 The [`Dockerfile`](Dockerfile) builds the frontend with Node, builds the binary with the
