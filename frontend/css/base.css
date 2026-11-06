@@ -353,3 +353,8 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
     text-align: center; color: #9a958b; font: 500 15px/1.4 var(--sans); letter-spacing: .02em;
   }
 }
+
+/* A persistent deploy notice; shown only when the frame can be interacted with. */
+.update-notice { position: absolute; right: 20px; bottom: 20px; z-index: 65; max-width: calc(100% - 96px); }
+.update-notice[hidden] { display: none; }
+.update-notice button { min-height: 48px; padding: 12px 20px; border: 1px solid currentColor; border-radius: 24px; background: var(--ink); color: var(--paper, #F2EEE6); font: inherit; cursor: pointer; box-shadow: 0 4px 18px #0003; }
