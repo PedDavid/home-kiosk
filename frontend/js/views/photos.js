@@ -11,6 +11,36 @@
     b.querySelector('span').textContent = on ? 'Favourite' : 'Favourite';
   }
 
+  function setFav(p, fav) {
+    p.fav = fav;
+    heart();
+    App.write('state', 'PATCH', '/photos/' + p.id, { fav: fav });
+    App.toast(fav ? 'Added to favourites · it’ll show up more often' : 'Removed from favourites', { icon: 'heart', ms: 2500 });
+  }
+
+  // Removing a favourite asks first: with Immich it unfavourites the asset in the library too, and
+  // a wall frame gets brushed past. The slideshow holds still while the sheet is open, so the
+  // question is always about the photo on screen. Cancel, the close button, the scrim and the
+  // idle timeout (which closes sheets) all leave the photo a favourite; only Remove acts.
+  function confirmUnfav(p) {
+    V.show.stop();
+    var immich = !!(window.DATA && window.DATA.immich);
+    App.sheet('<div class="sheet-pad ph-unfav">' +
+      '<img class="ph-unfav-img" src="' + App.photoSrc(p) + '" alt="">' +
+      '<div><div class="label">Favourites</div><h2 class="serif sheet-h">Remove from favourites?</h2>' +
+      '<p class="sheet-p">It will show up less often on this frame.' + (immich ? ' It’s also removed from your favourites in Immich.' : '') + '</p>' +
+      '<div class="sheet-actions"><button class="btn btn--solid" data-close data-cancel>Cancel</button><button class="btn btn--ghost" data-remove>Remove</button></div></div>' +
+      '</div>', {
+      cls: 'sheet--unfav',
+      onMount: function (s, close) {
+        s.querySelector('[data-cancel]').focus();
+        s.querySelector('[data-remove]').addEventListener('click', function () { close(); setFav(p, false); });
+      },
+      // Resume only if the Photos tab is still showing; leaving it stops the slideshow anyway.
+      onClose: function () { if (App.current === 'photos') V.show.start(); }
+    });
+  }
+
   App.register('photos', {
     show: function (el) {
       if (!V.el) {
@@ -44,10 +74,7 @@
           if (t.hasAttribute('data-fav')) {
             var p = V.show.current && V.show.current.photos[0];
             if (!p) return;
-            p.fav = !p.fav;
-            heart();
-            App.write('state', 'PATCH', '/photos/' + p.id, { fav: p.fav });
-            App.toast(p.fav ? 'Added to favourites · it’ll show up more often' : 'Removed from favourites', { icon: 'heart', ms: 2500 });
+            if (p.fav) confirmUnfav(p); else setFav(p, true);
           }
         });
       }
