@@ -568,8 +568,11 @@ async fn api_adds_and_removes_on_caldav_and_reports_the_capability() {
     let (status, _) = call(&app, "DELETE", "/api/events/api1", None).await;
     assert_eq!(status, StatusCode::OK);
     assert!(dav.object("/alex/family/", "api1.ics").is_none());
-    // Removing again (a double tap) is fine.
-    assert_eq!(call(&app, "DELETE", "/api/events/api1", None).await.0, StatusCode::OK);
+    // Gone now.
+    assert_eq!(
+        call(&app, "DELETE", "/api/events/api1", None).await.0,
+        StatusCode::NOT_FOUND
+    );
 }
 
 #[tokio::test]

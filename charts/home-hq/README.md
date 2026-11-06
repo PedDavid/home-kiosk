@@ -109,6 +109,51 @@ https://home-hq.prdv.cloud/?key=<HQ_KEY>
 You should be redirected to `/` with a `hq` cookie set, and the dashboard should show dummy
 data. `/m` is the phone page.
 
+## Calendars
+
+"Next up", the people lanes and the calendar views read private iCal links, one or more per
+person. The links are secrets (anyone holding one can read that calendar), so they live in the
+Secret as `HQ_CALENDARS`, a JSON list:
+
+```json
+[
+  { "url": "https://calendar.google.com/calendar/ical/…/private-…/basic.ics", "people": ["alex"] },
+  { "url": "https://calendar.google.com/calendar/ical/…/private-…/basic.ics", "people": ["sam"] },
+  { "url": "webcal://p01-caldav.icloud.com/published/2/…", "people": "all" }
+]
+```
+
+`people` names person ids from `settings.people` (a list, one id, or `"all"`). In Google
+Calendar the link is *Settings → (the calendar) → Integrate calendar → Secret address in iCal
+format*. Add it to the Secret and point the chart at it:
+
+```bash
+kubectl -n home-hq create secret generic home-hq \
+  --from-literal=HQ_KEY=… \
+  --from-file=HQ_CALENDARS=calendars.json
+```
+
+```yaml
+  values:
+    calendars:
+      existingSecret: home-hq
+```
+
+Feeds are read every 10 minutes. A feed that fails keeps its last events, and the frame's Status
+panel shows "Calendar N: …" (never the link). ICS feeds are read-only: the frame's "+" is hidden
+until a writable source is configured.
+
+CalDAV calendars go in the same list with `"type": "caldav"` and their credentials, and take
+events added on the frame (and their removal with Undo):
+
+```json
+  { "type": "caldav", "id": "family", "url": "https://dav.example/alex/family/",
+    "username": "alex", "password": "…", "people": "all" }
+```
+
+Which calendar a new event goes to, and `calendar.writeTo` in `settings` to choose it per group,
+are in the app README's [Calendars](../../README.md#calendars) section.
+
 ## Dedicated LAN address
 
 Behind Traefik, a device allowed to reach Traefik's IP can reach every other ingress by sending a

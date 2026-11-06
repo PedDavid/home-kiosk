@@ -1,7 +1,13 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, calendar, router, settings::Settings, tls};
+use home_hq::{
+    AppState,
+    calendar::{self, CalendarSource},
+    router,
+    settings::Settings,
+    tls,
+};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,22 +33,10 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    // HTTPS clients (calendars) need the crypto provider too, not only the TLS listener.
+    // reqwest (calendar feeds) and the TLS listener share rustls's ring provider.
     tls::install_crypto_provider();
     let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
-    let calendars = std::env::var("HQ_CALENDARS").ok();
-    let calendar = calendar::mixed::from_env_value(
-        calendars.as_deref(),
-        &settings,
-        Arc::new(calendar::fetch::Http::new()?),
-        Arc::new(calendar::caldav::http::Http::new()?),
-        clock.clone(),
-    );
-    tracing::info!(
-        configured = calendar.configured(),
-        writable = calendar.can_write(),
-        "calendar"
-    );
+    let calendar = calendars(&settings, clock.clone())?;
     let state = AppState::new(settings, key, clock).with_calendar(calendar);
     let app = router(state).layer(TraceLayer::new_for_http());
 
@@ -65,7 +59,6 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    tls::install_crypto_provider();
     let (config, pem) = tls::load(&files).await?;
     let addr: SocketAddr = tls_listen
         .parse()
@@ -91,6 +84,26 @@ async fn main() -> anyhow::Result<()> {
     reloader.abort();
     result?;
     Ok(())
+}
+
+/// The calendar from `HQ_CALENDARS` (ICS feeds); unset keeps the demo calendar.
+fn calendars(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Arc<dyn CalendarSource>> {
+    let value = std::env::var("HQ_CALENDARS").ok();
+    settings.tz()?;
+    // ICS feeds and CalDAV calendars ("type": "caldav") from the same list.
+    let source = calendar::mixed::from_env_value(
+        value.as_deref(),
+        settings,
+        Arc::new(calendar::fetch::Http::new()?),
+        Arc::new(calendar::caldav::http::Http::new()?),
+        clock,
+    );
+    if source.configured() {
+        tracing::info!(writable = source.can_write(), "calendar: from HQ_CALENDARS");
+    } else {
+        tracing::info!("calendar: HQ_CALENDARS is not set, serving the demo calendar");
+    }
+    Ok(source)
 }
 
 async fn stopped(mut stop: watch::Receiver<bool>) {

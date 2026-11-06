@@ -104,71 +104,8 @@ async fn calendar(State(app): State<AppState>) -> Response {
     ok(app.demo.lock().await.calendar(app.now()))
 }
 
-/// While a configured calendar is read-only, the frame can't add or remove events.
-fn calendar_read_only(app: &AppState) -> Option<ApiError> {
-    (app.calendar.configured() && !app.calendar.can_write())
-        .then_some(ApiError("the calendar is read-only", StatusCode::METHOD_NOT_ALLOWED))
-}
-
 async fn weather(State(app): State<AppState>) -> Response {
     ok(app.demo.lock().await.weather(app.now()))
-}
-
-async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
-    if let Some(e) = calendar_read_only(&app) {
-        return Err(e);
-    }
-    if app.calendar.configured() {
-        return Ok(add_to_calendar(&app, &body(&b)).await);
-    }
-    app.demo
-        .lock()
-        .await
-        .add_event(&body(&b))
-        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
-    Ok(ok(json!({ "ok": true })))
-}
-
-async fn delete_event(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
-    if let Some(e) = calendar_read_only(&app) {
-        return Err(e);
-    }
-    if app.calendar.configured() {
-        return Ok(match app.calendar.remove(&id).await {
-            // Already gone is what the frame wanted.
-            Ok(()) | Err(calendar::CalendarError::NotFound) => ok(json!({ "ok": true })),
-            Err(e) => calendar_error(e),
-        });
-    }
-    app.demo.lock().await.delete_event(&id);
-    Ok(ok(json!({ "ok": true })))
-}
-
-/// `POST /api/events` on a writable calendar: `{ id, title, people, start, end }`, times in ms.
-async fn add_to_calendar(app: &AppState, b: &Value) -> Response {
-    let ms = |v: &Value| {
-        v.as_f64()
-            .and_then(|n| chrono::DateTime::from_timestamp_millis(n as i64))
-    };
-    let (Some(start), Some(end)) = (ms(&b["start"]), ms(&b["end"])) else {
-        return bad("id, title, people, start < end required", StatusCode::BAD_REQUEST);
-    };
-    let new = calendar::NewEvent {
-        id: b["id"].as_str().unwrap_or_default().to_string(),
-        title: b["title"].as_str().unwrap_or_default().trim().to_string(),
-        people: b["people"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .filter_map(|p| p.as_str().map(String::from))
-            .collect(),
-        start,
-        end,
-    };
-    match app.calendar.add(new).await {
-        Ok(_) => ok(json!({ "ok": true })),
-        Err(e) => calendar_error(e),
-    }
 }
 
 /// A failed write. The frame shows it as "Couldn't save · <error>" and refreshes the calendar,
@@ -181,6 +118,59 @@ fn calendar_error(e: calendar::CalendarError) -> Response {
         calendar::CalendarError::Backend(_) => StatusCode::BAD_GATEWAY,
     };
     bad(&e.to_string(), status)
+}
+
+/// `{ id, title, people: [...], start: ms, end: ms }`, as the frontend posts it.
+fn new_event(b: &Value) -> Option<calendar::NewEvent> {
+    let ms = |k: &str| b[k].as_i64().and_then(chrono::DateTime::from_timestamp_millis);
+    let new = calendar::NewEvent {
+        id: b["id"].as_str()?.trim().chars().take(64).collect(),
+        title: b["title"].as_str()?.trim().chars().take(200).collect(),
+        people: b["people"]
+            .as_array()?
+            .iter()
+            .filter_map(|p| p.as_str().map(String::from))
+            .collect(),
+        start: ms("start")?,
+        end: ms("end")?,
+    };
+    (!new.id.is_empty() && !new.title.is_empty() && !new.people.is_empty() && new.end > new.start).then_some(new)
+}
+
+async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
+    if app.calendar.configured() {
+        // A read-only source refuses (405); a writable one (CalDAV) adds it.
+        if !app.calendar.can_write() {
+            return Ok(calendar_error(calendar::CalendarError::ReadOnly));
+        }
+        let Some(new) = new_event(&body(&b)) else {
+            return Err(ApiError(
+                "id, title, people, start < end required",
+                StatusCode::BAD_REQUEST,
+            ));
+        };
+        return Ok(match app.calendar.add(new).await {
+            Ok(_) => ok(json!({ "ok": true })),
+            Err(e) => calendar_error(e),
+        });
+    }
+    app.demo
+        .lock()
+        .await
+        .add_event(&body(&b))
+        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
+    Ok(ok(json!({ "ok": true })))
+}
+
+async fn delete_event(State(app): State<AppState>, Path(id): Path<String>) -> Response {
+    if app.calendar.configured() {
+        return match app.calendar.remove(&id).await {
+            Ok(()) => ok(json!({ "ok": true })),
+            Err(e) => calendar_error(e),
+        };
+    }
+    app.demo.lock().await.delete_event(&id);
+    ok(json!({ "ok": true }))
 }
 
 async fn bins_out(State(app): State<AppState>, b: Bytes) -> ApiResult {

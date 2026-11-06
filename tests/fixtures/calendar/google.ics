@@ -1,0 +1,35 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:alex@example.com
+X-WR-TIMEZONE:Europe/Lisbon
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Lisbon:20261106T123000
+DTEND;TZID=Europe/Lisbon:20261106T133000
+DTSTAMP:20261105T100000Z
+UID:0abc123def@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Alex; Home";X-NUM-GUESTS=0:mailto:alex@example.com
+DESCRIPTION:<b>Bring</b> the insurance card&nbsp;and X-rays.<br>Travel: 20<br
+ >Walk: 5
+LOCATION:Clínica Dentária\, Rua Augusta 10\, Lisboa
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Dentist
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261107T150000Z
+DTEND:20261107T160000Z
+UID:busy1@google.com
+CLASS:PRIVATE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261108T100000Z
+DTEND:20261108T110000Z
+UID:long@google.com
+SUMMARY:Long notes
+DESCRIPTION:Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. 
+END:VEVENT
+END:VCALENDAR
