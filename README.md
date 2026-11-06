@@ -71,6 +71,11 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+Display Controls shows the configured weather coordinates and optional city label from
+`settings.location.name` (for example, `"Lisbon"`). The label is configured alongside `lat` and
+`lon`, not looked up online. A locally generated QR code opens the location in OpenStreetMap
+on a phone with internet access; displaying the label and QR needs no internet on the kiosk.
+
 ### Photo frame behaviour
 
 After eight seconds without interaction in Photos, the daytime frame shows only an
