@@ -25,6 +25,11 @@ every route the frontend calls. The responses use upstream's shapes, filled with
 - The alert WebSocket (`/api/alerts/ws`) and the polling fallback (`/api/alerts`) answer with
   `seq: 0`, and nothing raises alerts yet.
 
+**Calendar (delivered).** With `HQ_CALENDARS` set, "Next up", the people lanes and the calendar
+views show real ICS feeds through the `CalendarSource` port ([`src/calendar/`](src/calendar/)),
+with recurrences, exceptions, timezones and per-person attribution. Without it, the demo events
+stay.
+
 Each later delivery replaces one slice of `demo.rs` with a real port and adapter:
 
 | Delivery | Replaces |
@@ -56,6 +61,7 @@ empty `frontend/dist`.
 | `HQ_TLS_CERT` / `HQ_TLS_KEY` | unset (no TLS) | PEM certificate chain and key. Both set adds a TLS listener; the files are re-read every minute and a renewed certificate is used without a restart |
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
+| `HQ_CALENDARS` | unset (demo events) | Calendar feeds (secret): a JSON list of `{ "url": "…", "people": ["alex"] \| "all" }`. See [Calendars](charts/home-hq/README.md#calendars) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
 
