@@ -49,6 +49,8 @@ spec:
       existingSecret: home-hq # holds HQ_KEY, created per RFC 004
     ingress:
       host: home-hq.prdv.cloud
+    # immich:
+    #   publicUrl: https://photos.example.com # shows the Share button (QR to the photo in Immich)
     settings:
       timezone: Europe/Lisbon
       location: { lat: 38.7223, lon: -9.1393, units: celsius }
@@ -145,6 +147,7 @@ WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a cl
 | `imagePullSecrets` | `[]` | For private GHCR |
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
 | `settings` | `{}` | Household settings. Empty means the bundled example |
+| `immich.publicUrl` | `""` | `HQ_IMMICH_PUBLIC_URL`: the Immich address phones open from the Photos tab's Share QR code. Empty hides the Share button |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
 | `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |

@@ -87,7 +87,7 @@ impl Immich {
                     .or_else(|| asset["fileCreatedAt"].as_str())
                     .unwrap_or("");
                 let date = date.get(..10).unwrap_or("");
-                photos.push(json!({"id":id,"o":if exif["exifImageHeight"].as_u64().unwrap_or(0) > exif["exifImageWidth"].as_u64().unwrap_or(0) {"p"} else {"l"},
+                photos.push(json!({"id":id,"immichId":id,"o":if exif["exifImageHeight"].as_u64().unwrap_or(0) > exif["exifImageWidth"].as_u64().unwrap_or(0) {"p"} else {"l"},
                     "date":date,"place":exif["city"].as_str().unwrap_or(""),"from":null,"fav":true,"tag":date}));
             }
             if assets["nextPage"].is_null() {

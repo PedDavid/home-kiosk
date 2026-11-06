@@ -18,6 +18,13 @@ key:
 # Empty: the image's bundled example settings are used.
 settings: {}
 
+immich:
+  # The Immich address people's phones open (HQ_IMMICH_PUBLIC_URL), e.g. https://photos.example.com.
+  # The Photos tab's Share button shows a QR code for <publicUrl>/photos/<assetId>: a plain link,
+  # no key, so whoever scans it signs in to Immich with their own login. Use the public address,
+  # not a cluster-internal one a phone can't reach. Empty: the Share button is hidden.
+  publicUrl: ""
+
 logLevel: info
 
 # Extra environment variables for the container (later deliveries: HA_TOKEN, calendar URLs, ...).

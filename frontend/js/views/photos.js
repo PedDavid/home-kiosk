@@ -72,6 +72,7 @@
           '<div class="ph-stage"></div>' +
           '<button class="ph-btn ph-screen ph-enter" data-photo-fullscreen aria-label="Full screen" title="Full screen">' + App.icon('expand', 24) + '</button>' +
           '<button class="ph-btn ph-screen ph-exit" data-photo-exit aria-label="Exit full screen" title="Exit full screen">' + App.icon('shrink', 24) + '</button>' +
+          App.share.button() +
           '<div class="ph-empty serif" hidden>No photos yet.<br><i>Add some from your phone at <b>' + location.host + '/upload</b></i></div>' +
           '<button class="ph-zone ph-zone--l" data-prev aria-label="Previous"></button>' +
           '<button class="ph-zone ph-zone--c" data-loud aria-label="Show details"></button>' +
@@ -85,6 +86,7 @@
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
           '</div></div>';
         V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: V.layout, interval: 15000, onChange: function () { setTimeout(heart); } });
+        App.share.attach(el, V.show);
         el.addEventListener('click', function (e) {
           var t = e.target.closest('button');
           if (!t) return;

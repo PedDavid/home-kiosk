@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, router, settings::Settings, tls};
+use home_hq::{AppState, router, settings::Settings, share::ImmichPublicUrl, tls};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,7 +27,13 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let mut state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    let immich_public_url = ImmichPublicUrl::parse(&std::env::var("HQ_IMMICH_PUBLIC_URL").unwrap_or_default())?;
+    match &immich_public_url {
+        Some(u) => tracing::info!(immich_public_url = u.as_str(), "photo sharing on"),
+        None => tracing::info!("HQ_IMMICH_PUBLIC_URL is not set: the Share button is hidden"),
+    }
+
+    let mut state = AppState::new(settings, key, Arc::new(chrono::Utc::now)).with_immich_public_url(immich_public_url);
     state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
     if state.device_auth.is_none() {
         state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);

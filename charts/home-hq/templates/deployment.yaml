@@ -46,6 +46,10 @@ spec:
             - name: HQ_SETTINGS
               value: /config/settings.json
             {{- end }}
+            {{- with .Values.immich.publicUrl }}
+            - name: HQ_IMMICH_PUBLIC_URL
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.key.existingSecret }}
             - name: HQ_KEY
               valueFrom:
