@@ -5,6 +5,7 @@ pub mod assets;
 pub mod auth;
 pub mod demo;
 pub mod settings;
+pub mod shopping;
 pub mod tls;
 
 use std::sync::Arc;
@@ -21,6 +22,8 @@ pub struct AppState {
     pub key: Option<Arc<str>>,
     pub demo: Arc<Mutex<demo::Demo>>,
     pub clock: Clock,
+    /// The shopping list port. `None` keeps the demo list.
+    pub groceries: Option<Arc<shopping::Groceries>>,
 }
 
 impl AppState {
@@ -30,7 +33,14 @@ impl AppState {
             key: key.filter(|k| !k.is_empty()).map(Arc::from),
             demo: Arc::new(Mutex::new(demo)),
             clock,
+            groceries: None,
         }
+    }
+
+    /// Serve the shopping list from `port` instead of the demo list.
+    pub fn with_shopping(mut self, port: Arc<dyn shopping::ShoppingList>, settings: &settings::Settings) -> Self {
+        self.groceries = Some(Arc::new(shopping::Groceries::new(port, settings.clone())));
+        self
     }
 
     pub fn now(&self) -> DateTime<Utc> {

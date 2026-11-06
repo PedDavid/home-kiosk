@@ -57,6 +57,7 @@ empty `frontend/dist`.
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
+| `MEALIE_URL` / `MEALIE_TOKEN` | unset (demo shopping list) | Mealie's base URL and an API token (secret). Set: the shopping list is the Mealie list named in the settings' `shopping.mealie.list` (see the [chart README](charts/home-hq/README.md#mealie)) |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
 
 `GET /healthz` returns `ok` without a key.

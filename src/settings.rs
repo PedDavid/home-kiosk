@@ -68,6 +68,9 @@ pub struct Shopping {
     /// Category -> item names. Order of categories follows the file.
     #[serde(default)]
     pub catalog: serde_json::Map<String, serde_json::Value>,
+    /// The Mealie list(s) behind the shopping list, used when `MEALIE_URL` is set.
+    #[serde(default)]
+    pub mealie: Option<crate::shopping::mealie::MealieSettings>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

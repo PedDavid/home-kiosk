@@ -53,6 +53,18 @@ spec:
                   name: {{ .Values.key.existingSecret }}
                   key: {{ .Values.key.secretKey }}
             {{- end }}
+            {{- if .Values.mealie.existingSecret }}
+            - name: MEALIE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mealie.existingSecret }}
+                  key: {{ .Values.mealie.urlKey }}
+            - name: MEALIE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mealie.existingSecret }}
+                  key: {{ .Values.mealie.tokenKey }}
+            {{- end }}
             {{- if .Values.tls.existingSecret }}
             - name: HQ_TLS_CERT
               value: /tls/tls.crt

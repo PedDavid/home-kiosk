@@ -71,6 +71,9 @@ spec:
           Pantry: [Coffee beans, Pasta, Rice]
 ```
 
+To take the shopping list from Mealie, add `MEALIE_URL` and `MEALIE_TOKEN` to the Secret, point
+`mealie.existingSecret` at it and name the list in the settings (see [Mealie](#mealie)).
+
 `settings` takes upstream Home HQ's `settings.json` format written as YAML. A complete example is
 in [`config/settings.example.json`](../../config/settings.example.json). Leave `settings` out to
 run with that bundled example. Quote dates such as `"2026-01-06"` so YAML keeps them as strings.
@@ -107,6 +110,46 @@ https://home-hq.prdv.cloud/?key=<HQ_KEY>
 
 You should be redirected to `/` with a `hq` cookie set, and the dashboard should show dummy
 data. `/m` is the phone page.
+
+## Mealie
+
+The shopping list (frame and phone) can live in [Mealie](https://mealie.io) instead of the demo
+list. Changes made in Mealie show on the frame within the 30-second state poll, and the frame's
+changes show in Mealie straight away.
+
+1. In Mealie, create the shopping list (for example *Groceries*) and an API token for the
+   household's user (*Profile → API Tokens*).
+2. Add both to the Secret:
+
+   ```bash
+   kubectl -n home-hq create secret generic home-hq \
+     --from-literal=HQ_KEY=<key> \
+     --from-literal=MEALIE_URL=http://mealie.mealie.svc:9000 \
+     --from-literal=MEALIE_TOKEN=<token> \
+     --dry-run=client -o yaml   # then seal or encrypt it the RFC 004 way
+   ```
+
+3. Values:
+
+   ```yaml
+       mealie:
+         existingSecret: home-hq
+       settings:
+         shopping:
+           stores: [{ id: grocer, name: Supermarket }, { id: market, name: Market }]
+           categories: [Produce, Bakery, Dairy & Eggs, Pantry, Household]
+           mealie:
+             list: Groceries            # the Mealie list's name
+             storeLists:                # optional: stores with a Mealie list of their own
+               market: Market
+   ```
+
+Categories are Mealie labels with the same names (a missing one is created when an item needs
+it, if the token's user may organise the group). Stores without a list of their own share the
+main list. Clearing ticked items deletes them in Mealie; Undo puts them back (for an hour, while
+the pod runs). If Mealie can't be reached, the shopping tab shows a "Can't load the shopping list"
+row above the last list it read, and saving shows "Couldn't save". With `MEALIE_URL` set but no
+`shopping.mealie.list`, the app refuses to start and says so.
 
 ## Dedicated LAN address
 
@@ -145,6 +188,7 @@ WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a cl
 | `imagePullSecrets` | `[]` | For private GHCR |
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
 | `settings` | `{}` | Household settings. Empty means the bundled example |
+| `mealie.existingSecret`, `urlKey`, `tokenKey` | `""`, `MEALIE_URL`, `MEALIE_TOKEN` | Secret with Mealie's URL and API token: the shopping list comes from Mealie (list named in `settings.shopping.mealie.list`). Unset means the demo list |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
 | `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |
