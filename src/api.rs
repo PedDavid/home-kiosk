@@ -96,6 +96,9 @@ async fn calendar(State(app): State<AppState>) -> Response {
 }
 
 async fn weather(State(app): State<AppState>) -> Response {
+    if let Some(w) = &app.weather {
+        return ok(w.get().await);
+    }
     ok(app.demo.lock().await.weather(app.now()))
 }
 

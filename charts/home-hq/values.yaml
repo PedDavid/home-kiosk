@@ -20,6 +20,14 @@ settings: {}
 
 logLevel: info
 
+# Weather. provider "" keeps the demo forecast; "open-meteo" fetches settings.location's forecast
+# from Open-Meteo (no key, cached 15 minutes). The pod then needs egress to api.open-meteo.com
+# (or to openMeteoUrl's host); the frame itself never calls it.
+weather:
+  provider: ""
+  # Empty: https://api.open-meteo.com/v1/forecast. Set for a self-hosted Open-Meteo.
+  openMeteoUrl: ""
+
 # Extra environment variables for the container (later deliveries: HA_TOKEN, calendar URLs, ...).
 extraEnv: []
 

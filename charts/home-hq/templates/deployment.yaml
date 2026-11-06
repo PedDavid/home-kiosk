@@ -46,6 +46,14 @@ spec:
             - name: HQ_SETTINGS
               value: /config/settings.json
             {{- end }}
+            {{- with .Values.weather.provider }}
+            - name: HQ_WEATHER
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.weather.openMeteoUrl }}
+            - name: HQ_OPEN_METEO_URL
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.key.existingSecret }}
             - name: HQ_KEY
               valueFrom:

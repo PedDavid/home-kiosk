@@ -4,7 +4,10 @@ key:
   existingSecret: home-hq
 ingress:
   host: home-hq.lab.example.com
-  tls:
+  weather:
+  provider: open-meteo
+  openMeteoUrl: https://open-meteo.lab.example.com/v1/forecast
+tls:
     secretName: wildcard-tls
 extraEnv:
   - name: EXAMPLE

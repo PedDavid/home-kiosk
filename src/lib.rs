@@ -6,6 +6,7 @@ pub mod auth;
 pub mod demo;
 pub mod settings;
 pub mod tls;
+pub mod weather;
 
 use std::sync::Arc;
 
@@ -21,6 +22,8 @@ pub struct AppState {
     pub key: Option<Arc<str>>,
     pub demo: Arc<Mutex<demo::Demo>>,
     pub clock: Clock,
+    /// Live weather. `None` keeps the demo forecast.
+    pub weather: Option<Arc<weather::Weather>>,
 }
 
 impl AppState {
@@ -30,7 +33,13 @@ impl AppState {
             key: key.filter(|k| !k.is_empty()).map(Arc::from),
             demo: Arc::new(Mutex::new(demo)),
             clock,
+            weather: None,
         }
+    }
+
+    pub fn with_weather(mut self, weather: weather::Weather) -> Self {
+        self.weather = Some(Arc::new(weather));
+        self
     }
 
     pub fn now(&self) -> DateTime<Utc> {

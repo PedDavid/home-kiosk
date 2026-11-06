@@ -149,6 +149,8 @@ WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a cl
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
 | `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |
 | `lanService.enabled`, `type`, `port`, `externalTrafficPolicy`, `annotations` | `false`, `LoadBalancer`, `443`, `Local`, `{}` | A Service straight to the TLS listener: a dedicated LAN address. Needs `tls.existingSecret` |
+| `weather.provider` | `""` | `open-meteo` serves the real forecast for `settings.location` (needs egress to `api.open-meteo.com`). Empty keeps the demo forecast |
+| `weather.openMeteoUrl` | `""` | Forecast endpoint for a self-hosted Open-Meteo. Empty means `https://api.open-meteo.com/v1/forecast` |
 | `extraEnv` | `[]` | Extra env vars (HA token and adapter credentials in later deliveries) |
 | `logLevel` | `info` | `RUST_LOG` |
 | `resources`, `podSecurityContext`, `securityContext`, `nodeSelector`, `tolerations`, `affinity`, `podAnnotations` | small, non-root, read-only root filesystem | The usual |

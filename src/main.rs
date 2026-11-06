@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, router, settings::Settings, tls};
+use home_hq::{AppState, router, settings::Settings, tls, weather};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,7 +27,14 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    // ring for every rustls user: the TLS listener and outbound HTTPS.
+    tls::install_crypto_provider();
+    let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
+    let weather = weather_from_env(&settings, clock.clone())?;
+    let mut state = AppState::new(settings, key, clock);
+    if let Some(w) = weather {
+        state = state.with_weather(w);
+    }
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.
@@ -49,7 +56,6 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    tls::install_crypto_provider();
     let (config, pem) = tls::load(&files).await?;
     let addr: SocketAddr = tls_listen
         .parse()
@@ -75,6 +81,27 @@ async fn main() -> anyhow::Result<()> {
     reloader.abort();
     result?;
     Ok(())
+}
+
+/// `HQ_WEATHER=open-meteo` turns on live weather (`HQ_OPEN_METEO_URL` overrides the endpoint);
+/// unset keeps the demo forecast.
+fn weather_from_env(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Option<weather::Weather>> {
+    match std::env::var("HQ_WEATHER").unwrap_or_default().as_str() {
+        "" | "demo" => Ok(None),
+        "open-meteo" => {
+            let url = std::env::var("HQ_OPEN_METEO_URL")
+                .ok()
+                .filter(|u| !u.is_empty())
+                .unwrap_or_else(|| weather::OPEN_METEO_URL.into());
+            let w = weather::Weather::new(settings, &url, weather::http_fetch()?, clock)?;
+            match w.request_url() {
+                Some(_) => tracing::info!(endpoint = %url, "weather from Open-Meteo"),
+                None => tracing::warn!("HQ_WEATHER=open-meteo but settings have no location: weather is off"),
+            }
+            Ok(Some(w))
+        }
+        other => anyhow::bail!("HQ_WEATHER must be open-meteo or demo, not {other:?}"),
+    }
 }
 
 async fn stopped(mut stop: watch::Receiver<bool>) {
