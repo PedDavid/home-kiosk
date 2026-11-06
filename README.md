@@ -101,8 +101,12 @@ Open **Photos → Connect Immich** (or `/immich`), scan the QR code, compare the
 and approve on your phone. Home HQ requests `asset.read asset.view asset.update`, with a
 one-day lifetime capped by the broker. The device code and issued key stay on the backend;
 the QR image is generated locally. Polling respects the broker interval and `slow_down` responses.
-Once connected, use **Show favorite photos**. **Disconnect** revokes the issued key through
-the broker; if revocation fails, the grant is retained so you can retry.
+Once connected, use **Show favorite photos**. **Disconnect** asks the broker to revoke the
+issued key (`POST /device/revoke`); the key itself is the only credential needed. The broker
+accepts the request and deletes the key in Immich itself, retrying in the background if Immich
+is unavailable, so a successful Disconnect means the broker has the request, not that the key is
+already gone. Only if the broker can't be reached, or answers with an error, does Home HQ keep
+the grant so you can retry.
 
 A grant is shared by this Home HQ instance and all its frames. By default it is held in memory
 only: restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
@@ -111,7 +115,7 @@ To keep it across restarts, set `HQ_STATE_DIR` to a writable directory (the Helm
 `$HQ_STATE_DIR/immich-grant.bin`, encrypted with AES-256-GCM under a key derived from `HQ_KEY` and
 bound to the two configured URLs, and reloads it on start. Without `HQ_KEY` nothing is written.
 A stored grant that has expired or can't be decrypted (a changed `HQ_KEY` or URL) is deleted on
-start, and the frame shows "disconnected". **Disconnect** revokes the key, then deletes the file.
+start, and the frame shows "disconnected". **Disconnect** deletes the file once the broker has accepted the revocation.
 Expired grants stop being used even if the broker is unavailable. There is no refresh token;
 return to `/immich` to approve again after expiry. Cancelling a pending request clears it locally;
 the broker expires abandoned approvals and revokes any uncollected keys. Without `HQ_STATE_DIR`,

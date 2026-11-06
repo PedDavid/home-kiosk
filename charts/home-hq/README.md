@@ -167,7 +167,9 @@ derived from `HQ_KEY` (HKDF-SHA256) and bound to the configured broker and Immic
 - On start, a grant that has expired, or that can't be decrypted because `HQ_KEY` or one of the
   URLs changed, is deleted and the frame shows "disconnected". Rotating `HQ_KEY` therefore means
   pairing again; the old key expires at the broker as before.
-- **Disconnect** revokes the key through the broker, then deletes the file.
+- **Disconnect** asks the broker to revoke the key, then deletes the file. The broker deletes
+  the key in Immich itself (retrying if Immich is down). If the broker can't be reached, the grant
+  and the file are kept so Disconnect can be retried.
 
 When `persistence` is on and `podSecurityContext` has no `fsGroup`, the chart sets it to the
 run-as group, so provisioners that honour `fsGroup` give the non-root user a writable volume.

@@ -350,7 +350,9 @@ impl DeviceAuth {
     }
     pub async fn disconnect(&self) -> anyhow::Result<Value> {
         let mut state = self.state.lock().await;
-        // Retain the grant if revocation fails, so the user can retry.
+        // The broker answers 200 once it has accepted the request (RFC 7009 style) and deletes the
+        // key in Immich itself, retrying as needed. Retain the grant only if the broker can't be
+        // reached or answers with an error, so the user can retry.
         if let Some(g) = &state.grant {
             self.client
                 .post(self.broker.join("device/revoke")?)
