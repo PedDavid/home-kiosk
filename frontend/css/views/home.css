@@ -2,10 +2,13 @@
 .home {
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: 184px 1fr;
   gap: 16px;
 }
+
+/* Intrinsic card/text widths must not enlarge the fixed frame's grid tracks. */
+.home > *, .h-main > *, .h-side > *, .h-duo > * { min-width: 0; }
 
 /* ---- clock */
 .h-clock { grid-column: 1 / 5; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 6px; border-bottom: 3px solid var(--ink); }
@@ -105,7 +108,7 @@
 .h-photo-cap b { font-size: var(--fs-min); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .h-photo-cap span { font-family: var(--serif); font-size: 20px; font-style: italic; }
 
-.h-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.h-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .h-shop, .h-status { display: flex; flex-direction: column; gap: 4px; }
 .h-stat { display: flex; align-items: baseline; gap: 8px; }
 .h-stat .num { font-size: 56px; line-height: .9; }

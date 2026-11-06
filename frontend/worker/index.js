@@ -3,7 +3,7 @@
 //   /api/calendar  Google Calendar ICS feeds + events added on the frame    ICS → D1 cache
 //   /api/weather   Open-Meteo forecast                                      → D1 cache
 //   /api/home      Home Assistant states, controls and camera snapshots     HA REST API
-//   /api/photos    upload / serve / favourite / delete                      R2 + D1
+//   /api/photos    upload / serve / favorite / delete                      R2 + D1
 // Every /api route needs the dashboard key: open any page once with ?key=<DASHBOARD_KEY> and it is
 // kept in a cookie (the kiosk WebView keeps cookies across reboots).
 import RAW from '../settings.json';

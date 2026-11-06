@@ -20,8 +20,7 @@ pub trait Fetch: Send + Sync {
 /// .ics files larger than this are refused, so a wrong link can't fill memory.
 pub const MAX_BODY: usize = 20 * 1024 * 1024;
 
-/// The real fetch: reqwest over rustls, with the system's trust store. Needs a rustls crypto
-/// provider installed first (`tls::install_crypto_provider`).
+/// The real fetch: the same reqwest as Immich (rustls with ring, the system's trust store).
 pub struct Http {
     client: reqwest::Client,
 }

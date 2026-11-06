@@ -33,11 +33,15 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    // reqwest (calendar feeds) and the TLS listener share rustls's ring provider.
+    // reqwest (calendar, Immich) and the TLS listener share rustls's ring provider.
     tls::install_crypto_provider();
     let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
     let calendar = calendars(&settings, clock.clone())?;
-    let state = AppState::new(settings, key, clock).with_calendar(calendar);
+    let mut state = AppState::new(settings, key, clock).with_calendar(calendar);
+    state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
+    if state.device_auth.is_none() {
+        state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);
+    }
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.

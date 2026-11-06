@@ -1,5 +1,7 @@
 // Minimal stroke icon set (24×24 grid). Usage: App.icon('home', 28)
 window.ICONS = {
+  expand: '<path d="M8 16l-5 5M3 16v5h5M16 8l5-5M16 3h5v5"/>',
+  shrink: '<path d="M3 21l6-6M4 15h5v5M21 3l-6 6M15 4v5h5"/>',
   home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   cart: '<path d="M3 4h2.2l2.3 11h10.8L21 8H6.5"/><circle cx="10" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>',

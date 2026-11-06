@@ -23,3 +23,7 @@ lanService:
   annotations:
     metallb.io/loadBalancerIPs: 192.168.8.56
     external-dns.kubernetes.io/hostname: home-hq.lab.example.com
+persistence:
+  storageClass: local-path
+  annotations:
+    helm.sh/resource-policy: keep
