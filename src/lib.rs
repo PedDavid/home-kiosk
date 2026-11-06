@@ -5,6 +5,7 @@ pub mod assets;
 pub mod auth;
 pub mod demo;
 pub mod device_auth;
+pub mod grant_store;
 pub mod immich;
 pub mod settings;
 pub mod tls;
