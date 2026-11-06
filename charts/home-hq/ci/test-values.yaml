@@ -5,7 +5,8 @@ key:
 ingress:
   host: home-hq.lab.example.com
   weather:
-  provider: open-meteo
+  # CI never calls Open-Meteo. openMeteoUrl is set only so its env var renders.
+  provider: demo
   openMeteoUrl: https://open-meteo.lab.example.com/v1/forecast
 tls:
     secretName: wildcard-tls

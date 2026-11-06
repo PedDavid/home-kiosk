@@ -57,11 +57,20 @@ empty `frontend/dist`.
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
-| `HQ_WEATHER` | unset (demo forecast) | `open-meteo` serves Open-Meteo's forecast for `settings.location`, cached 15 minutes; a failed refresh serves the last forecast. With no `location`, `/api/weather` answers `{ "none": true }`. Needs egress to `api.open-meteo.com` |
+| `HQ_WEATHER` | `open-meteo` | `open-meteo` serves Open-Meteo's forecast for `settings.location`, cached 15 minutes; a failed refresh serves the last forecast. With no `location`, `/api/weather` answers `{ "none": true }`. Needs egress to `api.open-meteo.com`. `demo` serves the generated demo forecast and makes no outbound calls (CI, offline development) |
 | `HQ_OPEN_METEO_URL` | `https://api.open-meteo.com/v1/forecast` | Forecast endpoint, e.g. a self-hosted Open-Meteo |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
 
 `GET /healthz` returns `ok` without a key.
+
+### Weather snapshot
+
+`tests/fixtures/weather/open-meteo-snapshot.json` is a real Open-Meteo response for the bundled
+example settings, together with the request that produced it. `cargo test` maps it offline. To
+fetch a new one, run `HQ_RECORD_WEATHER=1 cargo test --test weather_snapshot` (needs network), or
+run the CI workflow by hand with *record-weather-snapshot* ticked. CI records the snapshot by
+itself when the file is missing and commits it to the branch. The test fails when the request
+changes (fields, units, the example location) until the snapshot is recorded again.
 
 ### Screenshot tests
 

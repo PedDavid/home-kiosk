@@ -9,10 +9,20 @@ on:
         description: Render new screenshot baselines (download them from the run's screenshots artifact)
         type: boolean
         default: false
+      record-weather-snapshot:
+        description: Fetch a fresh Open-Meteo response into tests/fixtures/weather/open-meteo-snapshot.json and commit it to this branch
+        type: boolean
+        default: false
+
+# The app calls Open-Meteo by default. Nothing in CI should, apart from recording the snapshot.
+env:
+  HQ_WEATHER: demo
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      weather-recorded: ${{ steps.weather.outputs.recorded }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -30,6 +40,21 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
+      # The one live call: only when the snapshot is missing or a manual run asks for a new one.
+      # Every other run maps the stored response and stays offline.
+      - name: Record the Open-Meteo snapshot
+        id: weather
+        if: ${{ inputs.record-weather-snapshot || hashFiles('tests/fixtures/weather/open-meteo-snapshot.json') == '' }}
+        env:
+          HQ_RECORD_WEATHER: "1"
+        run: |
+          cargo test --locked --test weather_snapshot
+          echo "recorded=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: ${{ steps.weather.outputs.recorded == 'true' }}
+        with:
+          name: weather-snapshot
+          path: tests/fixtures/weather/open-meteo-snapshot.json
       - run: cargo test --locked
       - name: Screenshot fixtures are up to date with src/demo.rs
         run: |
@@ -108,6 +133,31 @@ jobs:
             const mine = comments.find(c => c.user.type === 'Bot' && c.body.startsWith('<!-- screens -->'));
             if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
             else await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+
+  # Commits a snapshot the test job recorded (and tested) back to the branch. Separate so that
+  # only this job, which runs no project code, holds a write token. Pull request runs skip it:
+  # the push run of the same commit commits instead, and a fork's PR keeps it as an artifact.
+  # A push with GITHUB_TOKEN doesn't start a new CI run; the snapshot was already tested above.
+  weather-snapshot:
+    needs: test
+    if: ${{ needs.test.outputs.weather-recorded == 'true' && github.event_name != 'pull_request' && github.ref_type == 'branch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: weather-snapshot
+          path: tests/fixtures/weather
+      - name: Commit the snapshot
+        run: |
+          git add tests/fixtures/weather/open-meteo-snapshot.json
+          if git diff --cached --quiet; then echo "Snapshot unchanged"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Record the Open-Meteo weather snapshot"
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
 
   chart:
     runs-on: ubuntu-latest

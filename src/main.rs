@@ -83,12 +83,12 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `HQ_WEATHER=open-meteo` turns on live weather (`HQ_OPEN_METEO_URL` overrides the endpoint);
-/// unset keeps the demo forecast.
+/// Live weather from Open-Meteo by default (`HQ_OPEN_METEO_URL` overrides the endpoint);
+/// `HQ_WEATHER=demo` serves the demo forecast instead and makes no outbound calls.
 fn weather_from_env(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Option<weather::Weather>> {
     match std::env::var("HQ_WEATHER").unwrap_or_default().as_str() {
-        "" | "demo" => Ok(None),
-        "open-meteo" => {
+        "demo" => Ok(None),
+        "" | "open-meteo" => {
             let url = std::env::var("HQ_OPEN_METEO_URL")
                 .ok()
                 .filter(|u| !u.is_empty())
@@ -96,7 +96,7 @@ fn weather_from_env(settings: &Settings, clock: home_hq::Clock) -> anyhow::Resul
             let w = weather::Weather::new(settings, &url, weather::http_fetch()?, clock)?;
             match w.request_url() {
                 Some(_) => tracing::info!(endpoint = %url, "weather from Open-Meteo"),
-                None => tracing::warn!("HQ_WEATHER=open-meteo but settings have no location: weather is off"),
+                None => tracing::warn!("settings have no location: weather is off"),
             }
             Ok(Some(w))
         }
