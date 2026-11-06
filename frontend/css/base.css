@@ -285,6 +285,8 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .demo-weather { margin-top: 10px; overflow-wrap: anywhere; }
 .demo-weather p { margin: 8px 0; }
 .demo-weather-city { color: #fff; }
+.demo-weather-toggle { padding: 6px 0; margin: -6px 0; background: none; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.demo-weather-toggle:hover, .demo-weather-toggle:focus-visible { color: #fff; }
 .demo-weather-qr { line-height: 0; margin-top: 10px; }
 .demo-weather-qr svg { max-width: 100%; height: auto; }
 .demo-test { display: flex; gap: 8px; margin-top: 10px; }

@@ -234,8 +234,8 @@
     var url = 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(loc.lat) + '&mlon=' + encodeURIComponent(loc.lon) + '#map=12/' + encodeURIComponent(loc.lat) + '/' + encodeURIComponent(loc.lon);
     var name = typeof loc.name === 'string' ? loc.name.trim() : '';
     return '<p>Weather location · ' + (name ? '<b class="demo-weather-city">' + App.esc(name) + '</b> · ' : '') +
-      'Open-Meteo<br>Latitude, longitude: <b>' + App.esc(coords) + '</b></p>' +
-      '<div class="demo-test"><button data-weather-map data-map-url="' + App.esc(url) + '" aria-expanded="false" aria-controls="demoWeatherMap">Show map QR code</button></div>' +
+      'Open-Meteo<br>Latitude, longitude: <b>' + App.esc(coords) + '</b> · ' +
+      '<button class="demo-weather-toggle" data-weather-map data-map-url="' + App.esc(url) + '" aria-expanded="false" aria-controls="demoWeatherMap">Show QR</button></p>' +
       '<div id="demoWeatherMap" hidden><p>Scan to view the map on your phone. Your phone needs internet access.</p>' +
       '<div class="demo-weather-qr" role="img" aria-label="QR code to open the weather location in OpenStreetMap"></div></div>';
   }
@@ -320,7 +320,7 @@
       if (show && !map.querySelector('svg')) map.querySelector('.demo-weather-qr').innerHTML = App.share.qrSvg(b.getAttribute('data-map-url'), 180);
       map.hidden = !show;
       b.setAttribute('aria-expanded', String(show));
-      b.textContent = show ? 'Hide map QR code' : 'Show map QR code';
+      b.textContent = show ? 'Hide QR' : 'Show QR';
       return;
     }
     if (b.hasAttribute('data-adb')) {
