@@ -8,7 +8,7 @@
     var s = V.show && V.show.current, on = s && s.photos[0].fav;
     var b = V.el.querySelector('[data-fav]');
     b.classList.toggle('is-on', !!on);
-    b.querySelector('span').textContent = on ? 'Favourite' : 'Favourite';
+    b.querySelector('span').textContent = on ? 'Favorite' : 'Favorite';
   }
 
   function open(opts) {
@@ -31,7 +31,7 @@
           }).join('') + '</div></div>' +
           '<div class="ph-bottom">' +
           '  <button class="ph-btn" data-prev>' + App.icon('left', 30) + '</button>' +
-          '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favourite</span></button>' +
+          '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favorite</span></button>' +
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
           '</div></div>';
         V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: V.layout, interval: 15000, onChange: function () { setTimeout(heart); } });
@@ -52,7 +52,7 @@
             p.fav = !p.fav;
             heart();
             App.write('state', 'PATCH', '/photos/' + p.id, { fav: p.fav });
-            App.toast(p.fav ? 'Added to favourites · it’ll show up more often' : 'Removed from favourites', { icon: 'heart', ms: 2500 });
+            App.toast(p.fav ? 'Added to favorites · it’ll show up more often' : 'Removed from favorites', { icon: 'heart', ms: 2500 });
           }
         });
       }

@@ -19,7 +19,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 
 // A 1x1 PNG for every photo; the test checks which photo id is on screen, not the pixels.
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-// Landscape and portrait, a favourite, none on today's date (keeps the queue order random).
+// Landscape and portrait, a favorite, none on today's date (keeps the queue order random).
 const PHOTOS = Array.from({ length: 8 }, (_, i) => ({
   id: 'p' + (i + 1), date: '2020-0' + ((i % 6) + 1) + '-1' + i, o: i % 3 === 2 ? 'p' : 'l',
   place: 'Place ' + (i + 1), from: 'a', tag: 't' + (i % 2), fav: i === 0,
