@@ -17,3 +17,8 @@ app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | qu
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
 {{- end -}}
+
+{{- /* Persistence is on when enabled and there is a key: without HQ_KEY the app writes nothing. */}}
+{{- define "home-hq.persistence" -}}
+{{- if and .Values.persistence.enabled .Values.key.existingSecret -}}true{{- end -}}
+{{- end -}}
