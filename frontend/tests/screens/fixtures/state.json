@@ -1,0 +1,448 @@
+{
+  "people": [
+    {
+      "id": "alex",
+      "name": "Alex",
+      "color": "#2D5BFF",
+      "rgb": "45 91 255",
+      "ink": "#FFFFFF",
+      "tracked": true
+    },
+    {
+      "id": "sam",
+      "name": "Sam",
+      "color": "#E4007C",
+      "rgb": "228 0 124",
+      "ink": "#FFFFFF",
+      "tracked": true
+    }
+  ],
+  "stores": [
+    {
+      "id": "grocer",
+      "name": "Supermarket"
+    },
+    {
+      "id": "market",
+      "name": "Market"
+    }
+  ],
+  "catOrder": {
+    "all": [
+      "Produce",
+      "Bakery",
+      "Meat & Fish",
+      "Dairy & Eggs",
+      "Pantry",
+      "Frozen",
+      "Snacks",
+      "Household"
+    ],
+    "grocer": [
+      "Produce",
+      "Bakery",
+      "Meat & Fish",
+      "Dairy & Eggs",
+      "Pantry",
+      "Frozen",
+      "Snacks",
+      "Household"
+    ],
+    "market": [
+      "Produce",
+      "Meat & Fish",
+      "Bakery",
+      "Dairy & Eggs",
+      "Pantry",
+      "Frozen",
+      "Snacks",
+      "Household"
+    ]
+  },
+  "catalog": [
+    [
+      "Apples",
+      "Produce"
+    ],
+    [
+      "Avocados",
+      "Produce"
+    ],
+    [
+      "Bananas",
+      "Produce"
+    ],
+    [
+      "Spinach",
+      "Produce"
+    ],
+    [
+      "Broccoli",
+      "Produce"
+    ],
+    [
+      "Carrots",
+      "Produce"
+    ],
+    [
+      "Garlic",
+      "Produce"
+    ],
+    [
+      "Lemons",
+      "Produce"
+    ],
+    [
+      "Onions",
+      "Produce"
+    ],
+    [
+      "Potatoes",
+      "Produce"
+    ],
+    [
+      "Tomatoes",
+      "Produce"
+    ],
+    [
+      "Bread",
+      "Bakery"
+    ],
+    [
+      "Croissants",
+      "Bakery"
+    ],
+    [
+      "Wraps",
+      "Bakery"
+    ],
+    [
+      "Chicken breasts",
+      "Meat & Fish"
+    ],
+    [
+      "Mince",
+      "Meat & Fish"
+    ],
+    [
+      "Salmon fillets",
+      "Meat & Fish"
+    ],
+    [
+      "Cod",
+      "Meat & Fish"
+    ],
+    [
+      "Butter",
+      "Dairy & Eggs"
+    ],
+    [
+      "Cheese",
+      "Dairy & Eggs"
+    ],
+    [
+      "Eggs",
+      "Dairy & Eggs"
+    ],
+    [
+      "Yogurt",
+      "Dairy & Eggs"
+    ],
+    [
+      "Milk",
+      "Dairy & Eggs"
+    ],
+    [
+      "Coffee beans",
+      "Pantry"
+    ],
+    [
+      "Olive oil",
+      "Pantry"
+    ],
+    [
+      "Pasta",
+      "Pantry"
+    ],
+    [
+      "Rice",
+      "Pantry"
+    ],
+    [
+      "Tea bags",
+      "Pantry"
+    ],
+    [
+      "Frozen peas",
+      "Frozen"
+    ],
+    [
+      "Ice cream",
+      "Frozen"
+    ],
+    [
+      "Crackers",
+      "Snacks"
+    ],
+    [
+      "Dark chocolate",
+      "Snacks"
+    ],
+    [
+      "Washing-up liquid",
+      "Household"
+    ],
+    [
+      "Bin bags",
+      "Household"
+    ],
+    [
+      "Kitchen roll",
+      "Household"
+    ],
+    [
+      "Toilet roll",
+      "Household"
+    ]
+  ],
+  "usuals": [
+    "Milk",
+    "Eggs",
+    "Bananas",
+    "Bread",
+    "Apples",
+    "Coffee beans",
+    "Yogurt",
+    "Cheese",
+    "Butter",
+    "Spinach"
+  ],
+  "groceries": [
+    {
+      "id": "demo-g0",
+      "name": "Milk",
+      "cat": "Dairy & Eggs",
+      "qty": 2,
+      "store": "grocer",
+      "note": "",
+      "done": false
+    },
+    {
+      "id": "demo-g1",
+      "name": "Bananas",
+      "cat": "Produce",
+      "qty": 1,
+      "store": "grocer",
+      "note": "",
+      "done": false
+    },
+    {
+      "id": "demo-g2",
+      "name": "Bread",
+      "cat": "Bakery",
+      "qty": 1,
+      "store": "grocer",
+      "note": "",
+      "done": false
+    },
+    {
+      "id": "demo-g3",
+      "name": "Coffee beans",
+      "cat": "Pantry",
+      "qty": 1,
+      "store": "grocer",
+      "note": "",
+      "done": false
+    },
+    {
+      "id": "demo-g4",
+      "name": "Spinach",
+      "cat": "Produce",
+      "qty": 1,
+      "store": "grocer",
+      "note": "",
+      "done": true
+    },
+    {
+      "id": "demo-g5",
+      "name": "Eggs",
+      "cat": "Dairy & Eggs",
+      "qty": 12,
+      "store": "grocer",
+      "note": "",
+      "done": false
+    }
+  ],
+  "photos": [
+    {
+      "id": "demo0",
+      "o": "l",
+      "date": "2025-11-05",
+      "place": "Lisbon",
+      "from": "alex",
+      "fav": true,
+      "tag": "2025-11-05"
+    },
+    {
+      "id": "demo1",
+      "o": "l",
+      "date": "2024-11-05",
+      "place": "Sintra",
+      "from": "sam",
+      "fav": false,
+      "tag": "2024-11-05"
+    },
+    {
+      "id": "demo2",
+      "o": "p",
+      "date": "2026-08-14",
+      "place": "Porto",
+      "from": "alex",
+      "fav": false,
+      "tag": "2026-08-14"
+    },
+    {
+      "id": "demo3",
+      "o": "l",
+      "date": "2026-07-05",
+      "place": "",
+      "from": "sam",
+      "fav": false,
+      "tag": "2026-07-05"
+    },
+    {
+      "id": "demo4",
+      "o": "l",
+      "date": "2026-05-26",
+      "place": "Algarve",
+      "from": "alex",
+      "fav": true,
+      "tag": "2026-05-26"
+    },
+    {
+      "id": "demo5",
+      "o": "p",
+      "date": "2026-04-16",
+      "place": "",
+      "from": "sam",
+      "fav": false,
+      "tag": "2026-04-16"
+    },
+    {
+      "id": "demo6",
+      "o": "l",
+      "date": "2026-03-07",
+      "place": "Évora",
+      "from": "alex",
+      "fav": false,
+      "tag": "2026-03-07"
+    },
+    {
+      "id": "demo7",
+      "o": "l",
+      "date": "2026-01-26",
+      "place": "Cascais",
+      "from": "sam",
+      "fav": false,
+      "tag": "2026-01-26"
+    }
+  ],
+  "hasHome": true,
+  "scenes": [
+    {
+      "id": "scene.movie_night",
+      "name": "Movie night",
+      "icon": "film"
+    },
+    {
+      "id": "scene.good_night",
+      "name": "Good night",
+      "icon": "moon"
+    },
+    {
+      "id": "scene.all_off",
+      "name": "All off",
+      "icon": "bolt"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "camera.front_door",
+      "name": "Front door"
+    },
+    {
+      "id": "camera.garden",
+      "name": "Garden"
+    }
+  ],
+  "bins": {
+    "types": {
+      "general": {
+        "name": "Black",
+        "what": "General waste",
+        "color": "#222222",
+        "lid": "#222222"
+      },
+      "paper": {
+        "name": "Blue",
+        "what": "Paper and card",
+        "color": "#1F6FEB"
+      },
+      "recycling": {
+        "name": "Yellow",
+        "what": "Plastic and metal",
+        "color": "#F2C200"
+      }
+    },
+    "next": [
+      {
+        "date": "2026-11-06",
+        "bins": [
+          "general",
+          "paper"
+        ]
+      },
+      {
+        "date": "2026-11-13",
+        "bins": [
+          "general",
+          "recycling"
+        ]
+      },
+      {
+        "date": "2026-11-20",
+        "bins": [
+          "general",
+          "paper"
+        ]
+      },
+      {
+        "date": "2026-11-27",
+        "bins": [
+          "general",
+          "recycling"
+        ]
+      }
+    ],
+    "out": null
+  },
+  "notes": [
+    {
+      "id": "demonote2",
+      "text": "Parcel is with the neighbour at no. 12",
+      "from": "sam",
+      "to": "alex",
+      "created": 1793899200000,
+      "expires": null
+    },
+    {
+      "id": "demonote1",
+      "text": "Plumber coming Thursday between 9 and 11",
+      "from": "alex",
+      "to": "all",
+      "created": 1793896200000,
+      "expires": null
+    }
+  ],
+  "awayOffMinutes": 0
+}
