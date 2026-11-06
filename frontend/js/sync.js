@@ -34,6 +34,7 @@
       return r;
     }, function (err) {
       wrote[source] = Date.now();
+      delete last[source]; // home-kiosk patch: re-apply the server's copy even if unchanged, dropping the optimistic edit
       App.toast('Couldn’t save · ' + App.esc(err.message), { tone: 'error', icon: 'bolt' });
       refresh(source);
       throw err;
@@ -128,7 +129,7 @@
     var started = Date.now();
     due[source] = started + PERIOD[source];
     return request('GET', '/' + (source === 'state' ? 'state' : source)).then(function (data) {
-      if (wrote[source] && wrote[source] >= started) return; // a local write raced this poll
+      if (wrote[source] && wrote[source] > started) return; // a local write raced this poll (home-kiosk patch: > so the refresh after a failed write, same ms, applies)
       apply(source, data);
     }, function (err) {
       if (source === 'home') { D.homeOnline = false; D.homeError = err.message; }

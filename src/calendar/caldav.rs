@@ -197,6 +197,10 @@ impl CalDavSource {
             for e in &mut events {
                 e.id = id.to_string();
                 e.local = true;
+                // The frame says "Added on this display" itself; phones still see the description.
+                if e.notes.as_deref() == Some(vevent::DESCRIPTION) {
+                    e.notes = None;
+                }
                 if let Some(p) = &people {
                     e.people = p.clone();
                 }
@@ -240,7 +244,7 @@ impl CalDavSource {
                     cache.calendars[i] = Some(objects);
                 }
                 Err(e) => {
-                    tracing::warn!(calendar = cal.number, error = %e, "CalDAV calendar failed; keeping its last events");
+                    tracing::warn!(calendar = cal.number, error = ?e, "CalDAV calendar failed; keeping its last events");
                     errors.push(format!("Calendar {}: {e}", cal.number));
                 }
             }
@@ -274,7 +278,7 @@ impl CalDavSource {
     }
 
     fn backend(&self, cal: &Calendar, e: DavError) -> CalendarError {
-        tracing::warn!(calendar = cal.number, error = %e, "CalDAV write failed");
+        tracing::warn!(calendar = cal.number, error = ?e, "CalDAV write failed");
         CalendarError::Backend(e.to_string())
     }
 }
@@ -331,7 +335,7 @@ impl CalendarSource for CalDavSource {
         // Writability is only known after discovery, so find out before choosing.
         for cal in self.calendars.iter().filter(|c| !c.read_only && c.info().is_none()) {
             if let Err(e) = cal.discover().await {
-                tracing::warn!(calendar = cal.number, error = %e, "CalDAV discovery failed");
+                tracing::warn!(calendar = cal.number, error = ?e, "CalDAV discovery failed");
             }
         }
         let targets: Vec<Target> = self

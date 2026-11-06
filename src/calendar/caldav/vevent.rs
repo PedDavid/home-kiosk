@@ -14,6 +14,9 @@ pub const UID_SUFFIX: &str = "@home-hq";
 
 const PEOPLE_PROP: &str = "X-HOME-HQ-PEOPLE";
 
+/// The `DESCRIPTION` of events added on the frame, as upstream writes to Google Calendar.
+pub const DESCRIPTION: &str = "Added on the Home HQ frame";
+
 /// The `UID` for an event added on the frame with this id.
 pub fn uid_for(id: &str) -> String {
     format!("{id}{UID_SUFFIX}")
@@ -77,7 +80,7 @@ pub fn serialize(e: &NewEvent, now: DateTime<Utc>) -> String {
         format!("DTSTART:{}", stamp(e.start)),
         format!("DTEND:{}", stamp(e.end)),
         format!("SUMMARY:{}", escape(&e.title)),
-        "DESCRIPTION:Added on the Home HQ frame".into(),
+        format!("DESCRIPTION:{DESCRIPTION}"),
         format!("{PEOPLE_PROP}:{}", escape(&e.people.join(","))),
         "END:VEVENT".into(),
         "END:VCALENDAR".into(),

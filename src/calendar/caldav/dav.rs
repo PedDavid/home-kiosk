@@ -71,7 +71,8 @@ pub enum DavError {
 impl fmt::Display for DavError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DavError::Unreachable(e) => write!(f, "calendar server not reachable ({e})"),
+            // The cause (DNS, TLS, timeout) is in the logs: too long for a toast.
+            DavError::Unreachable(_) => f.write_str("calendar server not reachable"),
             DavError::Unauthorized => f.write_str("the calendar server refused the credentials"),
             DavError::Conflict => f.write_str("the event changed on the calendar server, try again"),
             DavError::NotFound => f.write_str("calendar not found on the server"),
