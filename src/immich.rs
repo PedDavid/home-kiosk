@@ -1,4 +1,4 @@
-//! Immich favourites, translated to the dashboard's photo contract.
+//! Immich favorites, translated to the dashboard's photo contract.
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, bail};
@@ -95,7 +95,7 @@ impl Immich {
                 return Ok(photos);
             }
         }
-        bail!("Immich favourites exceed the 10000-photo limit")
+        bail!("Immich favorites exceed the 10000-photo limit")
     }
 
     async fn contains(&self, id: &str) -> anyhow::Result<bool> {
@@ -136,7 +136,7 @@ impl Immich {
         Ok(Some((content_type, bytes)))
     }
 
-    pub async fn favourite(&self, id: &str, fav: bool) -> anyhow::Result<bool> {
+    pub async fn favorite(&self, id: &str, fav: bool) -> anyhow::Result<bool> {
         if !self.contains(id).await? {
             return Ok(false);
         }

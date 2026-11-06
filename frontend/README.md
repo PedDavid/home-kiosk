@@ -160,7 +160,7 @@ where it can be put back, and **Clear** empties the ticked ones (with Undo). Pho
 ### Photos
 
 The Photos tab is a slideshow of everything uploaded, with "On this day" photos from earlier years.
-The heart marks a favourite, which comes up more often. Adding and deleting photos is done on a
+The heart marks a favorite, which comes up more often. Adding and deleting photos is done on a
 phone; see [Adding photos](#adding-photos).
 
 ### Notes
@@ -411,7 +411,7 @@ limited to your computer's subnet (it won't start until one is saved). These fra
 On a phone, open `/upload` (or **Photos** on the phone page). Pick **Added by**, an optional place,
 and the photos. They're resized on the phone, and the location and other hidden metadata are
 removed; only the date taken is kept. The same page lists every photo with a delete button. On the
-frame, the heart on the Photos tab marks favourites, which come up more often.
+frame, the heart on the Photos tab marks favorites, which come up more often.
 
 **Share from the gallery (Android):** open the phone page in Chrome and choose **Install app** (or
 **Add to Home screen**) from the menu, once per phone. **Home HQ** then appears when you tap
