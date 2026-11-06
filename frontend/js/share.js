@@ -1,7 +1,8 @@
 // Share photo (Photos tab): an icon-only Share button beside the full-screen button, there in full
-// screen too, opens a sheet with a QR code that opens the photo shown in Immich. The backend sets
-// `shareUrl` (<HQ_IMMICH_PUBLIC_URL>/photos/<assetId>) on Immich photos when HQ_IMMICH_PUBLIC_URL
-// is set; any other photo has none and the button is hidden.
+// screen too, opens a sheet with a QR code that opens the photo shown in the Immich phone app
+// (`shareAppUrl`, immich://asset?id=<assetId>) or, switched to Web, in Immich on the web
+// (`shareUrl`, <HQ_IMMICH_PUBLIC_URL>/photos/<assetId>). The backend sets both on Immich photos
+// when HQ_IMMICH_PUBLIC_URL is set; any other photo has neither and the button is hidden.
 // The QR is a plain link, never a key: whoever scans it signs in to Immich with their own login.
 // It's drawn here, offline, by a bundled library. No QR service is ever called.
 import { qrcode } from 'qrcode-generator';
@@ -37,6 +38,26 @@ import { qrcode } from 'qrcode-generator';
     else if (App.idleFor() >= App.idle.home) closeOpen();
   });
 
+  // What the QR opens: the Immich phone app (immich://asset?id=…) or the web page. Remembered per
+  // screen; the app is the default since household phones have it.
+  var MODES = {
+    app: { label: 'Immich app', note: 'Opens it in the Immich app on your phone. No app? Switch to Web.' },
+    web: { label: 'Web', note: 'Opens it in your phone’s browser. Sign in with your own Immich account.' }
+  };
+  var mode = 'app';
+  try { if (localStorage.getItem('hq-share-qr') === 'web') mode = 'web'; } catch (e) {}
+
+  function qrFor(p) { return mode === 'app' && p.shareAppUrl ? p.shareAppUrl : p.shareUrl; }
+
+  // The web link as text. Clickable in a browser; on the frame (the kiosk app) it's plain text,
+  // because following a link there would take the dashboard itself away.
+  function webLink(p) {
+    var text = App.esc(p.shareUrl.replace(/^https?:\/\//, ''));
+    return window.HomeHQKiosk
+      ? '<span class="share-link">' + text + '</span>'
+      : '<a class="share-link" href="' + App.esc(p.shareUrl) + '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
+  }
+
   function open(show) {
     var p = current(show);
     if (!p || !p.shareUrl) return;
@@ -49,14 +70,37 @@ import { qrcode } from 'qrcode-generator';
         '<div class="share-info">' +
           '<div class="label">Share photo</div>' +
           '<h2 class="serif sheet-h">Scan to open in Immich</h2>' +
+          (p.shareAppUrl ? '<div class="seg share-mode">' + Object.keys(MODES).map(function (k) {
+            return '<button data-qr="' + k + '">' + MODES[k].label + '</button>';
+          }).join('') + '</div>' : '') +
           '<div class="share-thumb"><img src="' + App.photoSrc(p) + '" alt=""></div>' +
           '<div class="share-date serif">' + m.date + (m.place ? '<span> · ' + App.esc(m.place) + '</span>' : '') + '</div>' +
-          '<p class="share-note">Sign in with your own Immich account to see it.</p>' +
+          '<p class="share-note"></p>' +
         '</div>' +
-        '<div class="share-qr" role="img" aria-label="QR code that opens this photo in Immich">' + qrSvg(p.shareUrl, QR_PX) + '</div>' +
-        '<div class="sheet-actions share-actions"><button class="btn btn--solid" data-close>Close</button></div>' +
+        '<div class="share-qr" role="img"></div>' +
+        '<div class="sheet-actions share-actions">' + webLink(p) + '<button class="btn btn--solid" data-close>Close</button></div>' +
       '</div>',
-      { cls: 'sheet--share', onClose: function () { closeOpen = null; if (App.current === 'photos') show.start(); } }
+      {
+        cls: 'sheet--share',
+        onClose: function () { closeOpen = null; if (App.current === 'photos') show.start(); },
+        onMount: function (sheet) {
+          function draw() {
+            var app = mode === 'app' && !!p.shareAppUrl;
+            sheet.querySelector('.share-qr').innerHTML = qrSvg(qrFor(p), QR_PX);
+            sheet.querySelector('.share-qr').setAttribute('aria-label', 'QR code that opens this photo in ' + (app ? 'the Immich app' : 'Immich on the web'));
+            sheet.querySelector('.share-note').textContent = MODES[app ? 'app' : 'web'].note;
+            App.$$('[data-qr]', sheet).forEach(function (b) { b.classList.toggle('is-on', b.dataset.qr === mode); });
+          }
+          App.$$('[data-qr]', sheet).forEach(function (b) {
+            b.addEventListener('click', function () {
+              mode = b.dataset.qr;
+              try { localStorage.setItem('hq-share-qr', mode); } catch (e) {}
+              draw();
+            });
+          });
+          draw();
+        }
+      }
     );
   }
 

@@ -403,6 +403,16 @@ async fn immich_photos_get_a_share_url_when_the_public_url_is_set() {
 }
 
 #[tokio::test]
+async fn immich_photos_get_an_app_link_too() {
+    let app = sharing_app(Some("https://photos.example.com")).await;
+    let state = json_of(&app, get("/api/state")).await;
+    for p in state["photos"].as_array().unwrap() {
+        let want = (p["id"] == "demo0").then(|| format!("immich://asset?id={ASSET}"));
+        assert_eq!(p["shareAppUrl"].as_str().map(String::from), want, "{p}");
+    }
+}
+
+#[tokio::test]
 async fn no_share_url_without_the_public_url() {
     let app = sharing_app(None).await;
     let urls = share_urls(&json_of(&app, get("/api/state")).await);
