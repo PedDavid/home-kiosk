@@ -3,6 +3,7 @@
 pub mod api;
 pub mod assets;
 pub mod auth;
+pub mod calendar;
 pub mod demo;
 pub mod device_auth;
 pub mod grant_store;
@@ -29,6 +30,8 @@ pub struct AppState {
     pub clock: Clock,
     /// Live weather. `None` keeps the demo forecast.
     pub weather: Option<Arc<weather::Weather>>,
+    /// Calendar events. Not configured: `/api/calendar` serves the demo calendar.
+    pub calendar: Arc<dyn calendar::CalendarSource>,
 }
 
 impl AppState {
@@ -41,11 +44,18 @@ impl AppState {
             demo: Arc::new(Mutex::new(demo)),
             clock,
             weather: None,
+            calendar: Arc::new(calendar::NotConfigured),
         }
     }
 
     pub fn with_weather(mut self, weather: weather::Weather) -> Self {
         self.weather = Some(Arc::new(weather));
+        self
+    }
+
+    /// Uses `source` for the calendar (when it reports itself configured).
+    pub fn with_calendar(mut self, source: Arc<dyn calendar::CalendarSource>) -> Self {
+        self.calendar = source;
         self
     }
 

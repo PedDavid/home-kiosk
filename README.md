@@ -25,6 +25,12 @@ every route the frontend calls. The responses use upstream's shapes, filled with
 - The alert WebSocket (`/api/alerts/ws`) and the polling fallback (`/api/alerts`) answer with
   `seq: 0`, and nothing raises alerts yet.
 
+**Calendar (delivered).** With `HQ_CALENDARS` set, "Next up", the people lanes and the calendar
+views show real ICS feeds through the `CalendarSource` port ([`src/calendar/`](src/calendar/)),
+with recurrences, exceptions, timezones and per-person attribution. Reading iCalendar is its own
+crate, [`crates/ical-expand`](crates/ical-expand/), whose README explains why it isn't a library. Without it, the demo events
+stay.
+
 Each later delivery replaces one slice of `demo.rs` with a real port and adapter:
 
 | Delivery | Replaces |
@@ -56,6 +62,7 @@ empty `frontend/dist`.
 | `HQ_TLS_CERT` / `HQ_TLS_KEY` | unset (no TLS) | PEM certificate chain and key. Both set adds a TLS listener; the files are re-read every minute and a renewed certificate is used without a restart |
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
+| `HQ_CALENDARS` | unset (demo events) | Calendar feeds (secret): a JSON list of `{ "url": "…", "people": ["alex"] \| "all" }`. See [Calendars](charts/home-hq/README.md#calendars) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
 | `HQ_WEATHER` | `open-meteo` | `open-meteo` serves Open-Meteo's forecast for `settings.location`, cached 15 minutes; a failed refresh serves the last forecast. With no `location`, `/api/weather` answers `{ "none": true }`. Needs egress to `api.open-meteo.com`. `demo` serves the generated demo forecast and makes no outbound calls (CI, offline development) |
 | `HQ_OPEN_METEO_URL` | `https://api.open-meteo.com/v1/forecast` | Forecast endpoint, e.g. a self-hosted Open-Meteo |
@@ -113,7 +120,7 @@ the grant so you can retry.
 A grant is shared by this Home HQ instance and all its frames. By default it is held in memory
 only: restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
 To keep it across restarts, set `HQ_STATE_DIR` to a writable directory (the Helm chart's
-`persistence` option does this). Home HQ then stores the issued key, its expiry and scope in
+`persistence` option, on by default with a dashboard key, does this). Home HQ then stores the issued key, its expiry and scope in
 `$HQ_STATE_DIR/immich-grant.bin`, encrypted with AES-256-GCM under a key derived from `HQ_KEY` and
 bound to the two configured URLs, and reloads it on start. Without `HQ_KEY` nothing is written.
 A stored grant that has expired or can't be decrypted (a changed `HQ_KEY` or URL) is deleted on

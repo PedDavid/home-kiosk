@@ -2,6 +2,8 @@
 imagePullSecrets: [{ name: ghcr-pull }]
 key:
   existingSecret: home-hq
+calendars:
+  existingSecret: home-hq
 ingress:
   host: home-hq.lab.example.com
   tls:
@@ -26,7 +28,6 @@ lanService:
     metallb.io/loadBalancerIPs: 192.168.8.56
     external-dns.kubernetes.io/hostname: home-hq.lab.example.com
 persistence:
-  enabled: true
   storageClass: local-path
   annotations:
     helm.sh/resource-policy: keep

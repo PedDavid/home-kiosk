@@ -87,3 +87,20 @@
 .stage.is-photo-fullscreen > .demo { display: none; }
 .stage.is-photo-fullscreen .photos .slide::after { display: none; }
 .stage.is-photo-fullscreen .ph-exit { display: inline-flex; }
+
+/* Remove-from-favorites confirmation: the photo on the left, the question on the right. */
+.sheet--unfav { width: 760px; }
+.ph-unfav { display: flex; gap: 28px; align-items: center; }
+.ph-unfav > div { padding-right: 40px; }
+.ph-unfav-img { flex: none; width: 220px; height: 220px; object-fit: cover; border-radius: 18px; background: var(--paper-2); }
+.ph-unfav .sheet-h { font-size: 46px; }
+.ph-unfav .sheet-actions { justify-content: flex-start; }
+.ph-unfav-hint { margin: 14px 0 0; font-size: 17px; color: var(--ink-2); }
+/* Hold-to-remove button: fills with the heart pink left to right over the hold (--hold, set by App.hold). */
+.ph-hold { position: relative; overflow: hidden; }
+.ph-hold > * { position: relative; z-index: 1; }
+.ph-hold::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 0;
+  background: rgba(228, 0, 124, .3); transition: width .15s ease-out;
+}
+.ph-hold.is-holding::before { width: 100%; transition: width var(--hold, 1s) linear; }

@@ -9,6 +9,6 @@ WARNING: key.existingSecret is not set, so the dashboard is open to anyone who c
 {{- end }}
 {{- if and .Values.persistence.enabled (not .Values.key.existingSecret) }}
 
-WARNING: persistence is enabled but key.existingSecret is not set. Without HQ_KEY the Immich
-grant is never written to disk, so pairing is still lost on every restart.
+Note: persistence is skipped because key.existingSecret is not set: without HQ_KEY the Immich
+grant is never written to disk, so pairing is lost on every restart.
 {{- end }}
