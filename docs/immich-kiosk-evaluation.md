@@ -1,7 +1,7 @@
 # Evaluation: Immich Kiosk as Home HQ's photo viewer
 
 **Status:** Research, not validated on the device
-**Issue:** [#10](https://github.com/PedDavid/home-kiosk/issues/10). Related: [#7](https://github.com/PedDavid/home-kiosk/issues/7) (Home → Photos continuity), [#8](https://github.com/PedDavid/home-kiosk/issues/8) (metadata readability), PR [#1](https://github.com/PedDavid/home-kiosk/pull/1) (Immich favourites and `immich-device-auth`), PR [#9](https://github.com/PedDavid/home-kiosk/pull/9) (kiosk APK)
+**Issue:** [#10](https://github.com/PedDavid/home-kiosk/issues/10). Related: [#7](https://github.com/PedDavid/home-kiosk/issues/7) (Home → Photos continuity), [#8](https://github.com/PedDavid/home-kiosk/issues/8) (metadata readability), PR [#1](https://github.com/PedDavid/home-kiosk/pull/1) (Immich favorites and `immich-device-auth`), PR [#9](https://github.com/PedDavid/home-kiosk/pull/9) (kiosk APK)
 **Date:** 2026-11-06
 
 ## Summary
@@ -51,15 +51,15 @@ need a check on the frame.
   the dashboard's own LAN address, `192.168.8.56:443`, where the Rust app terminates TLS. It has
   no internet access.
 - **Photos** (PR #1, not merged; the "latest custom layout prototype" the issue calls shelved):
-  - `src/immich.rs` turns Immich favourites into upstream's photo contract, proxies thumbnails
-    and previews through `/api/photos/:id`, and only serves assets that are listed favourites.
+  - `src/immich.rs` turns Immich favorites into upstream's photo contract, proxies thumbnails
+    and previews through `/api/photos/:id`, and only serves assets that are listed favorites.
   - `src/device_auth.rs` runs the RFC 8628 flow against `immich-device-auth`. The grant (scope
     `asset.read asset.view asset.update`, 1-day TTL, hard cap of 7 days) lives only in memory. It
     is dropped at expiry even if the broker is down. Disconnect revokes it through the broker.
     The browser only ever sees `status`, `user_code`, the verification URI and a QR code that the
     server generates.
   - The frontend (`photos.js`, `slideshow.js`) has the Auto, Cover, Pair, Collage and Polaroid
-    layouts, a blur fill for portraits, captions, favourites, the 8-second quiet frame and an
+    layouts, a blur fill for portraits, captions, favorites, the 8-second quiet frame and an
     explicit full screen that holds off sleep.
 - **Navigation, idle and alerts** live in the parent page (`app.js`, `sync.js`): a document-level
   `pointerdown` resets the idle timer, the clock picks ambient, night or off, and Home Assistant
@@ -209,14 +209,14 @@ What Kiosk supports:
   missing")`, at start-up and during a reload. "Disconnect by blanking the key" would crash the
   container.
 - **The key isn't scoped to the slideshow.** `GET /image/:imageID` fetches any asset ID with the
-  configured key, not just assets in the configured albums or favourites. Anyone who can reach
+  configured key, not just assets in the configured albums or favorites. Anyone who can reach
   Kiosk can read every asset the key can view.
 - **`immich_url` keeps only scheme and host.** Endpoints are built as `{scheme}://{host}/api/...`,
   so a path on `immich_url` is dropped. Whatever Kiosk calls has to be at the root of its own
   host and port.
 - **Requirements:** Immich v3.2.0 or newer (docs). Its full-feature permission list is long:
   asset, album, albumAsset, archive, face, memory, person, server.about, tag and user. A
-  favourites-only, view-only setup needs far fewer.
+  favorites-only, view-only setup needs far fewer.
 
 **Design that meets the issue's rules: Home HQ as an Immich gateway.**
 
@@ -239,11 +239,11 @@ frame ──TLS──▶ Home HQ :8443 ─Host: photos.home-hq…─▶ Kiosk :3
    key file to rewrite and no reload. The grant stays in Home HQ's memory, as in PR #1.
 5. **Allowlist:**
    - **Paths:** `api/server/{ping,version}`, `api/search/random` and `api/search/metadata` with
-     the favourites filter forced in the body, `api/assets/{id}` and
+     the favorites filter forced in the body, `api/assets/{id}` and
      `api/assets/{id}/thumbnail`.
    - **Asset IDs:** only IDs that `Immich::contains()` already accepts, so the `/image/:id`
      overreach is closed on the Immich side.
-   - **Writes:** a favourite `PUT` only if the like button is kept (`like_button_action: favorite`).
+   - **Writes:** a favorite `PUT` only if the like button is kept (`like_button_action: favorite`).
    - **Everything else** gets 403: albums, tags, archive, faces, people, users and downloads.
 6. **Kiosk's cache:** `kiosk.cache` and `prefetch` keep recent API responses and images in
    memory. After a disconnect, Home HQ should call Kiosk's `/cache/flush` over the internal
@@ -385,7 +385,7 @@ This is not legal advice, but the setup is a common one.
 | Navigation, idle, alerts | Native: one document | Workarounds: no touch events from the iframe |
 | Keys: backend only, expiry, revocation | Done (`device_auth.rs`), grant in memory | Needs a new gateway listener and allowlist |
 | Network and TLS | Nothing new | New hostname, SAN, DNS, Host routing, SSE proxying |
-| Sources | Favourites only (albums and memories not built) | Albums, people, tags, dates, memories, ratings, timelines, multi-user |
+| Sources | Favorites only (albums and memories not built) | Albums, people, tags, dates, memories, ratings, timelines, multi-user |
 | Presentation | Five layouts, Ken Burns, blur fill | Single, split views, transitions, smart zoom, burn-in protection |
 | Video and live photos | No | Yes (heavy for the A33) |
 | Offline | No | Offline mode with a service worker |
