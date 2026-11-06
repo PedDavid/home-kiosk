@@ -1,34 +1,34 @@
-//! iCalendar (RFC 5545) text in, the occurrences that overlap a time window out.
+//! An .ics file (iCalendar, RFC 5545, text) in, the occurrences that overlap a time window out.
 //!
-//! This is the part of Home HQ's calendar that knows iCalendar: it reads a feed, expands
+//! This is the part of Home HQ's calendar that knows iCalendar: it reads an .ics file, expands
 //! recurring events and normalises times to UTC. It knows nothing about the household (people,
 //! "Travel:" notes, merging calendars); the app does that on top of [`Occurrence`]s.
 //!
 //! ```
 //! use chrono::{TimeZone, Utc};
-//! let feed = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:swim\r\nSUMMARY:Swim\r\n\
+//! let ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:swim\r\nSUMMARY:Swim\r\n\
 //!     DTSTART;TZID=Europe/Lisbon:20261005T180000\r\nDTEND;TZID=Europe/Lisbon:20261005T190000\r\n\
 //!     RRULE:FREQ=WEEKLY\r\nEXDATE;TZID=Europe/Lisbon:20261012T180000\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
 //! let from = Utc.with_ymd_and_hms(2026, 10, 1, 0, 0, 0).unwrap();
 //! let to = Utc.with_ymd_and_hms(2026, 11, 1, 0, 0, 0).unwrap();
-//! let swims = ical_expand::expand(feed, from, to, chrono_tz::Europe::Lisbon).unwrap();
+//! let swims = ical_expand::expand(ics, from, to, chrono_tz::Europe::Lisbon).unwrap();
 //! // 5 and 19 October (summer time, 17:00 UTC), then 26 October in winter time (18:00 UTC);
 //! // the 12th is an EXDATE.
 //! let starts: Vec<_> = swims.iter().map(|o| o.time.instants(chrono_tz::UTC).0.to_rfc3339()).collect();
 //! assert_eq!(starts, ["2026-10-05T17:00:00+00:00", "2026-10-19T17:00:00+00:00", "2026-10-26T18:00:00+00:00"]);
 //! ```
 //!
-//! What it covers, for what family calendars (Google, iCloud, Outlook, Nextcloud) put in their
-//! feeds:
+//! What it covers, for what family calendars (Google, iCloud, Outlook, Nextcloud) put in their .ics
+//! files:
 //!
 //! - content lines with folding, quoted parameters and text escapes. A line or event that
-//!   doesn't parse is skipped, never the whole feed;
+//!   doesn't parse is skipped, never the whole file;
 //! - `RRULE` (expanded with the [`rrule`] crate), `RDATE` and `EXDATE` (TZID, UTC and DATE forms);
 //! - edited and cancelled instances (`RECURRENCE-ID`), including one moved into the window from
 //!   outside it, and cancelled series (`STATUS:CANCELLED`);
 //! - all-day and multi-day events (`VALUE=DATE`, `DTEND` or `DURATION`);
 //! - `TZID`s as IANA names, with vendor prefixes (`/mozilla.org/…/Europe/London`), or as common
-//!   Windows names (`GMT Standard Time`). Unknown names fall back to the feed's
+//!   Windows names (`GMT Standard Time`). Unknown names fall back to the file's
 //!   `X-WR-TIMEZONE`, then the caller's zone, which is also used for floating times;
 //! - daylight saving per RFC 5545 §3.3.5: recurrences keep their local wall time, a time in a
 //!   spring-forward gap moves forward by the gap, and an ambiguous autumn time takes the first
@@ -79,7 +79,7 @@ impl Time {
     }
 }
 
-/// One occurrence of an event. Text fields are unescaped but otherwise as the feed has them
+/// One occurrence of an event. Text fields are unescaped but otherwise as the .ics file has them
 /// (a `DESCRIPTION` may be HTML); empty ones are `None`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Occurrence {
@@ -96,16 +96,16 @@ pub struct NotICalendar;
 
 impl std::fmt::Display for NotICalendar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("not an iCal feed (no BEGIN:VCALENDAR)")
+        f.write_str("not an iCalendar file (no BEGIN:VCALENDAR)")
     }
 }
 
 impl std::error::Error for NotICalendar {}
 
-/// Expands every event in `text` into the occurrences overlapping `[from, to)`, in feed order.
+/// Expands every event in `text` into the occurrences overlapping `[from, to)`, in file order.
 ///
 /// `tz` is the caller's zone: floating times, all-day dates and unknown `TZID`s (after the
-/// feed's `X-WR-TIMEZONE`) are read in it. Fails only when the text isn't iCalendar at all.
+/// file's `X-WR-TIMEZONE`) are read in it. Fails only when the text isn't iCalendar at all.
 pub fn expand(text: &str, from: DateTime<Utc>, to: DateTime<Utc>, tz: Tz) -> Result<Vec<Occurrence>, NotICalendar> {
     let roots = parse_components(text);
     let cals: Vec<&Component> = roots.iter().filter(|c| c.name == "VCALENDAR").collect();
@@ -262,7 +262,7 @@ fn parse_components(text: &str) -> Vec<Component> {
             }
         }
     }
-    // A truncated feed: keep what was read.
+    // A truncated file: keep what was read.
     while let Some(c) = stack.pop() {
         match stack.last_mut() {
             Some(parent) => parent.children.push(c),
@@ -636,7 +636,7 @@ fn occurrences(ev: &VEvent, until: DateTime<Utc>, ctx: &Ctx) -> Vec<Dt> {
     let tz = rrule_tz(&ev.start);
     let dtstart = to_rrule_dt(&ev.start, tz);
 
-    // UNTIL is read here: feeds often give it in a form the rrule crate rejects (a local time,
+    // UNTIL is read here: exports often give it in a form the rrule crate rejects (a local time,
     // a date for a timed event), and RFC 5545 makes it inclusive whatever its form.
     let mut parts = Vec::new();
     let mut rule_until = None;
@@ -779,7 +779,7 @@ fn expand_calendar(cal: &Component, ctx: &Ctx, window: (DateTime<Utc>, DateTime<
         }
     }
     // Edited instances whose original slot wasn't generated (moved in from outside the window,
-    // or the master is missing from the feed) stand on their own.
+    // or the master is missing from the file) stand on their own.
     for list in overrides.values() {
         for (e, used) in list {
             if !used && !e.cancelled {

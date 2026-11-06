@@ -1,7 +1,7 @@
 //! The fixture table: what each iCalendar feature in `tests/fixtures/` expands to.
 //!
 //! Every case lists the occurrences (title, then UTC start/end or all-day dates) expected in a
-//! window. Add a case here for every feed quirk found in the wild.
+//! window. Add a case here for every .ics quirk found in the wild.
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
@@ -230,7 +230,7 @@ const CASES: &[Case] = &[
             "Outlook London 2026-11-10T11:00Z/2026-11-10T11:30Z",
             // No zone: the household's (Lisbon).
             "Floating 2026-11-10T13:00Z/2026-11-10T14:00Z",
-            // Not a known zone: the feed's X-WR-TIMEZONE (New York).
+            // Not a known zone: the file's X-WR-TIMEZONE (New York).
             "Unknown zone 2026-11-10T14:00Z/2026-11-10T14:30Z",
             "Duration 2026-11-10T15:00Z/2026-11-10T15:45Z",
             "Paris to London 2026-11-10T17:00Z/2026-11-10T18:00Z",
@@ -272,8 +272,8 @@ fn fixture_table() {
 }
 
 #[test]
-fn html_and_garbage_are_not_feeds() {
-    for text in [fixture("not-a-feed.html"), String::new(), "Not Found".into()] {
+fn html_and_garbage_are_not_ics() {
+    for text in [fixture("not-ics.html"), String::new(), "Not Found".into()] {
         assert!(expand(&text, at("2026-11-01T00:00:00Z"), at("2026-12-01T00:00:00Z"), LISBON).is_err());
     }
 }

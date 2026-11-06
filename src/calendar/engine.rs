@@ -17,10 +17,11 @@ use super::{Event, Range, When};
 /// Longest `notes`, in characters, as upstream.
 const NOTES_MAX: usize = 280;
 
-/// Parses one feed and expands it into the events overlapping `window`, attributed to `people`.
+/// Reads one .ics file (the iCalendar text a calendar link returns) and expands it into the
+/// events overlapping `window`, attributed to `people`.
 ///
 /// `household` is the household's zone, for floating times and all-day dates. Errors only when
-/// the text isn't iCalendar at all; malformed events inside a feed are skipped.
+/// the text isn't iCalendar at all; malformed events inside the file are skipped.
 pub fn parse_feed(text: &str, people: &[String], window: Range, household: Tz) -> Result<Vec<Event>, String> {
     let occurrences = ical_expand::expand(text, window.from, window.to, household).map_err(|e| e.to_string())?;
     Ok(occurrences.into_iter().map(|o| to_event(o, people)).collect())

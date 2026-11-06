@@ -112,7 +112,7 @@ pub struct Event {
     /// (`<uid>|<start>`). The same invite on two people's calendars shares a key and is merged
     /// into one event listing both people ([`engine::merge`]). Not sent to the frontend.
     pub key: String,
-    /// `SUMMARY`, or `(busy)` when the feed hides it.
+    /// `SUMMARY`, or `(busy)` when the .ics file hides it.
     pub title: String,
     /// Person ids from the settings; never empty for an attributed event.
     pub people: Vec<String>,

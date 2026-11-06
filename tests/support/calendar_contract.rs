@@ -19,7 +19,7 @@
 //! ```
 //!
 //! The seed is iCalendar text because every calendar backend we target speaks it: an ICS
-//! adapter serves it as a feed, a CalDAV fake as `calendar-data`.
+//! adapter serves it as the .ics file behind a link, a CalDAV fake as `calendar-data`.
 
 #![allow(dead_code)]
 

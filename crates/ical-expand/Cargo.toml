@@ -2,7 +2,7 @@
 name = "ical-expand"
 version = "0.1.0"
 edition = "2024"
-description = "iCalendar feeds in, the occurrences in a time window out: recurrences, exceptions and timezones"
+description = ".ics files (iCalendar) in, the occurrences in a time window out: recurrences, exceptions and timezones"
 license = "MIT"
 publish = false
 

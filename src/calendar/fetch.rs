@@ -1,4 +1,4 @@
-//! The injected HTTP GET that adapters read feeds with, so tests never touch the network.
+//! The injected HTTP GET that adapters download .ics files with, so tests never touch the network.
 
 use std::time::Duration;
 
@@ -17,7 +17,7 @@ pub trait Fetch: Send + Sync {
     async fn get(&self, url: &str) -> Result<Response, String>;
 }
 
-/// Feeds larger than this are refused, so a wrong link can't fill memory.
+/// .ics files larger than this are refused, so a wrong link can't fill memory.
 pub const MAX_BODY: usize = 20 * 1024 * 1024;
 
 /// The real fetch: reqwest over rustls, with the system's trust store. Needs a rustls crypto
