@@ -355,11 +355,11 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 }
 
 /* The update button floats above the dashboard until someone chooses to refresh. */
-.update-notice { position: absolute; left: 75%; top: 47%; transform: translate(-50%, -50%); z-index: 65; }
+.update-notice { position: absolute; left: calc(87.5% - 33px); top: calc(73.5% - 33px); transform: translate(-50%, -50%); z-index: 65; }
 .update-notice[hidden] { display: none; }
 .update-notice button { position: relative; display: block; width: 88px; height: 88px; padding: 0; border: 0; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.update-notice button::before { content: ''; position: absolute; left: 15px; right: 12px; bottom: 0; height: 12px; border-radius: 50%; background: #26001955; filter: blur(5px); animation: update-shadow 3.6s ease-in-out infinite; }
-.update-burst { position: relative; display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(2px 5px 2px #21001644); transform: translateY(-6px); animation: update-float 3.6s ease-in-out infinite; }
+.update-notice button::before { content: ''; position: absolute; left: 15px; right: 12px; bottom: 0; height: 12px; border-radius: 50%; background: #26001955; filter: blur(5px); animation: update-shadow 1.8s ease-in-out infinite; }
+.update-burst { position: relative; display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(2px 5px 2px #21001644); transform: translateY(-6px); animation: update-float 1.8s ease-in-out infinite; }
 .update-depth { fill: #870044; stroke: #650035; stroke-width: 1; }
 .update-face { fill: #ED008C; }
 .update-notice button:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; border-radius: 50%; }
