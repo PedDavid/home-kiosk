@@ -514,3 +514,34 @@ Attach screenshots (`adb -d exec-out screencap -p > shot.png`) to #10.
 - [ ] Is #7 acceptable as an upstream dependency, or is it a blocker?
 - [ ] What is the Immich server version? It must be ≥ v3.2.0 for Kiosk. It also decides
       whether PR #1's metadata-search adapter needs updating anyway.
+
+## 11. Baseline screenshots of the current viewer
+
+Screenshots of today's custom viewer are in
+[`.github/pr-screenshots/pr-20/`](../.github/pr-screenshots/pr-20/), for comparison during the
+spike:
+
+- Home, Photos (Auto), Photos with details, and the Pair, Collage and Polaroid layouts.
+- Taken from the `main` build with demo data, in desktop Chromium (Playwright) at 1280×800.
+- The clock is fixed at 14:00 UTC, so night mode is off.
+- They are not WebView 106 renders, and the photos are demo SVG placeholders.
+
+They already show #7: the Home tile shows a Sintra photo, and Photos opens on a Lisbon one.
+No Immich Kiosk screenshots exist yet. Those need the spike in Phase 0.
+
+## 12. Open questions / needs owner
+
+- **docs.immichkiosk.app was unreachable** from the research environment (DNS blocked by the
+  network policy). The docs were read from `damongolding/immich-kiosk-docs@41d586e` instead,
+  which should match the site.
+- **Kiosk demo not opened.** demo.immichkiosk.app wasn't tried, for the same reason. No
+  Kiosk screenshots, on the frame or on a desktop, are in this evaluation.
+- **Which APK is on the frame?** The answer decides whether the `HomeHQKiosk` bridge exposure
+  (§1) applies: `android/` (PR #9) or `frontend/kiosk/`.
+- **Immich server version.** Kiosk needs ≥ v3.2.0.
+- **Certificate.** Can the Actalis certificate be reissued with a `photos.home-hq.prdv.cloud`
+  SAN (or a `*.home-hq.prdv.cloud` wildcard)?
+- **Scope.** Are Kiosk-only features (memories, people, albums, video) wanted at all? If not,
+  the evaluation's recommendation (stay on the custom viewer) is final.
+- **Upstream contact.** Do you want to open the start-asset feature request upstream yourself,
+  or should a later session draft it?
