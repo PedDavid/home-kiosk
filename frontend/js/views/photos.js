@@ -11,8 +11,13 @@
     b.querySelector('span').textContent = on ? 'Favourite' : 'Favourite';
   }
 
+  function open(opts) {
+    if (!(opts && opts.photo != null && V.show.showPhoto(opts.photo))) V.show.start();
+  }
+
   App.register('photos', {
-    show: function (el) {
+    // opts.photo: id of the photo to open on (the home tile passes the one it is showing).
+    show: function (el, opts) {
       if (!V.el) {
         V.el = el;
         el.innerHTML = '<div class="photos">' +
@@ -52,9 +57,9 @@
         });
       }
       el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length;
-      V.show.start();
+      open(opts);
     },
-    resume: function () { V.el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length; V.show.start(); },
+    resume: function (el, opts) { V.el.querySelector('.ph-empty').hidden = !!window.DATA.photos.length; open(opts); },
     hide: function () { if (V.show) V.show.stop(); }
   });
 })();

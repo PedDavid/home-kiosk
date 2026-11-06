@@ -13,7 +13,8 @@
     "deploy": "vite build && node tools/wr.mjs deploy",
     "secrets": "node tools/secrets.mjs",
     "ha-alerts": "node tools/ha-alerts.mjs",
-    "ha-state": "node tools/ha-state.mjs"
+    "ha-state": "node tools/ha-state.mjs",
+    "test:e2e": "node tests/home-photo-sync.mjs"
   },
   "devDependencies": {
     "vite": "^8.3.1",
