@@ -109,6 +109,40 @@ https://home-hq.prdv.cloud/?key=<HQ_KEY>
 You should be redirected to `/` with a `hq` cookie set, and the dashboard should show dummy
 data. `/m` is the phone page.
 
+## Calendars
+
+"Next up", the people lanes and the calendar views read private iCal links, one or more per
+person. The links are secrets (anyone holding one can read that calendar), so they live in the
+Secret as `HQ_CALENDARS`, a JSON list:
+
+```json
+[
+  { "url": "https://calendar.google.com/calendar/ical/…/private-…/basic.ics", "people": ["alex"] },
+  { "url": "https://calendar.google.com/calendar/ical/…/private-…/basic.ics", "people": ["sam"] },
+  { "url": "webcal://p01-caldav.icloud.com/published/2/…", "people": "all" }
+]
+```
+
+`people` names person ids from `settings.people` (a list, one id, or `"all"`). In Google
+Calendar the link is *Settings → (the calendar) → Integrate calendar → Secret address in iCal
+format*. Add it to the Secret and point the chart at it:
+
+```bash
+kubectl -n home-hq create secret generic home-hq \
+  --from-literal=HQ_KEY=… \
+  --from-file=HQ_CALENDARS=calendars.json
+```
+
+```yaml
+  values:
+    calendars:
+      existingSecret: home-hq
+```
+
+Feeds are read every 10 minutes. A feed that fails keeps its last events, and the frame's Status
+panel shows "Calendar N: …" (never the link). The calendar is read-only: the frame's "+" is
+refused until a writable source (CalDAV) is configured.
+
 ## Dedicated LAN address
 
 Behind Traefik, a device allowed to reach Traefik's IP can reach every other ingress by sending a
@@ -187,6 +221,7 @@ old pod before the new one mounts the claim, which a single-node `ReadWriteOnce`
 | `image.repository` / `image.tag` | `ghcr.io/peddavid/home-kiosk` / chart `appVersion` | Image |
 | `imagePullSecrets` | `[]` | For private GHCR |
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
+| `calendars.existingSecret` / `calendars.secretKey` | `""` / `HQ_CALENDARS` | Secret holding the calendar feeds ([Calendars](#calendars)). Unset means demo events |
 | `settings` | `{}` | Household settings. Empty means the bundled example |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |

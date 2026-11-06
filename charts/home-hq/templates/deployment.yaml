@@ -60,6 +60,13 @@ spec:
                   name: {{ .Values.key.existingSecret }}
                   key: {{ .Values.key.secretKey }}
             {{- end }}
+            {{- if .Values.calendars.existingSecret }}
+            - name: HQ_CALENDARS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.calendars.existingSecret }}
+                  key: {{ .Values.calendars.secretKey }}
+            {{- end }}
             {{- if .Values.tls.existingSecret }}
             - name: HQ_TLS_CERT
               value: /tls/tls.crt

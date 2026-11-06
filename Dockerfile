@@ -10,6 +10,7 @@ RUN npx vite build
 FROM rust:1.97-bookworm AS build
 WORKDIR /src
 COPY Cargo.toml Cargo.lock build.rs ./
+COPY crates ./crates
 COPY config ./config
 COPY src ./src
 COPY --from=frontend /src/frontend/dist ./frontend/dist

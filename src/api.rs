@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{AppState, demo};
+use crate::{AppState, calendar, demo};
 
 type ApiResult = Result<Response, ApiError>;
 
@@ -111,6 +111,10 @@ async fn state(State(app): State<AppState>) -> Response {
 }
 
 async fn calendar(State(app): State<AppState>) -> Response {
+    if app.calendar.configured() {
+        let listing = app.calendar.list(calendar::Range::around(app.now())).await;
+        return ok(json!(listing));
+    }
     ok(app.demo.lock().await.calendar(app.now()))
 }
 
@@ -118,7 +122,50 @@ async fn weather(State(app): State<AppState>) -> Response {
     ok(app.demo.lock().await.weather(app.now()))
 }
 
+fn calendar_error(e: calendar::CalendarError) -> Response {
+    let status = match e {
+        calendar::CalendarError::ReadOnly => StatusCode::METHOD_NOT_ALLOWED,
+        calendar::CalendarError::NotFound => StatusCode::NOT_FOUND,
+        calendar::CalendarError::Invalid(_) => StatusCode::BAD_REQUEST,
+        calendar::CalendarError::Backend(_) => StatusCode::BAD_GATEWAY,
+    };
+    bad(&e.to_string(), status)
+}
+
+/// `{ id, title, people: [...], start: ms, end: ms }`, as the frontend posts it.
+fn new_event(b: &Value) -> Option<calendar::NewEvent> {
+    let ms = |k: &str| b[k].as_i64().and_then(chrono::DateTime::from_timestamp_millis);
+    let new = calendar::NewEvent {
+        id: b["id"].as_str()?.trim().chars().take(64).collect(),
+        title: b["title"].as_str()?.trim().chars().take(200).collect(),
+        people: b["people"]
+            .as_array()?
+            .iter()
+            .filter_map(|p| p.as_str().map(String::from))
+            .collect(),
+        start: ms("start")?,
+        end: ms("end")?,
+    };
+    (!new.id.is_empty() && !new.title.is_empty() && !new.people.is_empty() && new.end > new.start).then_some(new)
+}
+
 async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
+    if app.calendar.configured() {
+        // A read-only source refuses (405); a writable one (CalDAV) adds it.
+        if !app.calendar.can_write() {
+            return Ok(calendar_error(calendar::CalendarError::ReadOnly));
+        }
+        let Some(new) = new_event(&body(&b)) else {
+            return Err(ApiError(
+                "id, title, people, start < end required",
+                StatusCode::BAD_REQUEST,
+            ));
+        };
+        return Ok(match app.calendar.add(new).await {
+            Ok(_) => ok(json!({ "ok": true })),
+            Err(e) => calendar_error(e),
+        });
+    }
     app.demo
         .lock()
         .await
@@ -128,6 +175,12 @@ async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
 }
 
 async fn delete_event(State(app): State<AppState>, Path(id): Path<String>) -> Response {
+    if app.calendar.configured() {
+        return match app.calendar.remove(&id).await {
+            Ok(()) => ok(json!({ "ok": true })),
+            Err(e) => calendar_error(e),
+        };
+    }
     app.demo.lock().await.delete_event(&id);
     ok(json!({ "ok": true }))
 }
