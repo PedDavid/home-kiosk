@@ -624,7 +624,7 @@ impl Demo {
         }
     }
 
-    pub fn set_favourite(&mut self, id: &str, fav: bool) {
+    pub fn set_favorite(&mut self, id: &str, fav: bool) {
         if let Some(p) = self.photos.iter_mut().find(|p| p["id"] == id) {
             p["fav"] = fav.into();
         }

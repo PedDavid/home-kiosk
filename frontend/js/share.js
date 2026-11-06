@@ -1,4 +1,4 @@
-// Share photo (Photos tab): a Share button next to Favourite opens a sheet with a QR code that opens
+// Share photo (Photos tab): a Share button next to Favorite opens a sheet with a QR code that opens
 // the photo shown in Immich. The backend sets `shareUrl` (<IMMICH_PUBLIC_URL>/photos/<assetId>) on
 // Immich photos when IMMICH_PUBLIC_URL is set; any other photo has none and the button is hidden.
 // The QR is a plain link, never a key: whoever scans it signs in to Immich with their own login.

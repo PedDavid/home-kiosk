@@ -76,7 +76,7 @@ pub fn router() -> Router<AppState> {
         .route("/notes/{id}/restore", post(restore_note))
         .route("/groceries", post(put_grocery))
         .route("/groceries/clear", post(clear_groceries))
-        .route("/photos/{id}", get(photo).patch(favourite))
+        .route("/photos/{id}", get(photo).patch(favorite))
         .route("/home", get(home))
         .route("/home/energy", get(energy))
         .route("/home/device/{id}", post(control_device))
@@ -237,9 +237,9 @@ async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Qu
     }
 }
 
-async fn favourite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes) -> Response {
+async fn favorite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes) -> Response {
     let fav = body(&b)["fav"].as_bool().unwrap_or(false);
-    app.demo.lock().await.set_favourite(&id, fav);
+    app.demo.lock().await.set_favorite(&id, fav);
     ok(json!({ "ok": true }))
 }
 
