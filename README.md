@@ -30,6 +30,12 @@ views show real ICS feeds through the `CalendarSource` port ([`src/calendar/`](s
 with recurrences, exceptions, timezones and per-person attribution. Without it, the demo events
 stay.
 
+**Travel time (delivered).** With `settings.travel` pointing at OSRM and Photon or Nominatim,
+calendar events with a location in the next 4 hours get a drive time for "Leave by", through
+the `TravelTime` port and its shared caching and budget wrapper ([`src/travel/`](src/travel/)).
+Without it, "Leave by" uses the event's `Travel:` line. See
+[Travel times](charts/home-hq/README.md#travel-times).
+
 Each later delivery replaces one slice of `demo.rs` with a real port and adapter:
 
 | Delivery | Replaces |
@@ -41,7 +47,7 @@ Each later delivery replaces one slice of `demo.rs` with a real port and adapter
 | HA gateway | state snapshot, actions, camera/art proxy, WebSocket alerts, presence |
 | Frames monitor | offline notification through HA after 15 minutes |
 | Capabilities | `/api/state` capability flags, plus the frontend patch that hides unconfigured tabs |
-| Integrations | Immich, Mealie, CalDAV, travel time |
+| Integrations | Immich, Mealie, CalDAV, a hosted travel-time provider (live traffic) |
 | Auth | Keycloak login for phones, frame pairing, step-up for sensitive controls ([RFC](docs/rfc-device-auth.md)) |
 
 ## Running locally

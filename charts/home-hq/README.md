@@ -142,6 +142,70 @@ Feeds are read every 10 minutes. A feed that fails keeps its last events, and th
 panel shows "Calendar N: …" (never the link). The calendar is read-only: the frame's "+" is
 refused until a writable source (CalDAV) is configured.
 
+## Travel times
+
+"Leave by" on "Next up" and in the event sheet counts back from the start by the drive time. By
+default that's the event's `Travel: 15` line. With `settings.travel` set, timed events with a
+location starting in the next 4 hours get a drive time from a self-hosted router instead
+(`drive: { mins, from }` in `/api/calendar`), and `Travel:` stays the fallback whenever the
+router can't answer. The URLs aren't secrets, so this lives in the settings:
+
+```yaml
+  values:
+    settings:
+      location: { lat: 38.7223, lon: -9.1393 }
+      people:
+        - { id: alex, name: Alex, color: "#2D5BFF" }
+        # Optional: Sam's drives start from work instead of home.
+        - { id: sam, name: Sam, color: "#E4007C", origin: "Rua Augusta 1, Lisboa" }
+      travel:
+        osrm: http://osrm.routing.svc.cluster.local:5000
+        photon: http://photon.routing.svc.cluster.local:2322   # or nominatim: http://…
+        home: { lat: 38.7223, lon: -9.1393 }                 # optional, defaults to location
+        dailyCap: 300                                        # optional
+```
+
+`home` and a person's `origin` are coordinates or an address (geocoded). With several people at
+one event the longest drive counts. Answers, failures too, are kept 10 minutes, and at most
+`dailyCap` routes are asked per day; after that `Travel:` is used until midnight. There is no
+live traffic: OSRM's times come from OpenStreetMap road speeds.
+
+### Running OSRM and Photon
+
+Neither ships with this chart; run them next to it (a `routing` namespace, say). Both need the
+data prepared once, which is the heavy part.
+
+**OSRM** ([osrm-backend](https://github.com/Project-OSRM/osrm-backend)), for a country extract
+from Geofabrik (Portugal is about 350 MB; preparing it wants roughly 2–4 GB of RAM once, and
+serving it a few hundred MB):
+
+```bash
+wget https://download.geofabrik.de/europe/portugal-latest.osm.pbf
+docker run --rm -v "$PWD:/data" ghcr.io/project-osrm/osrm-backend osrm-extract -p /opt/car.lua /data/portugal-latest.osm.pbf
+docker run --rm -v "$PWD:/data" ghcr.io/project-osrm/osrm-backend osrm-partition /data/portugal-latest.osrm
+docker run --rm -v "$PWD:/data" ghcr.io/project-osrm/osrm-backend osrm-customize /data/portugal-latest.osrm
+# Serve (in the cluster: a Deployment with the files on a PVC, a Service on 5000):
+docker run -p 5000:5000 -v "$PWD:/data" ghcr.io/project-osrm/osrm-backend osrm-routed --algorithm mld /data/portugal-latest.osrm
+```
+
+Refresh the extract every few months (a CronJob that re-runs the three steps and restarts the
+Deployment works). Check it with
+`curl "http://osrm:5000/route/v1/driving/-9.1393,38.7223;-9.3817,38.8029?overview=false"`.
+
+**Photon** ([komoot/photon](https://github.com/komoot/photon)) is the lighter geocoder: a Java
+service with a prebuilt per-country index from GraphHopper's download server, no database to run.
+Download and unpack the country's index next to `photon.jar` and run `java -jar photon.jar`
+(port 2322); community images such as `rtuszik/photon-docker` do the download for you from a
+country code. Check it with `curl "http://photon:2322/api?q=Sintra&limit=1"`.
+
+**Nominatim** instead of Photon (`travel.nominatim`) is also supported, for example with the
+`mediagis/nominatim` image and the same Geofabrik extract. It needs PostgreSQL and much more
+disk and import time; prefer it only if you already run one. The public
+`nominatim.openstreetmap.org` works for a try-out (the daily cap keeps the load low), but its
+usage policy is not meant for an always-on dashboard.
+
+The frame never talks to either: only the pod does, so the frame's firewall rule doesn't change.
+
 ## Dedicated LAN address
 
 Behind Traefik, a device allowed to reach Traefik's IP can reach every other ingress by sending a
@@ -179,7 +243,7 @@ WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a cl
 | `imagePullSecrets` | `[]` | For private GHCR |
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
 | `calendars.existingSecret` / `calendars.secretKey` | `""` / `HQ_CALENDARS` | Secret holding the calendar feeds ([Calendars](#calendars)). Unset means demo events |
-| `settings` | `{}` | Household settings. Empty means the bundled example |
+| `settings` | `{}` | Household settings. Empty means the bundled example. `settings.travel` turns on drive times ([Travel times](#travel-times)) |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
 | `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |
