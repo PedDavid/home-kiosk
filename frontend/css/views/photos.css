@@ -65,6 +65,8 @@
   width: 52px; height: 52px; min-width: 52px; padding: 0; border-radius: 50%;
   background: rgba(0, 0, 0, .18); color: rgba(255, 255, 255, .85);
 }
+/* Extra touch area without enlarging or darkening the visible circle. */
+.ph-screen::before { content: ''; position: absolute; inset: -14px; }
 .ph-screen .i { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .45)); }
 .ph-screen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .ph-exit { display: none; background: rgba(0, 0, 0, .1); color: rgba(255, 255, 255, .7); }
