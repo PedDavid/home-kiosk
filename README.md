@@ -104,12 +104,18 @@ the QR image is generated locally. Polling respects the broker interval and `slo
 Once connected, use **Show favourite photos**. **Disconnect** revokes the issued key through
 the broker; if revocation fails, the grant is retained so you can retry.
 
-A grant is shared by this Home HQ instance and all its frames. Grants are held in memory only:
-restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
+A grant is shared by this Home HQ instance and all its frames. By default it is held in memory
+only: restarting Home HQ requires pairing again, and the broker cleans up the old key at expiry.
+To keep it across restarts, set `HQ_STATE_DIR` to a writable directory (the Helm chart's
+`persistence` option does this). Home HQ then stores the issued key, its expiry and scope in
+`$HQ_STATE_DIR/immich-grant.bin`, encrypted with AES-256-GCM under a key derived from `HQ_KEY` and
+bound to the two configured URLs, and reloads it on start. Without `HQ_KEY` nothing is written.
+A stored grant that has expired or can't be decrypted (a changed `HQ_KEY` or URL) is deleted on
+start, and the frame shows "disconnected". **Disconnect** revokes the key, then deletes the file.
 Expired grants stop being used even if the broker is unavailable. There is no refresh token;
 return to `/immich` to approve again after expiry. Cancelling a pending request clears it locally;
-the broker expires abandoned approvals and revokes any uncollected keys. Read-only container
-filesystems need no extra writable volume. Helm users can pass the two URLs through `extraEnv`.
+the broker expires abandoned approvals and revokes any uncollected keys. Without `HQ_STATE_DIR`,
+read-only container filesystems need no writable volume. Helm users can pass the two URLs through `extraEnv`.
 
 The flow was tested end to end with the broker at commit
 `1af7484a9a71b3946f14b7f569c3c5d440f98563` and its mock identity provider/Immich server

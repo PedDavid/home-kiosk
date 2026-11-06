@@ -1,4 +1,5 @@
 //! Backend-only client for PedDavid/immich-device-auth's RFC 8628 flow.
+use crate::grant_store::{GrantStore, LoadError, StoredGrant};
 use crate::immich::Immich;
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
@@ -17,6 +18,8 @@ pub struct DeviceAuth {
     client: Client,
     broker: Url,
     immich_url: String,
+    /// Where the active grant is persisted, encrypted; `None` keeps it in memory only.
+    store: Option<GrantStore>,
     state: Mutex<Session>,
 }
 #[derive(Default)]
@@ -35,6 +38,7 @@ struct Pending {
 }
 struct Grant {
     token: String,
+    scope: String,
     source: Arc<Immich>,
     expires_at: DateTime<Utc>,
     deadline: Instant,
@@ -69,8 +73,17 @@ fn base_url(input: &str) -> anyhow::Result<Url> {
     }
     Ok(url)
 }
+/// The issued scope must be exactly the one requested, in any order.
+fn valid_scope(scope: &str) -> bool {
+    let scope: Vec<_> = scope.split_whitespace().collect();
+    SCOPE.split_whitespace().all(|s| scope.contains(&s))
+        && scope
+            .iter()
+            .all(|s| SCOPE.split_whitespace().any(|allowed| allowed == *s))
+}
 impl Session {
-    fn expire(&mut self) {
+    /// Drops what has expired. Returns whether an active grant was dropped.
+    fn expire(&mut self) -> bool {
         if self.pending.as_ref().is_some_and(|p| Instant::now() >= p.deadline) {
             self.pending = None;
             self.outcome = Some("expired");
@@ -82,10 +95,11 @@ impl Session {
         {
             self.grant = None;
             self.outcome = Some("expired");
+            return true;
         }
+        false
     }
-    fn public(&mut self) -> Value {
-        self.expire();
+    fn public(&self) -> Value {
         if let Some(g) = &self.grant {
             return json!({"status":"connected","expires_at":g.expires_at});
         }
@@ -107,8 +121,87 @@ impl DeviceAuth {
                 .build()?,
             broker: base_url(broker)?,
             immich_url: immich_url.into(),
+            store: None,
             state: Mutex::new(Session::default()),
         })
+    }
+    /// A grant store in `dir`, bound to this broker and Immich server; `None` without a key.
+    pub fn store_in(&self, dir: &std::path::Path, hq_key: Option<&str>) -> Option<GrantStore> {
+        GrantStore::new(dir, hq_key, self.broker.as_str(), &self.immich_url)
+    }
+    /// Persists grants to `store` and reloads the one stored there, if it is still usable.
+    /// An expired, undecryptable or otherwise unusable stored grant is deleted.
+    pub fn with_store(mut self, store: Option<GrantStore>) -> Self {
+        self.store = store;
+        let Some(store) = &self.store else {
+            return self;
+        };
+        let loaded = match store.load() {
+            Ok(stored) => self.restore(stored),
+            Err(LoadError::Missing) => return self,
+            Err(e) => Err(match e {
+                LoadError::Undecryptable => "it could not be decrypted (HQ_KEY or the Immich URLs changed?)",
+                _ => "it could not be read",
+            }),
+        };
+        match loaded {
+            Ok(grant) => {
+                tracing::info!(expires_at = %grant.expires_at, "restored the stored Immich device grant");
+                self.state.get_mut().grant = Some(grant);
+            }
+            Err(reason) => {
+                tracing::warn!(path = %store.path().display(), "discarding the stored Immich device grant: {reason}");
+                self.forget();
+            }
+        }
+        self
+    }
+    fn restore(&self, stored: StoredGrant) -> Result<Grant, &'static str> {
+        let remaining = (stored.deadline.min(stored.expires_at) - Utc::now())
+            .to_std()
+            .map_err(|_| "it has expired")?;
+        if remaining.is_zero() {
+            return Err("it has expired");
+        }
+        if !valid_scope(&stored.scope) || stored.token.is_empty() {
+            return Err("its scope is not the one Home HQ requests");
+        }
+        let source = Immich::new(&self.immich_url, &stored.token).map_err(|_| "it is not a usable key")?;
+        Ok(Grant {
+            token: stored.token,
+            scope: stored.scope,
+            source: Arc::new(source),
+            expires_at: stored.expires_at,
+            deadline: Instant::now() + remaining,
+        })
+    }
+    fn persist(&self, grant: &Grant) {
+        let Some(store) = &self.store else { return };
+        let stored = StoredGrant {
+            token: grant.token.clone(),
+            expires_at: grant.expires_at,
+            deadline: Utc::now()
+                + chrono::Duration::from_std(grant.deadline.saturating_duration_since(Instant::now()))
+                    .unwrap_or_default(),
+            scope: grant.scope.clone(),
+        };
+        // Pairing still succeeds; it just won't survive a restart.
+        if let Err(e) = store.save(&stored) {
+            tracing::error!(path = %store.path().display(), "could not persist the Immich device grant: {e:#}");
+        }
+    }
+    fn forget(&self) {
+        if let Some(store) = &self.store
+            && let Err(e) = store.delete()
+        {
+            tracing::error!(path = %store.path().display(), "could not delete the stored Immich device grant: {e}");
+        }
+    }
+    /// Like `Session::expire`, also deleting a stored grant that has expired.
+    fn expire(&self, state: &mut Session) {
+        if state.expire() {
+            self.forget();
+        }
     }
     pub fn from_env() -> anyhow::Result<Option<Self>> {
         let Some(broker) = std::env::var("HQ_IMMICH_DEVICE_AUTH_URL").ok() else {
@@ -118,19 +211,29 @@ impl DeviceAuth {
             bail!("choose either Immich device auth or a static API key");
         }
         let immich = std::env::var("HQ_IMMICH_URL").context("device auth requires HQ_IMMICH_URL including /api")?;
-        Ok(Some(Self::new(&broker, &immich)?))
+        let auth = Self::new(&broker, &immich)?;
+        let Some(dir) = std::env::var_os("HQ_STATE_DIR").filter(|d| !d.is_empty()) else {
+            return Ok(Some(auth));
+        };
+        let store = auth.store_in(dir.as_ref(), std::env::var("HQ_KEY").ok().as_deref());
+        if store.is_none() {
+            tracing::warn!("HQ_STATE_DIR is set but HQ_KEY is not: the Immich grant is kept in memory only");
+        }
+        Ok(Some(auth.with_store(store)))
     }
     pub async fn status(&self) -> Value {
-        self.state.lock().await.public()
+        let mut state = self.state.lock().await;
+        self.expire(&mut state);
+        state.public()
     }
     pub async fn source(&self) -> Option<Arc<Immich>> {
         let mut state = self.state.lock().await;
-        state.expire();
+        self.expire(&mut state);
         state.grant.as_ref().map(|g| g.source.clone())
     }
     pub async fn start(&self) -> anyhow::Result<Value> {
         let mut state = self.state.lock().await;
-        state.expire();
+        self.expire(&mut state);
         if state.pending.is_some() || state.grant.is_some() {
             return Ok(state.public());
         }
@@ -174,7 +277,7 @@ impl DeviceAuth {
     }
     pub async fn qr(&self) -> anyhow::Result<Option<String>> {
         let mut state = self.state.lock().await;
-        state.expire();
+        self.expire(&mut state);
         state
             .pending
             .as_ref()
@@ -188,7 +291,7 @@ impl DeviceAuth {
     }
     pub async fn poll(&self) -> anyhow::Result<Value> {
         let mut state = self.state.lock().await;
-        state.expire();
+        self.expire(&mut state);
         let Some(p) = &mut state.pending else {
             return Ok(state.public());
         };
@@ -226,25 +329,21 @@ impl DeviceAuth {
             return Ok(state.public());
         }
         let token: Token = serde_json::from_value(body)?;
-        let scope: Vec<_> = token.scope.split_whitespace().collect();
         let remaining = (token.expires_at - Utc::now()).num_seconds();
-        if token.token_type != "immich_api_key"
-            || remaining <= 0
-            || token.expires_in == 0
-            || !SCOPE.split_whitespace().all(|s| scope.contains(&s))
-            || scope
-                .iter()
-                .any(|s| !SCOPE.split_whitespace().any(|allowed| allowed == *s))
+        if token.token_type != "immich_api_key" || remaining <= 0 || token.expires_in == 0 || !valid_scope(&token.scope)
         {
             bail!("invalid device grant");
         }
         let source = Arc::new(Immich::new(&self.immich_url, &token.access_token)?);
-        state.grant = Some(Grant {
+        let grant = Grant {
             token: token.access_token,
+            scope: token.scope,
             source,
             expires_at: token.expires_at,
             deadline: Instant::now() + Duration::from_secs(token.expires_in.min(remaining as u64).min(7 * 86400)),
-        });
+        };
+        self.persist(&grant);
+        state.grant = Some(grant);
         state.pending = None;
         state.outcome = None;
         Ok(state.public())
@@ -261,6 +360,12 @@ impl DeviceAuth {
                 .error_for_status()?;
         }
         *state = Session::default();
+        // Also when nothing was in memory, so a retry clears a file a failed delete left behind.
+        if let Some(store) = &self.store {
+            store
+                .delete()
+                .context("could not delete the stored Immich device grant")?;
+        }
         Ok(state.public())
     }
 }
@@ -268,6 +373,7 @@ impl DeviceAuth {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::grant_store::tests::TempDir;
     use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
     use http_body_util::BodyExt;
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -277,9 +383,12 @@ mod tests {
     struct Mock {
         reply: Arc<Mutex<(StatusCode, Value)>>,
         polls: Arc<AtomicUsize>,
+        codes: Arc<AtomicUsize>,
+        revokes: Arc<AtomicUsize>,
         revoke_fails: Arc<std::sync::atomic::AtomicBool>,
     }
-    async fn code(Json(body): Json<Value>) -> Json<Value> {
+    async fn code(State(mock): State<Mock>, Json(body): Json<Value>) -> Json<Value> {
+        mock.codes.fetch_add(1, Ordering::SeqCst);
         assert_eq!(body["scope"], SCOPE);
         assert_eq!(body["ttl"], 86400);
         Json(json!({"device_code":"private-device-code","user_code":"ABCD-EFGH",
@@ -296,19 +405,28 @@ mod tests {
     }
     async fn revoke(State(mock): State<Mock>, Json(body): Json<Value>) -> StatusCode {
         assert_eq!(body["token"], "private-issued-key");
+        mock.revokes.fetch_add(1, Ordering::SeqCst);
         if mock.revoke_fails.load(Ordering::SeqCst) {
             StatusCode::BAD_GATEWAY
         } else {
             StatusCode::OK
         }
     }
+    const IMMICH: &str = "https://trusted-immich.example/api";
     async fn fixture() -> (Arc<DeviceAuth>, Mock, tokio::task::JoinHandle<()>) {
+        let (url, mock, task) = broker().await;
+        (Arc::new(DeviceAuth::new(&url, IMMICH).unwrap()), mock, task)
+    }
+    /// A mock broker; returns its base URL.
+    async fn broker() -> (String, Mock, tokio::task::JoinHandle<()>) {
         let mock = Mock {
             reply: Arc::new(Mutex::new((
                 StatusCode::BAD_REQUEST,
                 json!({"error":"authorization_pending"}),
             ))),
             polls: Arc::new(AtomicUsize::new(0)),
+            codes: Arc::new(AtomicUsize::new(0)),
+            revokes: Arc::new(AtomicUsize::new(0)),
             revoke_fails: Arc::new(false.into()),
         };
         let server = Router::new()
@@ -321,11 +439,145 @@ mod tests {
         let task = tokio::spawn(async move {
             axum::serve(listener, server).await.unwrap();
         });
-        (
-            Arc::new(DeviceAuth::new(&url, "https://trusted-immich.example/api").unwrap()),
-            mock,
-            task,
-        )
+        (url, mock, task)
+    }
+    /// What a (re)started instance sees: a fresh `DeviceAuth` over the same state directory.
+    fn boot(url: &str, dir: &TempDir, hq_key: Option<&str>) -> DeviceAuth {
+        let auth = DeviceAuth::new(url, IMMICH).unwrap();
+        let store = auth.store_in(&dir.0, hq_key);
+        auth.with_store(store)
+    }
+    async fn pair(auth: &DeviceAuth, mock: &Mock) {
+        auth.start().await.unwrap();
+        *mock.reply.lock().await = (StatusCode::OK, issued());
+        due(auth).await;
+        assert_eq!(auth.poll().await.unwrap()["status"], "connected");
+    }
+    async fn token_of(auth: &DeviceAuth) -> Option<String> {
+        auth.state.lock().await.grant.as_ref().map(|g| g.token.clone())
+    }
+    fn stored(dir: &TempDir) -> bool {
+        dir.0.join(crate::grant_store::FILE_NAME).exists()
+    }
+    #[tokio::test]
+    async fn grant_survives_a_restart_without_pairing_again() {
+        let (url, mock, task) = broker().await;
+        let dir = TempDir::new();
+        let first = boot(&url, &dir, Some("k1"));
+        pair(&first, &mock).await;
+        let expires_at = first.status().await["expires_at"].clone();
+        assert!(stored(&dir));
+        drop(first);
+        let second = boot(&url, &dir, Some("k1"));
+        let status = second.status().await;
+        assert_eq!(status["status"], "connected");
+        assert_eq!(status["expires_at"], expires_at);
+        assert_eq!(token_of(&second).await.as_deref(), Some("private-issued-key"));
+        assert!(second.source().await.is_some());
+        // The reloaded grant keeps its original lifetime rather than starting a new one.
+        let left = second.state.lock().await.grant.as_ref().unwrap().deadline - Instant::now();
+        assert!(left <= Duration::from_secs(3600));
+        // No new pairing, so no new keys in Immich.
+        assert_eq!(mock.codes.load(Ordering::SeqCst), 1);
+        assert_eq!(second.start().await.unwrap()["status"], "connected");
+        assert_eq!(mock.codes.load(Ordering::SeqCst), 1);
+        task.abort();
+    }
+    #[tokio::test]
+    async fn expired_stored_grants_are_discarded_on_load() {
+        let (url, _, task) = broker().await;
+        let dir = TempDir::new();
+        let auth = boot(&url, &dir, Some("k1"));
+        let store = auth.store_in(&dir.0, Some("k1")).unwrap();
+        let fresh = Utc::now() + chrono::Duration::hours(1);
+        let past = Utc::now() - chrono::Duration::seconds(1);
+        for (expires_at, deadline) in [(past, fresh), (fresh, past)] {
+            store
+                .save(&StoredGrant {
+                    token: "private-issued-key".into(),
+                    expires_at,
+                    deadline,
+                    scope: SCOPE.into(),
+                })
+                .unwrap();
+            let auth = boot(&url, &dir, Some("k1"));
+            assert_eq!(auth.status().await["status"], "disconnected");
+            assert!(auth.source().await.is_none());
+            assert!(!stored(&dir));
+        }
+        // A stored grant whose scope no longer matches what Home HQ requests is not used either.
+        store
+            .save(&StoredGrant {
+                token: "private-issued-key".into(),
+                expires_at: fresh,
+                deadline: fresh,
+                scope: "asset.read asset.delete".into(),
+            })
+            .unwrap();
+        assert_eq!(boot(&url, &dir, Some("k1")).status().await["status"], "disconnected");
+        assert!(!stored(&dir));
+        task.abort();
+    }
+    #[tokio::test]
+    async fn a_grant_expiring_while_running_is_deleted_from_storage() {
+        let (url, mock, task) = broker().await;
+        let dir = TempDir::new();
+        let auth = boot(&url, &dir, Some("k1"));
+        pair(&auth, &mock).await;
+        auth.state.lock().await.grant.as_mut().unwrap().deadline = Instant::now();
+        assert_eq!(auth.status().await["status"], "expired");
+        assert!(!stored(&dir));
+        task.abort();
+    }
+    #[tokio::test]
+    async fn a_changed_hq_key_discards_the_stored_grant() {
+        let (url, mock, task) = broker().await;
+        let dir = TempDir::new();
+        pair(&boot(&url, &dir, Some("k1")), &mock).await;
+        let auth = boot(&url, &dir, Some("k2"));
+        assert_eq!(auth.status().await["status"], "disconnected");
+        assert!(auth.source().await.is_none());
+        assert!(!stored(&dir));
+        // Discarded for good: going back to the old key doesn't bring it back.
+        assert_eq!(boot(&url, &dir, Some("k1")).status().await["status"], "disconnected");
+        // A different Immich server never receives a key stored for another one.
+        pair(&boot(&url, &dir, Some("k1")), &mock).await;
+        let elsewhere = DeviceAuth::new(&url, "https://other-immich.example/api").unwrap();
+        let store = elsewhere.store_in(&dir.0, Some("k1"));
+        assert_eq!(elsewhere.with_store(store).status().await["status"], "disconnected");
+        assert!(!stored(&dir));
+        task.abort();
+    }
+    #[tokio::test]
+    async fn without_hq_key_nothing_is_persisted() {
+        let (url, mock, task) = broker().await;
+        let dir = TempDir::new();
+        let auth = DeviceAuth::new(&url, IMMICH).unwrap();
+        assert!(auth.store_in(&dir.0, None).is_none());
+        assert!(auth.store_in(&dir.0, Some("")).is_none());
+        let auth = boot(&url, &dir, None);
+        pair(&auth, &mock).await;
+        assert_eq!(std::fs::read_dir(&dir.0).unwrap().count(), 0);
+        assert_eq!(boot(&url, &dir, None).status().await["status"], "disconnected");
+        task.abort();
+    }
+    #[tokio::test]
+    async fn disconnect_revokes_then_clears_storage() {
+        let (url, mock, task) = broker().await;
+        let dir = TempDir::new();
+        let auth = boot(&url, &dir, Some("k1"));
+        pair(&auth, &mock).await;
+        // A failed revocation keeps the grant, in memory and on disk, so it can be retried.
+        mock.revoke_fails.store(true, Ordering::SeqCst);
+        assert!(auth.disconnect().await.is_err());
+        assert!(stored(&dir));
+        assert_eq!(boot(&url, &dir, Some("k1")).status().await["status"], "connected");
+        mock.revoke_fails.store(false, Ordering::SeqCst);
+        assert_eq!(auth.disconnect().await.unwrap()["status"], "disconnected");
+        assert_eq!(mock.revokes.load(Ordering::SeqCst), 2);
+        assert!(!stored(&dir));
+        assert_eq!(boot(&url, &dir, Some("k1")).status().await["status"], "disconnected");
+        task.abort();
     }
     async fn due(auth: &DeviceAuth) {
         auth.state.lock().await.pending.as_mut().unwrap().next_poll = Instant::now();

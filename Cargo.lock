@@ -606,6 +606,7 @@ dependencies = [
  "qrcode",
  "rcgen",
  "reqwest",
+ "ring",
  "rust-embed",
  "rustls",
  "serde",
