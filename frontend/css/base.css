@@ -74,7 +74,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .rail-clock span { font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--mute); }
 
 /* ---------------------------------------------------------------- views */
-.views { position: relative; overflow: hidden; }
+.views { position: relative; min-width: 0; overflow: hidden; }
 .view { position: absolute; top: 0; right: 0; bottom: 0; left: 0; padding: var(--pad); content-visibility: hidden; z-index: 0; }
 .view.is-active, .view.is-warming { content-visibility: visible; }
 .view.is-active { z-index: 1; }
@@ -319,10 +319,17 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 }
 .demo-test button.demo-icon { width: var(--tap); padding: 0; display: grid; place-items: center; background: rgba(255, 255, 255, .1); color: #fff; }
 
-/* ---------------------------------------------------------------- night: the whole dashboard muted */
-/* Whenever the frame's night hours are on (display controls), tapped awake or not. */
+/* ---------------------------------------------------------------- night: mute UI without recolouring photos */
+/* Filter individual UI regions: a filter on .views also inverts/grayscales every photo. */
 .stage[data-night="1"] > .rail,
-.stage[data-night="1"] > .views {
+.stage[data-night="1"] > .views > .view:not([data-view="home"]):not([data-view="photos"]),
+.stage[data-night="1"] .home > :not(.h-side),
+.stage[data-night="1"] .h-side > :not(.h-photo),
+.stage[data-night="1"] .ph-top,
+.stage[data-night="1"] .ph-bottom,
+.stage[data-night="1"] .photos .cap,
+.stage[data-night="1"] > .views > .notes,
+.stage[data-night="1"] > .views > .banners {
   filter: invert(1) hue-rotate(180deg) grayscale(1) sepia(1) saturate(5) hue-rotate(-38deg) brightness(.62);
 }
 .stage[data-night="1"] { background: #000; }

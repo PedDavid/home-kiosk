@@ -129,8 +129,8 @@ the two). It is a small change, but Pair and Collage take two or three photos fr
 slide. Time spent in Photos would then make the Home tile skip ahead through the shared queue. If it is
 ever shared, keep the night screen on its own queue.
 
-Browser test: `npm run test:e2e` (after `npx vite build`; needs Playwright with Chromium). It drives
-the built app in Chromium against a mocked API with fake timers. The `browser` CI job runs it.
+Regression test: `tests/screens/home-photo-sync.spec.mjs`, run with the screenshot tests
+(`npm run test:screens`, and the `screens` CI job).
 
 ## The free plan's CPU budget
 

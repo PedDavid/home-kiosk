@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{AppState, demo};
+use crate::{AppState, calendar, demo};
 
 type ApiResult = Result<Response, ApiError>;
 
@@ -61,6 +61,12 @@ fn image(content_type: &'static str, data: String) -> Response {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/state", get(state))
+        .route(
+            "/immich/auth",
+            get(immich_status).post(immich_start).delete(immich_disconnect),
+        )
+        .route("/immich/auth/poll", post(immich_poll))
+        .route("/immich/auth/qr", get(immich_qr))
         .route("/calendar", get(calendar))
         .route("/weather", get(weather))
         .route("/events", post(add_event))
@@ -88,10 +94,27 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn state(State(app): State<AppState>) -> Response {
-    ok(app.demo.lock().await.state(app.now()))
+    let mut state = app.demo.lock().await.state(app.now());
+    if let Some(immich) = app.photo_source().await {
+        match immich.photos().await {
+            Ok(photos) => state["photos"] = json!(photos),
+            Err(_) => return bad("photo source unavailable", StatusCode::BAD_GATEWAY),
+        }
+    }
+    if let Some(auth) = &app.device_auth {
+        state["photoAuth"] = auth.status().await;
+        if state["photoAuth"]["status"] != "connected" {
+            state["photos"] = json!([]);
+        }
+    }
+    ok(state)
 }
 
 async fn calendar(State(app): State<AppState>) -> Response {
+    if app.calendar.configured() {
+        let listing = app.calendar.list(calendar::Range::around(app.now())).await;
+        return ok(json!(listing));
+    }
     ok(app.demo.lock().await.calendar(app.now()))
 }
 
@@ -99,7 +122,50 @@ async fn weather(State(app): State<AppState>) -> Response {
     ok(app.demo.lock().await.weather(app.now()))
 }
 
+fn calendar_error(e: calendar::CalendarError) -> Response {
+    let status = match e {
+        calendar::CalendarError::ReadOnly => StatusCode::METHOD_NOT_ALLOWED,
+        calendar::CalendarError::NotFound => StatusCode::NOT_FOUND,
+        calendar::CalendarError::Invalid(_) => StatusCode::BAD_REQUEST,
+        calendar::CalendarError::Backend(_) => StatusCode::BAD_GATEWAY,
+    };
+    bad(&e.to_string(), status)
+}
+
+/// `{ id, title, people: [...], start: ms, end: ms }`, as the frontend posts it.
+fn new_event(b: &Value) -> Option<calendar::NewEvent> {
+    let ms = |k: &str| b[k].as_i64().and_then(chrono::DateTime::from_timestamp_millis);
+    let new = calendar::NewEvent {
+        id: b["id"].as_str()?.trim().chars().take(64).collect(),
+        title: b["title"].as_str()?.trim().chars().take(200).collect(),
+        people: b["people"]
+            .as_array()?
+            .iter()
+            .filter_map(|p| p.as_str().map(String::from))
+            .collect(),
+        start: ms("start")?,
+        end: ms("end")?,
+    };
+    (!new.id.is_empty() && !new.title.is_empty() && !new.people.is_empty() && new.end > new.start).then_some(new)
+}
+
 async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
+    if app.calendar.configured() {
+        // A read-only source refuses (405); a writable one (CalDAV) adds it.
+        if !app.calendar.can_write() {
+            return Ok(calendar_error(calendar::CalendarError::ReadOnly));
+        }
+        let Some(new) = new_event(&body(&b)) else {
+            return Err(ApiError(
+                "id, title, people, start < end required",
+                StatusCode::BAD_REQUEST,
+            ));
+        };
+        return Ok(match app.calendar.add(new).await {
+            Ok(_) => ok(json!({ "ok": true })),
+            Err(e) => calendar_error(e),
+        });
+    }
     app.demo
         .lock()
         .await
@@ -109,6 +175,12 @@ async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
 }
 
 async fn delete_event(State(app): State<AppState>, Path(id): Path<String>) -> Response {
+    if app.calendar.configured() {
+        return match app.calendar.remove(&id).await {
+            Ok(()) => ok(json!({ "ok": true })),
+            Err(e) => calendar_error(e),
+        };
+    }
     app.demo.lock().await.delete_event(&id);
     ok(json!({ "ok": true }))
 }
@@ -222,6 +294,24 @@ struct PhotoQuery {
 }
 
 async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Query<PhotoQuery>) -> Response {
+    if let Some(immich) = app.photo_source().await {
+        return match immich.image(&id, q.s.is_some()).await {
+            Ok(Some((mime, bytes))) => (
+                [
+                    (header::CONTENT_TYPE, mime.as_str()),
+                    (header::CACHE_CONTROL, "private, max-age=60"),
+                    (header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
+                ],
+                bytes,
+            )
+                .into_response(),
+            Ok(None) => bad("not found", StatusCode::NOT_FOUND),
+            Err(_) => bad("photo source unavailable", StatusCode::BAD_GATEWAY),
+        };
+    }
+    if app.device_auth.is_some() {
+        return bad("connect Immich first", StatusCode::CONFLICT);
+    }
     match app.demo.lock().await.photo_svg(&id, q.s.is_some()) {
         Some(svg) => (
             [
@@ -236,7 +326,19 @@ async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Qu
 }
 
 async fn favorite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes) -> Response {
-    let fav = body(&b)["fav"].as_bool().unwrap_or(false);
+    let Some(fav) = body(&b)["fav"].as_bool() else {
+        return bad("fav must be a boolean", StatusCode::BAD_REQUEST);
+    };
+    if let Some(immich) = app.photo_source().await {
+        return match immich.favorite(&id, fav).await {
+            Ok(true) => ok(json!({"ok":true})),
+            Ok(false) => bad("not found", StatusCode::NOT_FOUND),
+            Err(_) => bad("photo source unavailable", StatusCode::BAD_GATEWAY),
+        };
+    }
+    if app.device_auth.is_some() {
+        return bad("connect Immich first", StatusCode::CONFLICT);
+    }
     app.demo.lock().await.set_favorite(&id, fav);
     ok(json!({ "ok": true }))
 }
@@ -292,4 +394,48 @@ async fn camera(State(app): State<AppState>, Query(q): Query<IdQuery>) -> Respon
 
 async fn art() -> Response {
     StatusCode::NOT_FOUND.into_response()
+}
+
+async fn immich_status(State(app): State<AppState>) -> Response {
+    match &app.device_auth {
+        Some(auth) => ok(auth.status().await),
+        None => ok(json!({"status":"disabled"})),
+    }
+}
+async fn immich_start(State(app): State<AppState>, Json(_): Json<Value>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.start().await {
+        Ok(status) => ok(status),
+        Err(_) => bad("could not start Immich connection", StatusCode::BAD_GATEWAY),
+    }
+}
+async fn immich_poll(State(app): State<AppState>, Json(_): Json<Value>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.poll().await {
+        Ok(status) => ok(status),
+        Err(_) => bad("could not check Immich connection", StatusCode::BAD_GATEWAY),
+    }
+}
+async fn immich_disconnect(State(app): State<AppState>, Json(_): Json<Value>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.disconnect().await {
+        Ok(status) => ok(status),
+        Err(_) => bad("could not revoke Immich access; try again", StatusCode::BAD_GATEWAY),
+    }
+}
+async fn immich_qr(State(app): State<AppState>) -> Response {
+    let Some(auth) = &app.device_auth else {
+        return bad("device auth not configured", StatusCode::NOT_FOUND);
+    };
+    match auth.qr().await {
+        Ok(Some(svg)) => image("image/svg+xml", svg),
+        Ok(None) => bad("no pending connection", StatusCode::NOT_FOUND),
+        Err(_) => bad("could not create QR code", StatusCode::BAD_GATEWAY),
+    }
 }
