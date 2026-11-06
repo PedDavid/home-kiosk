@@ -34,7 +34,7 @@ Cloudflare Worker on the **free plan**: a domain name, and nothing for hosting.
   added on the frame are **written back to Google Calendar** through a service account, and removed
   from it again, with Undo.
 - A shared shopping list with usual items and aisles, ticking off, and Undo, in step with the phones.
-- A photo slideshow with "On this day", favourites, and upload from a phone (Android share target).
+- A photo slideshow with "On this day", favorites, and upload from a phone (Android share target).
 - **Sticky notes** on every frame, addressed to one person or everyone, with a push notification to
   that person's phone.
 

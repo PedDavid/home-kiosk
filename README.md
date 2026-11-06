@@ -101,7 +101,7 @@ Open **Photos → Connect Immich** (or `/immich`), scan the QR code, compare the
 and approve on your phone. Home HQ requests `asset.read asset.view asset.update`, with a
 one-day lifetime capped by the broker. The device code and issued key stay on the backend;
 the QR image is generated locally. Polling respects the broker interval and `slow_down` responses.
-Once connected, use **Show favourite photos**. **Disconnect** revokes the issued key through
+Once connected, use **Show favorite photos**. **Disconnect** revokes the issued key through
 the broker; if revocation fails, the grant is retained so you can retry.
 
 A grant is shared by this Home HQ instance and all its frames. Grants are held in memory only:
@@ -116,10 +116,10 @@ The flow was tested end to end with the broker at commit
 (extended locally with fixture photo endpoints). Real Immich/OIDC deployment validation is still
 required; the broker's README lists its current proof-of-concept limitations.
 
-### Immich favourites
+### Immich favorites
 
 Set both `HQ_IMMICH_URL` (the Immich API base URL, e.g. `https://photos.example.com/api`)
-and `HQ_IMMICH_API_KEY` to replace demo photos with the API key owner's favourite images.
+and `HQ_IMMICH_API_KEY` to replace demo photos with the API key owner's favorite images.
 Keep the key in a secret/environment binding; never put it in household settings or browser code.
 Use HTTPS outside local development. The key needs Immich asset search, view and update
 permissions (`asset.read`, `asset.view`, `asset.update` on versions with scoped keys).
@@ -127,10 +127,10 @@ In Helm, pass these variables through `extraEnv`, using `secretKeyRef` for the k
 
 The adapter follows metadata search pagination (up to 10,000 images), caches the list for
 60 seconds, and provides thumbnail/preview images through the authenticated dashboard API.
-Video assets are excluded. Capture date, city, orientation and favourite status feed the existing
-slideshow; favourites changed in the dashboard update Immich and invalidate the list cache.
-Unfavouriting removes that photo from the next list. Other Immich changes appear after the cache
-expires. Only listed favourite assets can be fetched or changed through this integration.
+Video assets are excluded. Capture date, city, orientation and favorite status feed the existing
+slideshow; favorites changed in the dashboard update Immich and invalidate the list cache.
+Unfavoriting removes that photo from the next list. Other Immich changes appear after the cache
+expires. Only listed favorite assets can be fetched or changed through this integration.
 An empty library shows no photos; upstream errors return a generic 502 rather than demo images.
 Images have a 20 MiB limit and upstream requests have a 15-second timeout. Redirects are disabled.
 The API URL must include `/api`; incomplete configuration prevents startup. With neither variable

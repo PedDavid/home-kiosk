@@ -73,7 +73,7 @@ roots to the frame's system trust store over root ADB.
 12. As a household member, I want to leave a short note for one person or everyone, so that I can pass messages on at home.
 13. As a household member, I want a note optionally pushed to the recipient's phone through HA, so that urgent notes are seen.
 14. As a household member, I want a photo slideshow when the frame is idle, so that it doubles as a photo frame.
-15. As a household member, I want the photo slideshow to come from Immich (favourites, an album, "on this day"), so that I don't upload photos twice.
+15. As a household member, I want the photo slideshow to come from Immich (favorites, an album, "on this day"), so that I don't upload photos twice.
 16. As a household member, I want to control lights, switches, scenes, covers and the thermostat from the frame, so that I don't need my phone for common actions.
 17. As a household member, I want camera snapshots on the Home tab, so that I can glance at the door or garden.
 18. As a household member, I want smoke, CO, water-leak and similar alerts to take over the screen with sound within seconds, so that the frame is a useful alarm surface.
@@ -133,8 +133,8 @@ patches are kept minimal and listed in the app repo. The one planned patch hides
 
 **Ports (deep modules with small interfaces).**
 
-- `PhotoSource`: list photos (with metadata such as date and favourite flag) and fetch an image at
-  a requested size. V1: not configured (Photos tab hidden). Next: Immich (favourites, an album,
+- `PhotoSource`: list photos (with metadata such as date and favorite flag) and fetch an image at
+  a requested size. V1: not configured (Photos tab hidden). Next: Immich (favorites, an album,
   memories / "on this day"). Upstream's upload page and R2 storage are dropped.
 - `ShoppingList`: list, add, tick and untick, clear done items. V1: SQLite. Next: Mealie.
 - `CalendarSource`: list events in a time range, attributed to people. Adding and removing
