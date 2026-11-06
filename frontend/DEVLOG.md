@@ -117,7 +117,7 @@ the deploy.
 ### Photo slideshows
 
 `js/slideshow.js` drives three slideshows: the Home tile, the Photos view and the night (ambient)
-screen. Each has its own queue (every photo once, favourites twice, shuffled, today's "on this day"
+screen. Each has its own queue (every photo once, favorites twice, shuffled, today's "on this day"
 photos first), plus its own history and timer. Tapping the Home tile passes the id of the photo on
 it (`App.go('photos', { photo })`), and Photos jumps to it with `showPhoto(id)`. In Auto layout the
 photo is shown on its own; a layout picked explicitly is kept, with that photo first. Previous,
