@@ -82,7 +82,7 @@ pub fn router() -> Router<AppState> {
         .route("/notes/{id}/restore", post(restore_note))
         .route("/groceries", post(put_grocery))
         .route("/groceries/clear", post(clear_groceries))
-        .route("/photos/{id}", get(photo).patch(favourite))
+        .route("/photos/{id}", get(photo).patch(favorite))
         .route("/home", get(home))
         .route("/home/energy", get(energy))
         .route("/home/device/{id}", post(control_device))
@@ -272,12 +272,12 @@ async fn photo(State(app): State<AppState>, Path(id): Path<String>, Query(q): Qu
     }
 }
 
-async fn favourite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes) -> Response {
+async fn favorite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes) -> Response {
     let Some(fav) = body(&b)["fav"].as_bool() else {
         return bad("fav must be a boolean", StatusCode::BAD_REQUEST);
     };
     if let Some(immich) = app.photo_source().await {
-        return match immich.favourite(&id, fav).await {
+        return match immich.favorite(&id, fav).await {
             Ok(true) => ok(json!({"ok":true})),
             Ok(false) => bad("not found", StatusCode::NOT_FOUND),
             Err(_) => bad("photo source unavailable", StatusCode::BAD_GATEWAY),
@@ -286,7 +286,7 @@ async fn favourite(State(app): State<AppState>, Path(id): Path<String>, b: Bytes
     if app.device_auth.is_some() {
         return bad("connect Immich first", StatusCode::CONFLICT);
     }
-    app.demo.lock().await.set_favourite(&id, fav);
+    app.demo.lock().await.set_favorite(&id, fav);
     ok(json!({ "ok": true }))
 }
 

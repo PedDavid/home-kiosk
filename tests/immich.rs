@@ -22,7 +22,7 @@ use tower::ServiceExt;
 #[derive(Clone, Default)]
 struct Mock {
     searches: Arc<AtomicUsize>,
-    favourite: Arc<AtomicBool>,
+    favorite: Arc<AtomicBool>,
     fail: Arc<AtomicBool>,
 }
 async fn search(State(mock): State<Mock>, headers: HeaderMap, Json(body): Json<Value>) -> (StatusCode, Json<Value>) {
@@ -37,7 +37,7 @@ async fn search(State(mock): State<Mock>, headers: HeaderMap, Json(body): Json<V
             Json(json!({"error":"secret upstream detail"})),
         );
     }
-    let items = if body["page"] == 1 && mock.favourite.load(Ordering::SeqCst) {
+    let items = if body["page"] == 1 && mock.favorite.load(Ordering::SeqCst) {
         json!([{"id":"asset-1","type":"IMAGE","isFavorite":true,"localDateTime":"2020-06-12T12:00:00","exifInfo":{"exifImageHeight":2000,"exifImageWidth":1000,"city":"Lisbon"}}, {"id":"video-1","type":"VIDEO","isFavorite":true}, {"id":"other-1","type":"IMAGE","isFavorite":false}])
     } else {
         json!([])
@@ -61,13 +61,13 @@ async fn thumbnail(
 }
 async fn update(State(mock): State<Mock>, headers: HeaderMap, Json(body): Json<Value>) -> Json<Value> {
     assert_eq!(headers["x-api-key"], "test-key");
-    mock.favourite
+    mock.favorite
         .store(body["isFavorite"].as_bool().unwrap(), Ordering::SeqCst);
     Json(json!({"id":"asset-1"}))
 }
 async fn fixture() -> (Router, Mock, tokio::task::JoinHandle<()>) {
     let mock = Mock::default();
-    mock.favourite.store(true, Ordering::SeqCst);
+    mock.favorite.store(true, Ordering::SeqCst);
     let upstream = Router::new()
         .route("/api/search/metadata", post(search))
         .route("/api/assets/asset-1/thumbnail", get(thumbnail))
@@ -103,7 +103,7 @@ async fn request(app: &Router, method: &str, path: &str, body: &str) -> (StatusC
     )
 }
 #[tokio::test]
-async fn favourites_are_paginated_cached_proxied_and_updated() {
+async fn favorites_are_paginated_cached_proxied_and_updated() {
     let (app, mock, task) = fixture().await;
     let (status, _, bytes) = request(&app, "GET", "/api/state", "").await;
     assert_eq!(status, StatusCode::OK);
@@ -132,7 +132,7 @@ async fn favourites_are_paginated_cached_proxied_and_updated() {
     );
     let (_, _, bytes) = request(&app, "GET", "/api/state", "").await;
     assert_eq!(serde_json::from_slice::<Value>(&bytes).unwrap()["photos"], json!([]));
-    assert!(!mock.favourite.load(Ordering::SeqCst));
+    assert!(!mock.favorite.load(Ordering::SeqCst));
     task.abort();
 }
 #[tokio::test]
