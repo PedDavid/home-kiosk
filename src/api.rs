@@ -95,6 +95,11 @@ pub fn router() -> Router<AppState> {
 
 async fn state(State(app): State<AppState>) -> Response {
     let mut state = app.demo.lock().await.state(app.now());
+    if let Some(source) = &app.geocoding
+        && state["weatherLocation"].is_object()
+    {
+        state["weatherLocation"]["name"] = json!(source.name().await);
+    }
     if let Some(immich) = app.photo_source().await {
         match immich.photos().await {
             Ok(photos) => state["photos"] = json!(photos),

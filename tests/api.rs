@@ -62,17 +62,13 @@ async fn json_of(app: &Router, req: Request<Body>) -> Value {
 async fn state_exposes_configured_weather_location_without_fetching_weather() {
     for location in [
         json!({"lat": 0.0, "lon": -9.1393}),
-        json!({"name": "Lisbon", "lat": 38.7223, "lon": -9.1393}),
+        json!({"lat": 38.7223, "lon": -9.1393}),
         Value::Null,
     ] {
         let settings = Settings::parse(&json!({"location": location}).to_string()).unwrap();
         let app = router(AppState::new(settings, None, Arc::new(Utc::now)));
         let state = json_of(&app, get("/api/state")).await;
-        let mut expected = location;
-        if let Some(object) = expected.as_object_mut() {
-            object.entry("name").or_insert(Value::Null);
-        }
-        assert_eq!(state["weatherLocation"], expected);
+        assert_eq!(state["weatherLocation"], location);
     }
 }
 

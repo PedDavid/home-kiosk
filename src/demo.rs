@@ -294,7 +294,6 @@ impl Demo {
             "notes": self.live_notes(now),
             "awayOffMinutes": self.settings.display.away_off_minutes,
             "weatherLocation": self.settings.location.as_ref().map(|loc| json!({
-                "name": loc.name,
                 "lat": loc.lat,
                 "lon": loc.lon,
             })),

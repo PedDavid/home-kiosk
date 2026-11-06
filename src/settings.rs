@@ -32,8 +32,6 @@ fn default_tz() -> String {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Location {
-    #[serde(default)]
-    pub name: Option<String>,
     pub lat: f64,
     pub lon: f64,
     #[serde(default)]

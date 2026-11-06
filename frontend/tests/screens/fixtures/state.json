@@ -446,7 +446,6 @@
   ],
   "awayOffMinutes": 0,
   "weatherLocation": {
-    "name": "Lisbon",
     "lat": 38.7223,
     "lon": -9.1393
   }
