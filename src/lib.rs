@@ -10,6 +10,7 @@ pub mod grant_store;
 pub mod immich;
 pub mod settings;
 pub mod tls;
+pub mod travel;
 
 use std::sync::Arc;
 
@@ -29,11 +30,14 @@ pub struct AppState {
     pub clock: Clock,
     /// Calendar events. Not configured: `/api/calendar` serves the demo calendar.
     pub calendar: Arc<dyn calendar::CalendarSource>,
+    /// Drive times added to calendar events. Not configured: events keep `Travel:` only.
+    pub drives: Arc<travel::Drives>,
 }
 
 impl AppState {
     pub fn new(settings: settings::Settings, key: Option<String>, clock: Clock) -> Self {
         let demo = demo::Demo::new(settings, clock());
+        let drives = Arc::new(travel::Drives::not_configured(chrono_tz::UTC, clock.clone()));
         AppState {
             immich: None,
             device_auth: None,
@@ -41,12 +45,19 @@ impl AppState {
             demo: Arc::new(Mutex::new(demo)),
             clock,
             calendar: Arc::new(calendar::NotConfigured),
+            drives,
         }
     }
 
     /// Uses `source` for the calendar (when it reports itself configured).
     pub fn with_calendar(mut self, source: Arc<dyn calendar::CalendarSource>) -> Self {
         self.calendar = source;
+        self
+    }
+
+    /// Uses `drives` for the calendar's `drive` times (when it reports itself configured).
+    pub fn with_drives(mut self, drives: Arc<travel::Drives>) -> Self {
+        self.drives = drives;
         self
     }
 

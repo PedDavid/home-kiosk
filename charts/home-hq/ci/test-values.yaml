@@ -16,6 +16,12 @@ settings:
   location: { lat: 38.7223, lon: -9.1393, units: celsius }
   people:
     - { id: alex, name: Alex, color: "#2D5BFF", ha: person.alex }
+    - { id: sam, name: Sam, color: "#E4007C", origin: "Rua Augusta 1, Lisboa" }
+  travel:
+    osrm: http://osrm.routing.svc.cluster.local:5000
+    photon: http://photon.routing.svc.cluster.local:2322
+    home: { lat: 38.7223, lon: -9.1393 }
+    dailyCap: 300
 tls:
   existingSecret: home-hq-tls
 lanService:

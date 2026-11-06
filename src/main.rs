@@ -3,7 +3,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use anyhow::Context;
 use home_hq::{
     AppState,
-    calendar::{self, CalendarSource, ics::IcsSource},
+    calendar::{self, CalendarSource, fetch::Http, ics::IcsSource},
     router,
     settings::Settings,
     tls,
@@ -37,7 +37,11 @@ async fn main() -> anyhow::Result<()> {
     tls::install_crypto_provider();
     let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
     let calendar = calendars(&settings, clock.clone())?;
-    let mut state = AppState::new(settings, key, clock).with_calendar(calendar);
+    let drives = home_hq::travel::from_settings(&settings, Arc::new(Http::new()?), clock.clone())?;
+    tracing::info!(configured = drives.configured(), "travel times");
+    let mut state = AppState::new(settings, key, clock)
+        .with_calendar(calendar)
+        .with_drives(Arc::new(drives));
     state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
     if state.device_auth.is_none() {
         state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);

@@ -159,8 +159,8 @@
       return ev.allDay && ev.start < e && ev.end > s && (!pid || ev.people.indexOf(pid) > -1);
     });
   };
-  // How long it takes to get there: the live drive time (Google, from where Home Assistant places
-  // the person) plus Walk:, or else the event's Travel:. Null when there's neither.
+  // How long it takes to get there: the drive time from the backend (OSRM, from home or the
+  // person's set origin) plus Walk:, or else the event's Travel:. Null when there's neither.
   App.journey = function (e) {
     if (e.drive) return { mins: e.drive.mins + (e.walk || 0), drive: e.drive.mins, walk: e.walk || 0, from: e.drive.from, live: true };
     return e.travel ? { mins: e.travel, live: false } : null;

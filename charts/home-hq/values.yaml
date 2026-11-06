@@ -21,7 +21,8 @@ calendars:
   secretKey: HQ_CALENDARS
 
 # Household settings in upstream Home HQ's settings.json format (timezone, location, people,
-# bins, shopping, display). Rendered to JSON in a ConfigMap; any change rolls the pod.
+# bins, shopping, display, travel). Rendered to JSON in a ConfigMap; any change rolls the pod.
+# `travel` points "leave by" drive times at OSRM and Photon/Nominatim (README: Travel times).
 # Empty: the image's bundled example settings are used.
 settings: {}
 
