@@ -67,6 +67,7 @@
       D.bins = s.bins || null;
       D.notes = s.notes || [];
       D.awayOffMinutes = s.awayOffMinutes || 0;
+      D.canAddEvents = !s.capabilities || s.capabilities.addEvents !== false; // home-kiosk patch
       App.$$('.rail-item[data-go="control"], .rail-item[data-go="media"]').forEach(function (r) { r.hidden = !D.hasHome; });
     },
     calendar: function (c) {

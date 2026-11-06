@@ -31,7 +31,7 @@ Each later delivery replaces one slice of `demo.rs` with a real port and adapter
 |---|---|
 | Store | SQLite (embedded migrations) for notes, bin state, frames and shopping |
 | Bins | the real rotation from `settings.bins`, moved dates, the 4 PM window |
-| Calendar | the ICS `CalendarSource` with recurrence, exceptions, timezones and attribution |
+| Calendar | the ICS `CalendarSource` with recurrence, exceptions, timezones and attribution; CalDAV calendars (read and write) alongside |
 | Weather | Open-Meteo for `settings.location`, cached |
 | HA gateway | state snapshot, actions, camera/art proxy, WebSocket alerts, presence |
 | Frames monitor | offline notification through HA after 15 minutes |
@@ -56,10 +56,40 @@ empty `frontend/dist`.
 | `HQ_TLS_CERT` / `HQ_TLS_KEY` | unset (no TLS) | PEM certificate chain and key. Both set adds a TLS listener; the files are re-read every minute and a renewed certificate is used without a restart |
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
+| `HQ_CALENDARS` | unset (demo calendar) | JSON list of ICS feeds and CalDAV calendars (secret), see [Calendars](#calendars) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
 
 `GET /healthz` returns `ok` without a key.
+
+### Calendars
+
+`HQ_CALENDARS` lists the calendars, each for some people (ids from the settings) or `"all"`.
+ICS feeds are read-only. Entries with `"type": "caldav"` are CalDAV calendars (Radicale,
+Nextcloud, Baïkal, iCloud with an app password, …): read with a time-range `REPORT`, and events
+added on the frame are saved to them (`PUT`) and removed again with Undo (`DELETE` with
+`If-Match`, so an event edited elsewhere in the meantime is never deleted):
+
+```json
+[ { "url": "https://calendar.google.com/calendar/ical/…/basic.ics", "people": ["sam"] },
+  { "type": "caldav", "id": "alex", "url": "https://dav.example/alex/personal/",
+    "username": "alex", "password": "…", "people": ["alex"] },
+  { "type": "caldav", "id": "family", "url": "https://dav.example/alex/family/",
+    "username": "alex", "password": "…", "people": "all", "readOnly": false } ]
+```
+
+`url` is the calendar collection (an account URL works when it has exactly one event calendar).
+Credentials can also go in the URL (`https://user:pass@…`); either way they only live in the
+Secret. A new event goes to the calendar for exactly its people, else the `"all"` one, like
+upstream; `calendar.writeTo` in the settings picks calendars by `id` for particular groups:
+
+```json
+"calendar": { "writeTo": [ { "people": ["alex", "sam"], "calendar": "family" } ] }
+```
+
+The frame's "+" only shows when some calendar takes writes (`capabilities.addEvents` in
+`/api/state`). A failed save (the server is down, or the event changed elsewhere) shows
+"Couldn't save" on the frame and keeps the calendar as it was.
 
 ### Screenshot tests
 

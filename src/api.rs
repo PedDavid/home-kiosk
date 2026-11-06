@@ -88,7 +88,12 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn state(State(app): State<AppState>) -> Response {
-    ok(app.demo.lock().await.state(app.now()))
+    let mut state = app.demo.lock().await.state(app.now());
+    // The frame's "+" (add event) shows only when events can be saved somewhere: the demo
+    // calendar, or a configured calendar with a writable (CalDAV) calendar in it.
+    let add_events = !app.calendar.configured() || app.calendar.can_write();
+    state["capabilities"] = json!({ "addEvents": add_events });
+    ok(state)
 }
 
 async fn calendar(State(app): State<AppState>) -> Response {
@@ -113,6 +118,9 @@ async fn add_event(State(app): State<AppState>, b: Bytes) -> ApiResult {
     if let Some(e) = calendar_read_only(&app) {
         return Err(e);
     }
+    if app.calendar.configured() {
+        return Ok(add_to_calendar(&app, &body(&b)).await);
+    }
     app.demo
         .lock()
         .await
@@ -125,8 +133,54 @@ async fn delete_event(State(app): State<AppState>, Path(id): Path<String>) -> Ap
     if let Some(e) = calendar_read_only(&app) {
         return Err(e);
     }
+    if app.calendar.configured() {
+        return Ok(match app.calendar.remove(&id).await {
+            // Already gone is what the frame wanted.
+            Ok(()) | Err(calendar::CalendarError::NotFound) => ok(json!({ "ok": true })),
+            Err(e) => calendar_error(e),
+        });
+    }
     app.demo.lock().await.delete_event(&id);
     Ok(ok(json!({ "ok": true })))
+}
+
+/// `POST /api/events` on a writable calendar: `{ id, title, people, start, end }`, times in ms.
+async fn add_to_calendar(app: &AppState, b: &Value) -> Response {
+    let ms = |v: &Value| {
+        v.as_f64()
+            .and_then(|n| chrono::DateTime::from_timestamp_millis(n as i64))
+    };
+    let (Some(start), Some(end)) = (ms(&b["start"]), ms(&b["end"])) else {
+        return bad("id, title, people, start < end required", StatusCode::BAD_REQUEST);
+    };
+    let new = calendar::NewEvent {
+        id: b["id"].as_str().unwrap_or_default().to_string(),
+        title: b["title"].as_str().unwrap_or_default().trim().to_string(),
+        people: b["people"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|p| p.as_str().map(String::from))
+            .collect(),
+        start,
+        end,
+    };
+    match app.calendar.add(new).await {
+        Ok(_) => ok(json!({ "ok": true })),
+        Err(e) => calendar_error(e),
+    }
+}
+
+/// A failed write. The frame shows it as "Couldn't save · <error>" and refreshes the calendar,
+/// which still has everything it had.
+fn calendar_error(e: calendar::CalendarError) -> Response {
+    let status = match e {
+        calendar::CalendarError::ReadOnly => StatusCode::METHOD_NOT_ALLOWED,
+        calendar::CalendarError::NotFound => StatusCode::NOT_FOUND,
+        calendar::CalendarError::Invalid(_) => StatusCode::BAD_REQUEST,
+        calendar::CalendarError::Backend(_) => StatusCode::BAD_GATEWAY,
+    };
+    bad(&e.to_string(), status)
 }
 
 async fn bins_out(State(app): State<AppState>, b: Bytes) -> ApiResult {

@@ -13,6 +13,17 @@ key:
   existingSecret: ""
   secretKey: HQ_KEY
 
+# Calendars (HQ_CALENDARS) come from an existing Secret, because the links and CalDAV passwords
+# are secrets: a JSON list of ICS feeds and CalDAV calendars, e.g.
+#   [ { "url": "https://calendar.google.com/calendar/ical/…/basic.ics", "people": ["sam"] },
+#     { "type": "caldav", "id": "family", "url": "https://dav.example/alex/family/",
+#       "username": "alex", "password": "…", "people": "all" } ]
+# CalDAV calendars can also take events added on the frame; which one an event goes to can be
+# set in settings.calendar.writeTo (by id). Empty: the demo calendar.
+calendars:
+  existingSecret: ""
+  secretKey: HQ_CALENDARS
+
 # Household settings in upstream Home HQ's settings.json format (timezone, location, people,
 # bins, shopping, display). Rendered to JSON in a ConfigMap; any change rolls the pod.
 # Empty: the image's bundled example settings are used.

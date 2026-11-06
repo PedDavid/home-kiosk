@@ -19,9 +19,11 @@
 //!
 //! Every adapter must pass the shared contract suite in `tests/support/calendar_contract.rs`.
 
+pub mod caldav;
 pub mod engine;
 pub mod fetch;
 pub mod ics;
+pub mod mixed;
 
 use std::fmt;
 

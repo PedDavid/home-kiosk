@@ -77,8 +77,9 @@ run with that bundled example. Quote dates such as `"2026-01-06"` so YAML keeps 
 
 ## Bootstrap
 
-1. **The `home-hq` namespace and Secret.** The Secret holds `HQ_KEY` and is created the way RFC
-   004 prescribes. Generate the key with:
+1. **The `home-hq` namespace and Secret.** The Secret holds `HQ_KEY` (and, with
+   `calendars.existingSecret`, `HQ_CALENDARS`: see the app README's Calendars section) and is
+   created the way RFC 004 prescribes. Generate the key with:
 
    ```bash
    openssl rand -base64 32 | tr '+/' '-_'
@@ -144,6 +145,7 @@ WebView 106 negotiates TLS 1.2 ECDHE-RSA-AES-GCM; use an RSA certificate if a cl
 | `image.repository` / `image.tag` | `ghcr.io/peddavid/home-kiosk` / chart `appVersion` | Image |
 | `imagePullSecrets` | `[]` | For private GHCR |
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
+| `calendars.existingSecret` / `calendars.secretKey` | `""` / `HQ_CALENDARS` | Secret holding the calendar list (ICS links, CalDAV URLs and passwords). Unset means the demo calendar |
 | `settings` | `{}` | Household settings. Empty means the bundled example |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |

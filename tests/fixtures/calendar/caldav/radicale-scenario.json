@@ -1,0 +1,129 @@
+[
+  {
+    "method": "PROPFIND",
+    "path": "/alex/personal/",
+    "depth": "0",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/personal/</href><propstat><prop><resourcetype><C:calendar /><collection /></resourcetype><displayname>personal</displayname><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><C:read-free-busy /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:supported-calendar-component-set><C:comp name=\"VEVENT\" /></C:supported-calendar-component-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><C:calendar-home-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "PROPFIND",
+    "path": "/alex/family/",
+    "depth": "0",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/family/</href><propstat><prop><resourcetype><C:calendar /><collection /></resourcetype><displayname>family</displayname><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><C:read-free-busy /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:supported-calendar-component-set><C:comp name=\"VEVENT\" /></C:supported-calendar-component-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><C:calendar-home-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/personal/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/personal/dentist.ics</href><propstat><prop><getetag>\"0a626bacecd41c73abe6ebaa3dc5b61eb5876325a881719deeeb3c81d0916f35\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dentist@phone\r\nDTSTART;TZID=Europe/Lisbon:20261106T123000\r\nDTEND;TZID=Europe/Lisbon:20261106T133000\r\nDTSTAMP:20261101T090000Z\r\nLOCATION:Rua Augusta 10\r\nSUMMARY:Dentist\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/family/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/family/dinner.ics</href><propstat><prop><getetag>\"6705bf3d155d9fd2ee2662945fb444f820a5bf24a9225f769a16b4b3b9b01120\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dinner@phone\r\nDTSTART;TZID=Europe/Lisbon:20261020T200000\r\nDTEND;TZID=Europe/Lisbon:20261020T210000\r\nDTSTAMP:20261101T090000Z\r\nEXDATE;TZID=Europe/Lisbon:20261110T200000\r\nRRULE:FREQ=WEEKLY;BYDAY=TU\r\nSUMMARY:Family dinner\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "PUT",
+    "path": "/alex/family/rad1.ics",
+    "if_none_match": "*",
+    "status": 201,
+    "etag": "\"ddd2f686d916ad928da770b61120212b2056189f39a2a2cdc0a920f894f19a1f\"",
+    "body": ""
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/family/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/family/dinner.ics</href><propstat><prop><getetag>\"6705bf3d155d9fd2ee2662945fb444f820a5bf24a9225f769a16b4b3b9b01120\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dinner@phone\r\nDTSTART;TZID=Europe/Lisbon:20261020T200000\r\nDTEND;TZID=Europe/Lisbon:20261020T210000\r\nDTSTAMP:20261101T090000Z\r\nEXDATE;TZID=Europe/Lisbon:20261110T200000\r\nRRULE:FREQ=WEEKLY;BYDAY=TU\r\nSUMMARY:Family dinner\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response><response><href>/alex/family/rad1.ics</href><propstat><prop><getetag>\"ddd2f686d916ad928da770b61120212b2056189f39a2a2cdc0a920f894f19a1f\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nCALSCALE:GREGORIAN\r\nPRODID:-//Home HQ//home-kiosk//EN\r\nBEGIN:VEVENT\r\nUID:rad1@home-hq\r\nDTSTART:20261108T100000Z\r\nDTEND:20261108T110000Z\r\nCREATED:20261105T173000Z\r\nDESCRIPTION:Added on the Home HQ frame\r\nDTSTAMP:20261105T173000Z\r\nSUMMARY:Haircut\r\nX-HOME-HQ-PEOPLE:alex\\,sam\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/personal/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/personal/dentist.ics</href><propstat><prop><getetag>\"0a626bacecd41c73abe6ebaa3dc5b61eb5876325a881719deeeb3c81d0916f35\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dentist@phone\r\nDTSTART;TZID=Europe/Lisbon:20261106T123000\r\nDTEND;TZID=Europe/Lisbon:20261106T133000\r\nDTSTAMP:20261101T090000Z\r\nLOCATION:Rua Augusta 10\r\nSUMMARY:Dentist\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "DELETE",
+    "path": "/alex/family/rad1.ics",
+    "if_match": "\"ddd2f686d916ad928da770b61120212b2056189f39a2a2cdc0a920f894f19a1f\"",
+    "status": 412,
+    "body": "Precondition failed."
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/personal/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/personal/dentist.ics</href><propstat><prop><getetag>\"0a626bacecd41c73abe6ebaa3dc5b61eb5876325a881719deeeb3c81d0916f35\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dentist@phone\r\nDTSTART;TZID=Europe/Lisbon:20261106T123000\r\nDTEND;TZID=Europe/Lisbon:20261106T133000\r\nDTSTAMP:20261101T090000Z\r\nLOCATION:Rua Augusta 10\r\nSUMMARY:Dentist\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/family/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/family/dinner.ics</href><propstat><prop><getetag>\"6705bf3d155d9fd2ee2662945fb444f820a5bf24a9225f769a16b4b3b9b01120\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dinner@phone\r\nDTSTART;TZID=Europe/Lisbon:20261020T200000\r\nDTEND;TZID=Europe/Lisbon:20261020T210000\r\nDTSTAMP:20261101T090000Z\r\nEXDATE;TZID=Europe/Lisbon:20261110T200000\r\nRRULE:FREQ=WEEKLY;BYDAY=TU\r\nSUMMARY:Family dinner\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response><response><href>/alex/family/rad1.ics</href><propstat><prop><getetag>\"b24aa7ce88a5f40493c0db184ce168249c28ab65343c486a94960cf70adf9b43\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nCALSCALE:GREGORIAN\r\nPRODID:-//Home HQ//home-kiosk//EN\r\nBEGIN:VEVENT\r\nUID:rad1@home-hq\r\nDTSTART:20261108T100000Z\r\nDTEND:20261108T110000Z\r\nCREATED:20261105T174500Z\r\nDESCRIPTION:Added on the Home HQ frame\r\nDTSTAMP:20261105T174500Z\r\nSUMMARY:Haircut (moved)\r\nX-HOME-HQ-PEOPLE:alex\\,sam\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "DELETE",
+    "path": "/alex/family/rad1.ics",
+    "if_match": "\"b24aa7ce88a5f40493c0db184ce168249c28ab65343c486a94960cf70adf9b43\"",
+    "status": 200,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\"><response><href>/alex/family/rad1.ics</href><status>HTTP/1.1 200 OK</status></response></multistatus>"
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/family/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/family/dinner.ics</href><propstat><prop><getetag>\"6705bf3d155d9fd2ee2662945fb444f820a5bf24a9225f769a16b4b3b9b01120\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dinner@phone\r\nDTSTART;TZID=Europe/Lisbon:20261020T200000\r\nDTEND;TZID=Europe/Lisbon:20261020T210000\r\nDTSTAMP:20261101T090000Z\r\nEXDATE;TZID=Europe/Lisbon:20261110T200000\r\nRRULE:FREQ=WEEKLY;BYDAY=TU\r\nSUMMARY:Family dinner\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "REPORT",
+    "path": "/alex/personal/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/personal/dentist.ics</href><propstat><prop><getetag>\"0a626bacecd41c73abe6ebaa3dc5b61eb5876325a881719deeeb3c81d0916f35\"</getetag><C:calendar-data>BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Phone//EN\r\nBEGIN:VTIMEZONE\r\nTZID:Europe/Lisbon\r\nBEGIN:STANDARD\r\nDTSTART:20001029T020000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\r\nTZNAME:WET\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0000\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20000326T010000\r\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\r\nTZNAME:WEST\r\nTZOFFSETFROM:+0000\r\nTZOFFSETTO:+0100\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nUID:dentist@phone\r\nDTSTART;TZID=Europe/Lisbon:20261106T123000\r\nDTEND;TZID=Europe/Lisbon:20261106T133000\r\nDTSTAMP:20261101T090000Z\r\nLOCATION:Rua Augusta 10\r\nSUMMARY:Dentist\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n</C:calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "PROPFIND",
+    "path": "/alex/personal/rad1.ics",
+    "depth": "0",
+    "status": 404,
+    "body": "The requested resource could not be found."
+  },
+  {
+    "method": "PROPFIND",
+    "path": "/alex/family/rad1.ics",
+    "depth": "0",
+    "status": 404,
+    "body": "The requested resource could not be found."
+  },
+  {
+    "method": "PROPFIND",
+    "path": "/alex/",
+    "depth": "0",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/</href><propstat><prop><resourcetype><principal /><collection /></resourcetype><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:calendar-home-set><href>/alex/</href></C:calendar-home-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><displayname /><C:supported-calendar-component-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "PROPFIND",
+    "path": "/alex/tasks/",
+    "depth": "0",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/tasks/</href><propstat><prop><resourcetype><C:calendar /><collection /></resourcetype><displayname>tasks</displayname><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><C:read-free-busy /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:supported-calendar-component-set><C:comp name=\"VTODO\" /></C:supported-calendar-component-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><C:calendar-home-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response></multistatus>"
+  },
+  {
+    "method": "PROPFIND",
+    "path": "/alex/",
+    "depth": "1",
+    "status": 207,
+    "body": "<?xml version='1.0' encoding='utf-8'?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><response><href>/alex/</href><propstat><prop><resourcetype><principal /><collection /></resourcetype><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:calendar-home-set><href>/alex/</href></C:calendar-home-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><displayname /><C:supported-calendar-component-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response><response><href>/alex/tasks/</href><propstat><prop><resourcetype><C:calendar /><collection /></resourcetype><displayname>tasks</displayname><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><C:read-free-busy /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:supported-calendar-component-set><C:comp name=\"VTODO\" /></C:supported-calendar-component-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><C:calendar-home-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response><response><href>/alex/personal/</href><propstat><prop><resourcetype><C:calendar /><collection /></resourcetype><displayname>personal</displayname><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><C:read-free-busy /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:supported-calendar-component-set><C:comp name=\"VEVENT\" /></C:supported-calendar-component-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><C:calendar-home-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response><response><href>/alex/family/</href><propstat><prop><resourcetype><C:calendar /><collection /></resourcetype><displayname>family</displayname><current-user-principal><href>/alex/</href></current-user-principal><current-user-privilege-set><privilege><read /></privilege><privilege><C:read-free-busy /></privilege><privilege><all /></privilege><privilege><write /></privilege><privilege><write-properties /></privilege><privilege><write-content /></privilege></current-user-privilege-set><C:supported-calendar-component-set><C:comp name=\"VEVENT\" /></C:supported-calendar-component-set></prop><status>HTTP/1.1 200 OK</status></propstat><propstat><prop><C:calendar-home-set /></prop><status>HTTP/1.1 404 Not Found</status></propstat></response></multistatus>"
+  }
+]
