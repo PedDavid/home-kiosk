@@ -10,6 +10,7 @@ check that nothing spills out of the 1280×800 frame.
 | `photos-landscape` | Photos with only a landscape photo (Cover) |
 | `photos-portrait`, `photos-portrait-polaroid` | Photos with only a portrait photo: Cover (fitted on a blurred fill) and Auto (polaroid) |
 | `photos-idle` | the idle photo screen (ambient mode, as `App.rest()` leaves it) |
+| `share-sheet`, `share-sheet-fullscreen` | the Share photo QR sheet over Photos, and over photo full screen (an Immich photo with `shareUrl`) |
 | `night` | the dim night clock |
 | `note-sheet` | the New note sheet over Calendar |
 | `weather-open-meteo` | the weather card and hourly strip on a real Open-Meteo forecast: the recorded snapshot in `tests/fixtures/weather/`, served as the backend serves it, at noon on the snapshot's day |
