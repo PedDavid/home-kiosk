@@ -27,6 +27,7 @@
     .ok { color: #1f6b3a; font-weight: 600; }
     #qr { width: 260px; height: 260px; background: white; padding: 10px; border-radius: 12px; }
     .pending { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+    .pending > div { flex: 1 1 300px; }
     .account-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
     .cal { border-top: 1px solid #e5dfd3; padding: 14px 0 6px; }
     .cal:first-of-type { border-top: 0; }
@@ -47,9 +48,11 @@
   <p class="muted">Calendars show on the frame for the people you pick. CalDAV calendars can also take events added on the frame.</p>
   <p id="persist" class="note" hidden></p>
   <p id="error" class="error" role="alert"></p>
+  <div id="accounts"></div>
+  <p id="env" class="note" hidden></p>
 
   <section>
-    <h2>Connect a calendar server</h2>
+    <h2 id="connect-title">Connect a calendar server</h2>
     <p class="note">Nextcloud and RustiCal: sign in on your phone (with your usual login, OIDC included) and approve. Home HQ gets its own app password, which you can revoke on the server.</p>
     <div id="connect-form" class="row">
       <div><label for="server">Server address</label><input id="server" type="url" placeholder="https://dav.example.com" autocomplete="url"></div>
@@ -90,7 +93,5 @@
     <button id="ics-add">Add link</button>
   </section>
 
-  <div id="accounts"></div>
-  <p id="env" class="note" hidden></p>
 </main><script type="module" src="/js/calendars.js"></script></body>
 </html>

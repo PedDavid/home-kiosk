@@ -62,7 +62,7 @@ function renderAccounts() {
   var list = $('accounts');
   list.innerHTML = '';
   if (!state.accounts.length) {
-    list.innerHTML = '<p class="muted">No calendars added here yet.</p>';
+    list.innerHTML = '<p class="muted">No calendars added here yet: connect a server or add a link below.</p>';
   }
   state.accounts.forEach(function (a) {
     var el = document.createElement('div');
@@ -125,8 +125,9 @@ async function poll() {
     if (r.status === 'waiting') { timer = setTimeout(poll, 2000); return; }
     renderLogin(null);
     if (r.status === 'connected') {
-      $('connect-status').innerHTML = '<span class="ok">Connected. Pick whose each calendar is below.</span>';
+      $('connect-status').innerHTML = '<span class="ok">Connected. Pick whose each calendar is, above.</span>';
       await load();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (r.status === 'expired') {
       $('connect-status').innerHTML = '<span class="error">The login expired or was declined. Connect again to retry.</span>';
     }
@@ -162,8 +163,9 @@ $('pw-add').addEventListener('click', function () {
   busy($('pw-add'), async function () {
     await api('POST', '/password', { server: $('pw-server').value, username: $('pw-user').value, password: $('pw-pass').value });
     $('pw-pass').value = '';
-    $('connect-status').innerHTML = '<span class="ok">Added. Pick whose each calendar is below.</span>';
+    $('connect-status').innerHTML = '<span class="ok">Added. Pick whose each calendar is, above.</span>';
     await load();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 });
 $('ics-add').addEventListener('click', function () {

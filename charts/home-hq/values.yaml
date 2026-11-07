@@ -13,14 +13,13 @@ key:
   existingSecret: ""
   secretKey: HQ_KEY
 
-# Calendars (HQ_CALENDARS) come from an existing Secret, because the links and CalDAV passwords
-# are secrets: a JSON list of ICS feeds and CalDAV calendars, e.g.
+# Calendars are normally added on the dashboard's calendar page (/calendars) and kept encrypted
+# on the PVC (needs persistence and a dashboard key). Optionally, fixed calendars (HQ_CALENDARS)
+# come from an existing Secret: a JSON list of ICS links and CalDAV calendars, e.g.
 #   [ { "url": "https://calendar.google.com/calendar/ical/…/basic.ics", "people": ["sam"] },
 #     { "type": "caldav", "id": "family", "url": "https://dav.example/alex/family/",
 #       "username": "alex", "password": "…", "people": "all" } ]
-# CalDAV calendars can also take events added on the frame; which one an event goes to can be
-# set in settings.calendar.writeTo (by id). Empty: the demo calendar. It may be the same Secret
-# as `key`.
+# It may be the same Secret as `key`.
 calendars:
   existingSecret: ""
   secretKey: HQ_CALENDARS

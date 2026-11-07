@@ -62,7 +62,8 @@ empty `frontend/dist`.
 | `HQ_TLS_CERT` / `HQ_TLS_KEY` | unset (no TLS) | PEM certificate chain and key. Both set adds a TLS listener; the files are re-read every minute and a renewed certificate is used without a restart |
 | `HQ_TLS_LISTEN` | `0.0.0.0:8443` | TLS listen address |
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
-| `HQ_CALENDARS` | unset (demo calendar) | JSON list of ICS feeds and CalDAV calendars (secret), see [Calendars](#calendars) and the [chart's Calendars](charts/home-hq/README.md#calendars) |
+| `HQ_CALENDARS` | unset | Optional fixed calendars (secret): a JSON list of ICS feeds and CalDAV calendars. Calendars are normally added on the calendar page, see [Calendars](#calendars) |
+| `HQ_CALENDAR_SERVERS` | unset (any) | Comma-separated origins the calendar page may add CalDAV servers and ICS links from |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
 | `HQ_IMMICH_PUBLIC_URL` | unset (Share hidden) | Immich address phones open, e.g. `https://photos.example.com`. The Photos tab's Share button shows a QR code for `<url>/photos/<assetId>` (a plain link, no key) on photos from Immich. Must be `http(s)://host[/path]`, else startup fails |
 | `HQ_WEATHER` | `open-meteo` | `open-meteo` serves Open-Meteo's forecast for `settings.location`, cached 15 minutes; a failed refresh serves the last forecast. With no `location`, `/api/weather` answers `{ "none": true }`. Needs egress to `api.open-meteo.com`. `demo` serves the generated demo forecast and makes no outbound calls (CI, offline development) |
@@ -207,32 +208,52 @@ Then run CI by hand with *update screenshots* ticked, which renders and commits 
 `weather-open-meteo.png` baseline, and review it.
 ### Calendars
 
-`HQ_CALENDARS` lists the calendars, each for some people (ids from the settings) or `"all"`.
-ICS feeds are read-only. Entries with `"type": "caldav"` are CalDAV calendars (Radicale,
-Nextcloud, Baïkal, iCloud with an app password, …): read with a time-range `REPORT`, and events
-added on the frame are saved to them (`PUT`) and removed again with Undo (`DELETE` with
-`If-Match`, so an event edited elsewhere in the meantime is never deleted):
+Add calendars on the **calendar page**: open **Status → Calendars: add or change** on the frame,
+or `/calendars` on a phone. It shows:
+
+- **Connect a calendar server** (Nextcloud, RustiCal): enter the server address and scan the QR
+  code with your phone. Sign in there, with OIDC if your server uses it, and approve "HomeHQ".
+  This is Nextcloud's Login Flow v2: the server makes Home HQ its own app password, which you
+  can revoke on the server, and nothing is typed on the frame. Home HQ then finds the account's
+  event calendars through `/.well-known/caldav`.
+- **Use an app password instead**, for servers without the login flow (Radicale, Baïkal,
+  iCloud). It takes a server or calendar address, a user name and an app password.
+- **Add an ICS link** (read-only), such as Google's "Secret address in iCal format".
+
+For each calendar you choose whose it is (a calendar named after a person starts as theirs),
+whether it shows on the frame, and whether the frame may add events to it. That last option is
+off until you turn it on, and only offered where the server lets the account write. Changes
+apply immediately, without a restart.
+
+A new event goes to the calendar for exactly its people, else an "Everyone" one, like
+upstream. It's saved with `PUT`, and removed again with Undo by `DELETE` with `If-Match`, so an
+event edited elsewhere in the meantime is never deleted. The frame's "+" only shows when some
+calendar takes events (`capabilities.addEvents` in `/api/state`). A failed save (the server is
+down, or the event changed elsewhere) shows "Couldn't save" on the frame and keeps the calendar
+as it was.
+
+**Where it's kept:** in `$HQ_STATE_DIR/calendars.bin`, encrypted with AES-256-GCM under a key
+derived from `HQ_KEY`, like the Immich grant (the chart's `persistence` sets `HQ_STATE_DIR`).
+Without `HQ_KEY` nothing is written; without `HQ_STATE_DIR`, calendars added on the page last
+until a restart. A file that can't be decrypted (a changed `HQ_KEY`) is renamed to
+`calendars.unreadable` and Home HQ starts without it. App passwords and ICS links never come
+back to the page. An account's server can't be changed, only removed and added again, so a
+stored password is only ever sent to the server it was made for. To limit which servers can be
+added, set `HQ_CALENDAR_SERVERS` to a comma-separated list of origins, for example
+`https://dav.example.com,https://calendar.google.com`.
+
+**Server configuration (optional):** `HQ_CALENDARS`, a JSON list in the Secret, adds calendars
+the page shows as fixed. It's useful for GitOps:
 
 ```json
 [ { "url": "https://calendar.google.com/calendar/ical/…/basic.ics", "people": ["sam"] },
-  { "type": "caldav", "id": "alex", "url": "https://dav.example/alex/personal/",
-    "username": "alex", "password": "…", "people": ["alex"] },
   { "type": "caldav", "id": "family", "url": "https://dav.example/alex/family/",
     "username": "alex", "password": "…", "people": "all", "readOnly": false } ]
 ```
 
-`url` is the calendar collection (an account URL works when it has exactly one event calendar).
-Credentials can also go in the URL (`https://user:pass@…`); either way they only live in the
-Secret. A new event goes to the calendar for exactly its people, else the `"all"` one, like
-upstream; `calendar.writeTo` in the settings picks calendars by `id` for particular groups:
-
-```json
-"calendar": { "writeTo": [ { "people": ["alex", "sam"], "calendar": "family" } ] }
-```
-
-The frame's "+" only shows when some calendar takes writes (`capabilities.addEvents` in
-`/api/state`). A failed save (the server is down, or the event changed elsewhere) shows
-"Couldn't save" on the frame and keeps the calendar as it was.
+There, `url` is the calendar collection, and credentials can also go in the URL. To pick
+calendars for particular groups by `id`, use `calendar.writeTo` in the settings:
+`"calendar": { "writeTo": [ { "people": ["alex", "sam"], "calendar": "family" } ] }`.
 
 ### Screenshot tests
 

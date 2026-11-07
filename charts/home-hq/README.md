@@ -80,8 +80,8 @@ run with that bundled example. Quote dates such as `"2026-01-06"` so YAML keeps 
 
 ## Bootstrap
 
-1. **The `home-hq` namespace and Secret.** The Secret holds `HQ_KEY` (and, with
-   `calendars.existingSecret`, `HQ_CALENDARS`: see the app README's Calendars section) and is
+1. **The `home-hq` namespace and Secret.** The Secret holds `HQ_KEY` (and optionally, with
+   `calendars.existingSecret`, fixed calendars as `HQ_CALENDARS`; see [Calendars](#calendars)) and is
    created the way RFC 004 prescribes. Generate the key with:
 
    ```bash
@@ -114,21 +114,23 @@ data. `/m` is the phone page.
 
 ## Calendars
 
-"Next up", the people lanes and the calendar views read private iCal links, one or more per
-person. The links are secrets (anyone holding one can read that calendar), so they live in the
-Secret as `HQ_CALENDARS`, a JSON list:
+Calendars are added on the dashboard's calendar page (**Status → Calendars: add or change**, or
+`/calendars`). CalDAV servers connect by signing in on a phone (Nextcloud Login Flow v2, which
+RustiCal also offers), and ICS links can be added too. With `persistence` on (the default) and
+a dashboard key, they are kept encrypted on the PVC (`calendars.bin`). See the app README's
+[Calendars](../../README.md#calendars).
 
-```json
-[
-  { "url": "https://calendar.google.com/calendar/ical/…/private-…/basic.ics", "people": ["alex"] },
-  { "url": "https://calendar.google.com/calendar/ical/…/private-…/basic.ics", "people": ["sam"] },
-  { "url": "webcal://p01-caldav.icloud.com/published/2/…", "people": "all" }
-]
+To limit the servers the page accepts, set `HQ_CALENDAR_SERVERS` through `extraEnv`:
+
+```yaml
+  values:
+    extraEnv:
+      - name: HQ_CALENDAR_SERVERS
+        value: https://dav.example.com
 ```
 
-`people` names person ids from `settings.people` (a list, one id, or `"all"`). In Google
-Calendar the link is *Settings → (the calendar) → Integrate calendar → Secret address in iCal
-format*. Add it to the Secret and point the chart at it:
+Calendars can also be fixed in the Secret as `HQ_CALENDARS` (`calendars.existingSecret`), a JSON
+list of ICS links and CalDAV calendars, for setups that keep everything in git:
 
 ```bash
 kubectl -n home-hq create secret generic home-hq \
@@ -136,26 +138,8 @@ kubectl -n home-hq create secret generic home-hq \
   --from-file=HQ_CALENDARS=calendars.json
 ```
 
-```yaml
-  values:
-    calendars:
-      existingSecret: home-hq
-```
-
-Feeds are read every 10 minutes. A feed that fails keeps its last events, and the frame's Status
-panel shows "Calendar N: …" (never the link). ICS feeds are read-only: the frame's "+" is hidden
-until a writable source is configured.
-
-CalDAV calendars go in the same list with `"type": "caldav"` and their credentials, and take
-events added on the frame (and their removal with Undo):
-
-```json
-  { "type": "caldav", "id": "family", "url": "https://dav.example/alex/family/",
-    "username": "alex", "password": "…", "people": "all" }
-```
-
-Which calendar a new event goes to, and `calendar.writeTo` in `settings` to choose it per group,
-are in the app README's [Calendars](../../README.md#calendars) section.
+Calendars are read every 10 minutes. One that fails keeps its last events, and the frame's Status
+panel shows "<name>: …" (never the link or password).
 
 ## Dedicated LAN address
 
@@ -235,7 +219,7 @@ old pod before the new one mounts the claim, which a single-node `ReadWriteOnce`
 | `image.repository` / `image.tag` | `ghcr.io/peddavid/home-kiosk` / chart `appVersion` | Image |
 | `imagePullSecrets` | `[]` | For private GHCR |
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
-| `calendars.existingSecret` / `calendars.secretKey` | `""` / `HQ_CALENDARS` | Secret holding the calendar list (ICS links, CalDAV URLs and passwords). Unset means the demo calendar |
+| `calendars.existingSecret` / `calendars.secretKey` | `""` / `HQ_CALENDARS` | Optional Secret with fixed calendars (ICS links, CalDAV URLs and passwords). Calendars are normally added on the calendar page |
 | `settings` | `{}` | Household settings. Empty means the bundled example |
 | `immich.publicUrl` | `""` | `HQ_IMMICH_PUBLIC_URL`: the Immich address phones open from the Photos tab's Share QR code. Empty hides the Share button |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
