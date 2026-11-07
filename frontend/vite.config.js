@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import pkg from './package.json' with { type: 'json' };
 
-// Changes with every build; frames compare it with /build.json and reload after a deploy.
+// Changes with every build; frames compare it with /build.json and offer an update after a deploy.
 const BUILD_ID = Date.now().toString(36);
 
 // The wall tablet runs Android WebView 106 — keep JS output within Chromium 106.

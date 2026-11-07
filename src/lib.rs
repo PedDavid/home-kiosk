@@ -6,6 +6,7 @@ pub mod auth;
 pub mod calendar;
 pub mod demo;
 pub mod device_auth;
+pub mod geocoding;
 pub mod grant_store;
 pub mod immich;
 pub mod settings;
@@ -33,6 +34,7 @@ pub struct AppState {
     pub immich_public_url: Option<Arc<share::ImmichPublicUrl>>,
     /// Live weather. `None` keeps the demo forecast.
     pub weather: Option<Arc<weather::Weather>>,
+    pub geocoding: Option<Arc<geocoding::Geocoding>>,
     /// Calendar events. Not configured: `/api/calendar` serves the demo calendar.
     pub calendar: Arc<dyn calendar::CalendarSource>,
 }
@@ -48,6 +50,7 @@ impl AppState {
             clock,
             immich_public_url: None,
             weather: None,
+            geocoding: None,
             calendar: Arc::new(calendar::NotConfigured),
         }
     }

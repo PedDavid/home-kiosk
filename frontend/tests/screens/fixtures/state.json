@@ -445,6 +445,10 @@
     }
   ],
   "awayOffMinutes": 0,
+  "weatherLocation": {
+    "lat": 38.7223,
+    "lon": -9.1393
+  },
   "capabilities": {
     "addEvents": true
   }

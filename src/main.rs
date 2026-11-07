@@ -4,7 +4,7 @@ use anyhow::Context;
 use home_hq::{
     AppState,
     calendar::{self, CalendarSource},
-    router,
+    geocoding, router,
     settings::Settings,
     share::ImmichPublicUrl,
     tls, weather,
@@ -45,11 +45,27 @@ async fn main() -> anyhow::Result<()> {
     let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
     let calendar = calendars(&settings, clock.clone())?;
     let weather = weather_from_env(&settings, clock.clone())?;
+    let geocoding = if weather.is_some() {
+        settings
+            .location
+            .as_ref()
+            .map(|location| {
+                let endpoint = std::env::var("HQ_GEOCODING_URL").unwrap_or_else(|_| geocoding::NOMINATIM_URL.into());
+                geocoding::Geocoding::new(location, &endpoint, geocoding::http_fetch()?).map(Arc::new)
+            })
+            .transpose()?
+    } else {
+        None
+    };
     let mut state = AppState::new(settings, key, clock)
         .with_calendar(calendar)
         .with_immich_public_url(immich_public_url);
     if let Some(w) = weather {
         state = state.with_weather(w);
+    }
+    if let Some(source) = geocoding {
+        source.start();
+        state.geocoding = Some(source);
     }
     state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
     if state.device_auth.is_none() {

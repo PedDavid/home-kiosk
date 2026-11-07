@@ -71,6 +71,15 @@ empty `frontend/dist`.
 
 `GET /healthz` returns `ok` without a key.
 
+The Status debug section at the bottom of Display Controls shows weather coordinates and a city
+resolved automatically from those coordinates by Nominatim (OpenStreetMap). The backend looks it
+up in the background and caches the name in memory until restart; unavailable lookups retry every
+15 minutes. The kiosk needs no internet. If the backend has no internet or restarts offline, the
+coordinates still appear. `HQ_WEATHER=demo` disables this lookup as well as live weather.
+`HQ_GEOCODING_URL` overrides the reverse-geocoding endpoint for self-hosting (Nominatim format).
+Backend egress to `nominatim.openstreetmap.org` is needed for the default provider.
+Click **Show QR** to reveal a locally generated QR code for opening the map on an online phone.
+
 ### Photo frame behaviour
 
 After eight seconds without interaction in Photos, the daytime frame shows only an
@@ -83,7 +92,7 @@ Photo colours stay unchanged at night; only the dashboard UI receives the night 
 Use the circular expand icon at the top left in Photos to keep the current slideshow on screen
 until you exit. Only the subtle circular shrink icon remains visible at the top left; Escape or navigating away also exits. This mode
 suspends the app's idle, night/scheduled-off and everyone-away sleep transitions, and postpones
-automatic deploy reloads. Normal timers resume from the time you exit. The browser's native
+deploy update notices. Normal timers resume from the time you exit. The browser's native
 full-screen API and screen wake lock are used where available; unsupported or denied browser
 APIs still allow the UI-only full-screen view. The Android kiosk already keeps the screen awake.
 This mode is local to the current page and is not restored after reload.
