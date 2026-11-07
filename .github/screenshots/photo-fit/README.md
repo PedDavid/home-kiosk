@@ -18,6 +18,6 @@ These comparisons use the **same real photograph** in the actual before and afte
 
 These are review illustrations, **not Playwright CI baselines**. Synthetic edge-marked fixtures remain in the automated geometry tests, where they make clipping detectable.
 
-The CI baselines were regenerated in `mcr.microsoft.com/playwright:v1.65.0-noble` and committed in `0779f43`. The photo-fit fixture uses a fixed non-zero Polaroid tilt so background Home-view rendering cannot change its screenshot. Geometry checks and exact screenshot comparisons remain enabled.
+The CI baselines were regenerated in `mcr.microsoft.com/playwright:v1.65.0-noble` and committed in `0779f43`. After merging the latest `main`, `3c6e64d` refreshed the three Share-sheet backgrounds and the Home screenshot with the latest weather layout. The photo-fit fixture uses a fixed non-zero Polaroid tilt so background Home-view rendering cannot change its screenshot. Geometry checks and exact screenshot comparisons remain enabled.
 
 For future visual changes, use `npm run test:screens:docker:update`, review the generated references, and then verify with `npm run test:screens:docker`, as described in `frontend/tests/screens/README.md`.
