@@ -27,7 +27,8 @@ settings: {}
 
 immich:
   # The Immich address people's phones open (HQ_IMMICH_PUBLIC_URL), e.g. https://photos.example.com.
-  # The Photos tab's Share button shows a QR code for <publicUrl>/photos/<assetId>: a plain link,
+  # The Photos tab's Share button shows a QR code that opens the photo in the Immich phone app
+  # (immich://asset?id=<assetId>) or, switched to Web, <publicUrl>/photos/<assetId>: plain links,
   # no key, so whoever scans it signs in to Immich with their own login. Use the public address,
   # not a cluster-internal one a phone can't reach. Empty: the Share button is hidden.
   publicUrl: ""
