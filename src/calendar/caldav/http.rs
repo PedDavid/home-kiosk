@@ -52,11 +52,9 @@ impl Transport for Http {
         }
         let res = b.send().await.map_err(describe)?;
         let status = res.status().as_u16();
-        let etag = res
-            .headers()
-            .get(header::ETAG)
-            .and_then(|v| v.to_str().ok())
-            .map(String::from);
+        let header = |name| res.headers().get(name).and_then(|v| v.to_str().ok()).map(String::from);
+        let etag = header(header::ETAG);
+        let location = header(header::LOCATION);
         if res.content_length().is_some_and(|n| n as usize > MAX_BODY) {
             return Err("response is larger than 20 MB".into());
         }
@@ -64,6 +62,11 @@ impl Transport for Http {
         if body.len() > MAX_BODY {
             return Err("response is larger than 20 MB".into());
         }
-        Ok(HttpResponse { status, etag, body })
+        Ok(HttpResponse {
+            status,
+            etag,
+            location,
+            body,
+        })
     }
 }

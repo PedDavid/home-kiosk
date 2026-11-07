@@ -20,6 +20,8 @@
 //!
 //! Every adapter must pass the shared contract suite in `tests/support/calendar_contract.rs`.
 
+pub mod accounts;
+pub mod admin;
 pub mod caldav;
 pub mod engine;
 pub mod fetch;

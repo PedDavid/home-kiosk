@@ -17,6 +17,7 @@ fn resolve(path: &str) -> String {
     match p {
         "" => "index.html".into(),
         "immich" | "immich/" => "immich.html".into(),
+        "calendars" | "calendars/" => "calendars.html".into(),
         "m" | "m/" => "m.html".into(),
         "upload" | "upload/" => "upload.html".into(),
         _ => p.to_string(),

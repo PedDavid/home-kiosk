@@ -43,6 +43,10 @@ pub struct FakeDav {
     pub authorization: Option<String>,
     pub log: Mutex<Vec<HttpRequest>>,
     etags: Mutex<u64>,
+    /// Nextcloud Login Flow v2: `None` until started, then whether the phone has approved.
+    pub login: Mutex<Option<bool>>,
+    /// The app password the login flow hands out (it must match `authorization`).
+    pub app_password: Mutex<String>,
 }
 
 impl FakeDav {
@@ -53,6 +57,16 @@ impl FakeDav {
             authorization: authorization.map(String::from),
             log: Mutex::new(Vec::new()),
             etags: Mutex::new(0),
+            login: Mutex::new(None),
+            app_password: Mutex::new("secret-pw".into()),
+        }
+    }
+
+    /// The phone approves the login in progress.
+    pub fn approve(&self) {
+        let mut l = self.login.lock().unwrap();
+        if l.is_some() {
+            *l = Some(true);
         }
     }
 
@@ -110,11 +124,46 @@ impl FakeDav {
     fn handle(&self, req: &HttpRequest) -> HttpResponse {
         let resp = |status: u16, body: String| HttpResponse {
             status,
-            etag: None,
             body,
+            ..Default::default()
         };
+        // Login Flow v2 needs no credentials (the person signs in on their phone).
+        let p = req.url.strip_prefix(ORIGIN).unwrap_or_default();
+        if req.method == "POST" && p == "/index.php/login/v2" {
+            *self.login.lock().unwrap() = Some(false);
+            return resp(
+                200,
+                format!(
+                    r#"{{"login":"{ORIGIN}/index.php/login/v2/flow/f1","poll":{{"token":"tok-1","endpoint":"{ORIGIN}/index.php/login/v2/poll/f1"}}}}"#
+                ),
+            );
+        }
+        if req.method == "POST" && p == "/index.php/login/v2/poll/f1" {
+            let mut l = self.login.lock().unwrap();
+            return match (*l, req.body.as_deref()) {
+                (Some(true), Some("token=tok-1")) => {
+                    *l = None;
+                    resp(
+                        200,
+                        format!(
+                            r#"{{"server":"{ORIGIN}","loginName":"alex","appPassword":"{}"}}"#,
+                            self.app_password.lock().unwrap()
+                        ),
+                    )
+                }
+                (Some(false), Some("token=tok-1")) => resp(404, String::new()),
+                _ => resp(401, String::new()),
+            };
+        }
         if self.authorization.as_deref() != req.header("Authorization") {
             return resp(401, "Unauthorized".into());
+        }
+        if p == "/.well-known/caldav" {
+            return HttpResponse {
+                status: 301,
+                location: Some("/alex/".into()),
+                ..Default::default()
+            };
         }
         let path = req
             .url
@@ -197,7 +246,7 @@ impl FakeDav {
                 HttpResponse {
                     status: 201,
                     etag: Some(etag),
-                    body: String::new(),
+                    ..Default::default()
                 }
             }
             ("DELETE", Some(name)) => {
@@ -321,6 +370,8 @@ pub struct Exchange {
     pub status: u16,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
     pub body: String,
 }
 
@@ -339,6 +390,7 @@ impl Exchange {
             if_none_match: req.header("If-None-Match").map(String::from),
             status: res.status,
             etag: res.etag.clone(),
+            location: res.location.as_deref().map(path_of),
             body: res.body.clone(),
         }
     }
@@ -381,6 +433,7 @@ impl Transport for Replay {
         Ok(HttpResponse {
             status: e.status,
             etag: e.etag,
+            location: e.location,
             body: e.body,
         })
     }

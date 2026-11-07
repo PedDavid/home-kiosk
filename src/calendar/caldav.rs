@@ -18,6 +18,7 @@
 pub mod config;
 pub mod dav;
 pub mod http;
+pub mod login_flow;
 pub mod vevent;
 
 use std::sync::{Arc, Mutex as SyncMutex};
@@ -41,6 +42,8 @@ const MAX_TITLE: usize = 120;
 struct Calendar {
     /// "Calendar N" on the Status panel: the entry's position in `HQ_CALENDARS`.
     number: usize,
+    /// How the Status panel names it: the label, else "Calendar N".
+    title: String,
     id: Option<String>,
     url: String,
     /// `people` as configured (`["all"]` kept), for choosing where to write.
@@ -142,7 +145,8 @@ impl CalDavSource {
                         .collect();
                     if !unknown.is_empty() {
                         notes.push(format!(
-                            "Calendar {number}: unknown people {} (ids must match settings.json)",
+                            "{}: unknown people {} (ids must match settings.json)",
+                            c.label.clone().unwrap_or_else(|| format!("Calendar {number}")),
                             unknown.join(", ")
                         ));
                     }
@@ -151,6 +155,7 @@ impl CalDavSource {
                 };
                 Calendar {
                     number,
+                    title: c.label.clone().unwrap_or_else(|| format!("Calendar {number}")),
                     id: c.id.clone(),
                     url: c.url.clone(),
                     wanted: if all { vec!["all".into()] } else { wanted },
@@ -245,7 +250,7 @@ impl CalDavSource {
                 }
                 Err(e) => {
                     tracing::warn!(calendar = cal.number, error = ?e, "CalDAV calendar failed; keeping its last events");
-                    errors.push(format!("Calendar {}: {e}", cal.number));
+                    errors.push(format!("{}: {e}", cal.title));
                 }
             }
         }

@@ -1,14 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{
-    AppState,
-    calendar::{self, CalendarSource},
-    geocoding, router,
-    settings::Settings,
-    share::ImmichPublicUrl,
-    tls, weather,
-};
+use home_hq::{AppState, calendar, geocoding, router, settings::Settings, share::ImmichPublicUrl, tls, weather};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -43,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
     // reqwest (calendar, Immich, weather) and the TLS listener share rustls's ring provider.
     tls::install_crypto_provider();
     let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
-    let calendar = calendars(&settings, clock.clone())?;
+    let calendar = calendars(&settings, key.as_deref(), clock.clone())?;
     let weather = weather_from_env(&settings, clock.clone())?;
     let geocoding = if weather.is_some() {
         settings
@@ -58,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
         None
     };
     let mut state = AppState::new(settings, key, clock)
-        .with_calendar(calendar)
+        .with_calendar_accounts(calendar)
         .with_immich_public_url(immich_public_url);
     if let Some(w) = weather {
         state = state.with_weather(w);
@@ -140,24 +133,32 @@ fn weather_from_env(settings: &Settings, clock: home_hq::Clock) -> anyhow::Resul
     }
 }
 
-/// The calendar from `HQ_CALENDARS` (ICS feeds); unset keeps the demo calendar.
-fn calendars(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Arc<dyn CalendarSource>> {
-    let value = std::env::var("HQ_CALENDARS").ok();
+/// Calendars from `HQ_CALENDARS` and from the calendar page (`/calendars`), kept encrypted in
+/// `HQ_STATE_DIR` when `HQ_KEY` is set. With neither, the demo calendar.
+fn calendars(
+    settings: &Settings,
+    key: Option<&str>,
+    clock: home_hq::Clock,
+) -> anyhow::Result<Arc<calendar::accounts::Manager>> {
     settings.tz()?;
-    // ICS feeds and CalDAV calendars ("type": "caldav") from the same list.
-    let source = calendar::mixed::from_env_value(
-        value.as_deref(),
-        settings,
-        Arc::new(calendar::fetch::Http::new()?),
-        Arc::new(calendar::caldav::http::Http::new()?),
+    let env = |k: &str| std::env::var(k).ok().filter(|v| !v.trim().is_empty());
+    let manager = calendar::accounts::Manager::new(calendar::accounts::Config {
+        settings: settings.clone(),
+        env: env("HQ_CALENDARS"),
+        fetch: Arc::new(calendar::fetch::Http::new()?),
+        transport: Arc::new(calendar::caldav::http::Http::new()?),
         clock,
-    );
+        state_dir: env("HQ_STATE_DIR").map(Into::into),
+        hq_key: key.map(String::from),
+        allowed_servers: env("HQ_CALENDAR_SERVERS"),
+    });
+    let source = manager.source();
     if source.configured() {
-        tracing::info!(writable = source.can_write(), "calendar: from HQ_CALENDARS");
+        tracing::info!(writable = source.can_write(), "calendar: configured");
     } else {
-        tracing::info!("calendar: HQ_CALENDARS is not set, serving the demo calendar");
+        tracing::info!("calendar: nothing configured yet, serving the demo calendar (add calendars at /calendars)");
     }
-    Ok(source)
+    Ok(Arc::new(manager))
 }
 
 async fn stopped(mut stop: watch::Receiver<bool>) {

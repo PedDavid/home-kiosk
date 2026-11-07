@@ -223,6 +223,7 @@
       '<div class="demo-sec"><div class="label label--light">Frames</div><div class="demo-frames" id="demoFrames"><p class="demo-note">Checking…</p></div></div>' +
       '<div class="demo-sec"><div class="label label--light">Status</div><p class="demo-note">' + status() + '</p>' +
       '<div class="demo-note demo-weather">' + weatherLocation() + '</div>' +
+      '<p class="demo-note"><a href="/calendars" style="color:inherit">Calendars: add or change</a></p>' + // home-kiosk patch
       '<p class="demo-note">Version ' + __APP_VERSION__ + '</p></div>' +
       '<p class="demo-note">Keyboard: <b>D</b> controls · <b>A</b> ambient · <b>1–6</b> views</p>' +
       '</div>';

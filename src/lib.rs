@@ -37,6 +37,8 @@ pub struct AppState {
     pub geocoding: Option<Arc<geocoding::Geocoding>>,
     /// Calendar events. Not configured: `/api/calendar` serves the demo calendar.
     pub calendar: Arc<dyn calendar::CalendarSource>,
+    /// Calendars added on the calendar page. `None`: `/api/calendars` answers 404.
+    pub calendar_accounts: Option<Arc<calendar::accounts::Manager>>,
 }
 
 impl AppState {
@@ -52,6 +54,7 @@ impl AppState {
             weather: None,
             geocoding: None,
             calendar: Arc::new(calendar::NotConfigured),
+            calendar_accounts: None,
         }
     }
 
@@ -68,6 +71,13 @@ impl AppState {
     /// Uses `source` for the calendar (when it reports itself configured).
     pub fn with_calendar(mut self, source: Arc<dyn calendar::CalendarSource>) -> Self {
         self.calendar = source;
+        self
+    }
+
+    /// Calendars from `HQ_CALENDARS` and the calendar page, through `manager`.
+    pub fn with_calendar_accounts(mut self, manager: Arc<calendar::accounts::Manager>) -> Self {
+        self.calendar = manager.source();
+        self.calendar_accounts = Some(manager);
         self
     }
 

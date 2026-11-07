@@ -30,10 +30,12 @@ impl HttpRequest {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct HttpResponse {
     pub status: u16,
     pub etag: Option<String>,
+    /// `Location`, for following a redirect by hand (only `/.well-known/caldav` needs it).
+    pub location: Option<String>,
     pub body: String,
 }
 
@@ -122,7 +124,8 @@ pub struct DavResource {
     /// reported.
     pub privileges: Option<Vec<String>>,
     pub principal: Option<String>,
-    pub calendar_home: Option<String>,
+    /// `calendar-home-set`: one or more (RustiCal lists group calendars' homes too).
+    pub calendar_homes: Vec<String>,
 }
 
 impl DavResource {
@@ -180,7 +183,9 @@ pub fn parse_multistatus(xml: &str) -> Result<Vec<DavResource>, DavError> {
                         )
                     }
                     (Some(CALDAV), "calendar-data") => r.calendar_data = Some(text_raw(p)),
-                    (Some(CALDAV), "calendar-home-set") => r.calendar_home = child(p, DAV, "href").map(text),
+                    (Some(CALDAV), "calendar-home-set") => {
+                        r.calendar_homes = p.children().filter(|n| is(*n, DAV, "href")).map(text).collect()
+                    }
                     (Some(CALDAV), "supported-calendar-component-set") => {
                         r.components = Some(
                             p.children()
@@ -240,6 +245,14 @@ pub fn resolve(base: &str, href: &str) -> String {
             .filter(|&i| i >= origin_end)
             .map_or(base.len(), |i| i + 1);
         format!("{}{href}", &base[..dir])
+    }
+}
+
+/// `https://dav.example:8443/a/` → `https://dav.example:8443`.
+pub fn origin_of(url: &str) -> &str {
+    match url.find("://") {
+        Some(i) => url[i + 3..].find('/').map_or(url, |j| &url[..i + 3 + j]),
+        None => "",
     }
 }
 
@@ -400,10 +413,25 @@ impl DavClient {
     }
 
     /// Finds the calendar a configured URL means: the URL itself when it is a calendar, or the
-    /// only event calendar in the account's calendar home when it points at the account.
+    /// only event calendar in the account's calendar homes when it points at the account.
     pub async fn discover(&self, url: &str) -> Result<CalendarInfo, DavError> {
-        let url = with_slash(url);
-        let found = self.propfind(&url, "0", PROPFIND_COLLECTION).await?;
+        let mut found = self.calendars(url).await?;
+        match found.len() {
+            1 => Ok(found.remove(0)),
+            n => Err(DavError::NotACalendar { found: n }),
+        }
+    }
+
+    /// Every event calendar a URL leads to: the URL itself when it is a calendar, else the
+    /// calendars in its calendar homes (found directly, or through the principal). A bare server
+    /// address (`https://dav.example`) starts at `/.well-known/caldav`.
+    pub async fn calendars(&self, url: &str) -> Result<Vec<CalendarInfo>, DavError> {
+        let start = if path_of(url).trim_matches('/').is_empty() {
+            format!("{}/.well-known/caldav", url.trim_end_matches('/'))
+        } else {
+            with_slash(url)
+        };
+        let (url, found) = self.propfind_following(&start, PROPFIND_COLLECTION).await?;
         let me = found
             .iter()
             .find(|r| same_resource(&resolve(&url, &r.href), &url))
@@ -413,36 +441,75 @@ impl DavClient {
             if !me.holds_events() {
                 return Err(DavError::NoEvents);
             }
-            return Ok(CalendarInfo {
+            return Ok(vec![CalendarInfo {
                 url,
                 name: me.displayname.clone(),
                 writable: me.writable(),
-            });
+            }]);
         }
-        let home = match (&me.calendar_home, &me.principal) {
-            (Some(h), _) => resolve(&url, h),
-            (None, Some(p)) => {
-                let principal = resolve(&url, p);
-                let r = self.propfind(&principal, "0", PROPFIND_HOME).await?;
-                let h = r.iter().find_map(|r| r.calendar_home.clone());
-                resolve(&principal, &h.ok_or(DavError::NotACalendar { found: 0 })?)
-            }
-            (None, None) => return Err(DavError::NotACalendar { found: 0 }),
+        let homes: Vec<String> = if !me.calendar_homes.is_empty() {
+            me.calendar_homes.iter().map(|h| resolve(&url, h)).collect()
+        } else if let Some(p) = &me.principal {
+            let principal = resolve(&url, p);
+            let r = self.propfind(&principal, "0", PROPFIND_HOME).await?;
+            r.iter()
+                .flat_map(|r| r.calendar_homes.iter())
+                .map(|h| resolve(&principal, h))
+                .collect()
+        } else {
+            Vec::new()
         };
-        let cals: Vec<_> = self
-            .propfind(&home, "1", PROPFIND_COLLECTION)
-            .await?
-            .into_iter()
-            .filter(|r| r.is_calendar && r.holds_events())
-            .collect();
-        match cals.as_slice() {
-            [one] => Ok(CalendarInfo {
-                url: with_slash(&resolve(&home, &one.href)),
-                name: one.displayname.clone(),
-                writable: one.writable(),
-            }),
-            _ => Err(DavError::NotACalendar { found: cals.len() }),
+        let mut out: Vec<CalendarInfo> = Vec::new();
+        for home in homes {
+            for r in self.propfind(&home, "1", PROPFIND_COLLECTION).await? {
+                if !(r.is_calendar && r.holds_events()) {
+                    continue;
+                }
+                let url = with_slash(&resolve(&home, &r.href));
+                if out.iter().all(|c| !same_resource(&c.url, &url)) {
+                    out.push(CalendarInfo {
+                        url,
+                        name: r.displayname.clone(),
+                        writable: r.writable(),
+                    });
+                }
+            }
         }
+        Ok(out)
+    }
+
+    /// A Depth 0 PROPFIND that follows up to three redirects on the same server, returning the
+    /// URL it ended at. Credentials are never sent to another host.
+    async fn propfind_following(&self, url: &str, body: &str) -> Result<(String, Vec<DavResource>), DavError> {
+        let mut url = url.to_string();
+        for _ in 0..4 {
+            let res = self
+                .send(
+                    "PROPFIND",
+                    &url,
+                    vec![
+                        ("Depth", "0".into()),
+                        ("Content-Type", "application/xml; charset=utf-8".into()),
+                    ],
+                    Some(body.into()),
+                )
+                .await?;
+            if (300..400).contains(&res.status) {
+                let next = res
+                    .location
+                    .as_deref()
+                    .map(|l| resolve(&url, l))
+                    .ok_or(DavError::Status(res.status))?;
+                if origin_of(&next) != origin_of(&url) {
+                    return Err(DavError::Status(res.status));
+                }
+                url = next;
+                continue;
+            }
+            check(&res, &[207])?;
+            return Ok((url, parse_multistatus(&res.body)?));
+        }
+        Err(DavError::BadResponse("too many redirects".into()))
     }
 
     /// Events overlapping `[start, end)`: masters and their edited instances, unexpanded, so

@@ -60,6 +60,7 @@ fn config(url: &str, who: People, id: Option<&str>) -> CalDavConfig {
         password: Some(PASSWORD.into()),
         read_only: false,
         number: 0,
+        label: None,
     }
 }
 
@@ -683,8 +684,7 @@ impl Transport for Accept {
     async fn send(&self, _req: HttpRequest) -> Result<HttpResponse, String> {
         Ok(HttpResponse {
             status: 201,
-            etag: None,
-            body: String::new(),
+            ..Default::default()
         })
     }
 }

@@ -48,6 +48,9 @@ pub struct CalDavConfig {
     /// Position in `HQ_CALENDARS`, from 1, for "Calendar N" on the Status panel.
     #[serde(skip)]
     pub number: usize,
+    /// A name for the Status panel instead of "Calendar N" (calendars added on the calendar page).
+    #[serde(default)]
+    pub label: Option<String>,
 }
 
 impl CalDavConfig {

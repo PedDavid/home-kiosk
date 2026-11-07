@@ -68,6 +68,7 @@ pub fn router() -> Router<AppState> {
         .route("/immich/auth/poll", post(immich_poll))
         .route("/immich/auth/qr", get(immich_qr))
         .route("/calendar", get(calendar))
+        .nest("/calendars", calendar::admin::router())
         .route("/weather", get(weather))
         .route("/events", post(add_event))
         .route("/events/{id}", delete(delete_event))

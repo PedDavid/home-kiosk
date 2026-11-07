@@ -9,9 +9,9 @@ use async_trait::async_trait;
 use chrono::DateTime;
 use chrono_tz::Tz;
 
-use super::caldav::{self, CalDavSource, dav::Transport};
+use super::caldav::{self, CalDavSource, config::CalDavConfig, dav::Transport};
 use super::fetch::Fetch;
-use super::ics::IcsSource;
+use super::ics::{FeedConfig, IcsSource};
 use super::{CalendarError, CalendarSource, Event, Listing, NewEvent, NotConfigured, Range, engine};
 use crate::{Clock, settings::Settings};
 
@@ -26,6 +26,13 @@ impl Mixed {
     }
 }
 
+/// Calendars from somewhere other than `HQ_CALENDARS`: the calendar page.
+#[derive(Debug, Default, Clone)]
+pub struct Extra {
+    pub ics: Vec<FeedConfig>,
+    pub caldav: Vec<CalDavConfig>,
+}
+
 /// The calendar source for a raw `HQ_CALENDARS` value: ICS entries to [`IcsSource`],
 /// `"type": "caldav"` ones to [`CalDavSource`], combined when both are present.
 pub fn from_env_value(
@@ -35,20 +42,43 @@ pub fn from_env_value(
     transport: Arc<dyn Transport>,
     clock: Clock,
 ) -> Arc<dyn CalendarSource> {
+    build(value, Extra::default(), settings, fetch, transport, clock)
+}
+
+/// [`from_env_value`] plus the calendars in `extra`.
+pub fn build(
+    value: Option<&str>,
+    extra: Extra,
+    settings: &Settings,
+    fetch: Arc<dyn Fetch>,
+    transport: Arc<dyn Transport>,
+    clock: Clock,
+) -> Arc<dyn CalendarSource> {
     let tz = settings.tz().unwrap_or(chrono_tz::UTC);
     let household: Vec<String> = settings.people.iter().map(|p| p.id.clone()).collect();
     let split = caldav::config::split(value);
     let mut sources: Vec<Arc<dyn CalendarSource>> = Vec::new();
-    if let Some(ics) = IcsSource::from_env_value(split.ics.as_deref(), &household, tz, fetch, clock.clone()) {
+    if let Some(ics) = IcsSource::from_env_value(split.ics.as_deref(), &household, tz, fetch.clone(), clock.clone()) {
         sources.push(Arc::new(ics));
     }
-    if !split.caldav.is_empty() || !split.errors.is_empty() {
+    if !extra.ics.is_empty() {
+        sources.push(Arc::new(IcsSource::new(
+            extra.ics,
+            &household,
+            tz,
+            fetch,
+            clock.clone(),
+        )));
+    }
+    let mut caldav = split.caldav;
+    caldav.extend(extra.caldav);
+    if !caldav.is_empty() || !split.errors.is_empty() {
         for e in &split.errors {
             tracing::error!(error = %e, "calendars");
         }
         sources.push(Arc::new(
             CalDavSource::new(
-                split.caldav,
+                caldav,
                 &household,
                 settings.calendar.write_to.clone(),
                 tz,
