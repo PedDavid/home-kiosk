@@ -150,6 +150,7 @@ async fn immich_photos_get_a_share_link_with_the_public_url_and_no_key() {
         state["photos"][0]["shareUrl"],
         "https://photos.example.com/photos/asset-1"
     );
+    assert_eq!(state["photos"][0]["shareAppUrl"], "immich://asset?id=asset-1");
     assert!(!String::from_utf8(bytes).unwrap().contains("test-key"));
     task.abort();
 }

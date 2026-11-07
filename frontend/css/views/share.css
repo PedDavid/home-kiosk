@@ -9,12 +9,16 @@
 .sheet--share { width: 880px; }
 .share { display: flex; flex-wrap: wrap; gap: 0 40px; align-items: flex-start; }
 .share-info { flex: 1; min-width: 0; padding-top: 6px; }
-.share-info .sheet-h { font-size: 46px; margin-bottom: 20px; }
-.share-thumb { width: 100%; height: 230px; border-radius: 16px; overflow: hidden; background: var(--paper-2); }
+.share-info .sheet-h { font-size: 46px; margin-bottom: 18px; }
+.share-mode { margin-bottom: 18px; }
+.share-mode button { min-height: 52px; padding: 0 22px; }
+.share-thumb { width: 100%; height: 170px; border-radius: 16px; overflow: hidden; background: var(--paper-2); }
 .share-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .share-date { font-size: 30px; line-height: 1.1; margin-top: 16px; }
 .share-date span { color: var(--ink-2); }
 .share-note { font-size: 17px; color: var(--ink-2); margin: 10px 0 0; }
 .share-qr { flex: none; width: 400px; height: 400px; display: grid; place-items: center; background: #fff; border-radius: 16px; margin-top: 44px; }
 .share-qr svg { display: block; }
-.share-actions { width: 100%; }
+.share-actions { width: 100%; align-items: center; }
+.share-link { margin-right: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; color: var(--ink-2); }
+a.share-link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }

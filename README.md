@@ -64,12 +64,21 @@ empty `frontend/dist`.
 | `HQ_KEY` | unset (open) | Dashboard key (secret) |
 | `HQ_CALENDARS` | unset (demo events) | Calendar feeds (secret): a JSON list of `{ "url": "…", "people": ["alex"] \| "all" }`. See [Calendars](charts/home-hq/README.md#calendars) |
 | `HQ_SETTINGS` | bundled [`config/settings.example.json`](config/settings.example.json) | Household settings in upstream's `settings.json` format |
-| `HQ_IMMICH_PUBLIC_URL` | unset (Share hidden) | Immich address phones open, e.g. `https://photos.example.com`. The Photos tab's Share button shows a QR code for `<url>/photos/<assetId>` (a plain link, no key) on photos from Immich. Must be `http(s)://host[/path]`, else startup fails |
+| `HQ_IMMICH_PUBLIC_URL` | unset (Share hidden) | Immich address phones open, e.g. `https://photos.example.com`. The Photos tab's Share button shows a QR code on photos from Immich. It opens the Immich phone app (`immich://asset?id=<assetId>`) by default, or `<url>/photos/<assetId>` in a browser when switched to Web; both are plain links with no key. Must be `http(s)://host[/path]`, else startup fails |
 | `HQ_WEATHER` | `open-meteo` | `open-meteo` serves Open-Meteo's forecast for `settings.location`, cached 15 minutes; a failed refresh serves the last forecast. With no `location`, `/api/weather` answers `{ "none": true }`. Needs egress to `api.open-meteo.com`. `demo` serves the generated demo forecast and makes no outbound calls (CI, offline development) |
 | `HQ_OPEN_METEO_URL` | `https://api.open-meteo.com/v1/forecast` | Forecast endpoint, e.g. a self-hosted Open-Meteo |
 | `RUST_LOG` | `info` | Log filter (logs are JSON) |
 
 `GET /healthz` returns `ok` without a key.
+
+The Status debug section at the bottom of Display Controls shows weather coordinates and a city
+resolved automatically from those coordinates by Nominatim (OpenStreetMap). The backend looks it
+up in the background and caches the name in memory until restart; unavailable lookups retry every
+15 minutes. The kiosk needs no internet. If the backend has no internet or restarts offline, the
+coordinates still appear. `HQ_WEATHER=demo` disables this lookup as well as live weather.
+`HQ_GEOCODING_URL` overrides the reverse-geocoding endpoint for self-hosting (Nominatim format).
+Backend egress to `nominatim.openstreetmap.org` is needed for the default provider.
+Click **Show QR** to reveal a locally generated QR code for opening the map on an online phone.
 
 ### Photo frame behaviour
 

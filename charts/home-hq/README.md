@@ -225,7 +225,7 @@ old pod before the new one mounts the claim, which a single-node `ReadWriteOnce`
 | `key.existingSecret` / `key.secretKey` | `""` / `HQ_KEY` | Secret holding the dashboard key. Unset means the dashboard is open |
 | `calendars.existingSecret` / `calendars.secretKey` | `""` / `HQ_CALENDARS` | Secret holding the calendar feeds ([Calendars](#calendars)). Unset means demo events |
 | `settings` | `{}` | Household settings. Empty means the bundled example |
-| `immich.publicUrl` | `""` | `HQ_IMMICH_PUBLIC_URL`: the Immich address phones open from the Photos tab's Share QR code. Empty hides the Share button |
+| `immich.publicUrl` | `""` | `HQ_IMMICH_PUBLIC_URL`: the Immich address phones open from the Photos tab's Share QR code (Web mode; the default App mode opens the Immich phone app). Empty hides the Share button |
 | `ingress.enabled`, `className`, `host`, `annotations` | `true`, `traefik`, `home-hq.example.com`, `{}` | Ingress |
 | `ingress.tls.enabled` / `ingress.tls.secretName` | `true` / `""` | TLS. Empty means Traefik's default certificate |
 | `tls.existingSecret` | `""` | `kubernetes.io/tls` Secret. Set: the app also serves TLS on 8443, reloading renewed certificates |

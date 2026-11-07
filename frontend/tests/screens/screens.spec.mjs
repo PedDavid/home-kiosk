@@ -159,6 +159,99 @@ test.describe('remove favorite', () => {
   });
 });
 
+// Share photo (#21): an icon-only Share button beside the full-screen button opens a sheet with a
+// QR code for the photo in the Immich phone app (shareAppUrl) or, switched to Web, in a browser
+// (shareUrl). The backend only sets both on Immich photos when HQ_IMMICH_PUBLIC_URL is set; the
+// fixtures are demo photos, so these tests give demo0 an asset ID and both links.
+test.describe('share photo', () => {
+  const ASSET = '9b2d8a4e-3f1c-4e7a-b0d5-6c8f1e2a3b4c';
+  const WEB = 'https://photos.example.com/photos/' + ASSET;
+  const APP = 'immich://asset?id=' + ASSET;
+  const immich = extra => ({ state: s => ({ ...s, photos: s.photos.filter(p => p.id === 'demo0').map(p => ({ ...p, immichId: ASSET, ...extra })) }) });
+  const shareBtn = page => page.locator('#view-photos [data-share]');
+  const sheet = page => page.locator('#sheetLayer.is-open .sheet--share');
+  // The QR on screen is the one App.share draws for `url` (the same 400 px rendering).
+  const qrIs = (page, url) => page.evaluate(u => {
+    const want = document.createElement('div');
+    want.innerHTML = App.share.qrSvg(u, 400);
+    return document.querySelector('.share-qr').innerHTML === want.innerHTML;
+  }, url);
+
+  test.describe('on an Immich photo', () => {
+    test.use({ api: immich({ shareUrl: WEB, shareAppUrl: APP }) });
+
+    test('share-sheet', async ({ page }) => {
+      await open(page, 'photos');
+      await expect(shareBtn(page)).toBeVisible();
+      await shareBtn(page).click();
+      await expect(sheet(page)).toBeVisible();
+      await expect(page.locator('[data-qr=app]')).toHaveClass(/is-on/);
+      expect(await qrIs(page, APP), 'QR opens the Immich app by default').toBe(true);
+      // Outside the kiosk app the web link is a real link, opened in a new tab.
+      await expect(page.locator('a.share-link')).toHaveAttribute('href', WEB);
+      await expect(page.locator('a.share-link')).toHaveAttribute('target', '_blank');
+      await settle(page);
+      await expect(page).toHaveScreenshot('share-sheet.png');
+      await fits(page);
+    });
+
+    test('share-sheet-web', async ({ page }) => {
+      await open(page, 'photos');
+      await shareBtn(page).click();
+      await page.locator('[data-qr=web]').click();
+      await expect(page.locator('[data-qr=web]')).toHaveClass(/is-on/);
+      expect(await qrIs(page, WEB), 'QR encodes the web link').toBe(true);
+      await settle(page);
+      await expect(page).toHaveScreenshot('share-sheet-web.png');
+      await fits(page);
+      // The choice is remembered on this screen.
+      await page.locator('#sheetLayer .sheet-x').click();
+      await shareBtn(page).click();
+      await expect(page.locator('[data-qr=web]')).toHaveClass(/is-on/);
+    });
+
+    test('share-sheet-fullscreen', async ({ page }) => {
+      await open(page, 'photos');
+      await page.locator('#view-photos [data-photo-fullscreen]').click();
+      await expect(page.locator('#stage')).toHaveClass(/is-photo-fullscreen/);
+      await expect(shareBtn(page)).toBeVisible();
+      await shareBtn(page).click();
+      await expect(sheet(page)).toBeVisible();
+      await settle(page);
+      await expect(page).toHaveScreenshot('share-sheet-fullscreen.png');
+      await fits(page);
+    });
+  });
+
+  test.describe('on the frame (kiosk app)', () => {
+    test.use({ api: immich({ shareUrl: WEB, shareAppUrl: APP }) });
+    test('the web link is plain text', async ({ page }) => {
+      // Following a link in the kiosk WebView would take the frame away from the dashboard.
+      await page.addInitScript(() => { window.HomeHQKiosk = { info: () => '{}', setScreenOff() {} }; });
+      await open(page, 'photos');
+      await shareBtn(page).click();
+      await expect(page.locator('span.share-link')).toHaveText('photos.example.com/photos/' + ASSET);
+      await expect(page.locator('a.share-link')).toHaveCount(0);
+    });
+  });
+
+  test.describe('without HQ_IMMICH_PUBLIC_URL', () => {
+    test.use({ api: immich({}) });
+    test('Share is hidden', async ({ page }) => {
+      await open(page, 'photos');
+      await expect(shareBtn(page)).toBeHidden();
+    });
+  });
+
+  test.describe('on a demo photo', () => {
+    test.use({ api: only('demo0') });
+    test('Share is hidden', async ({ page }) => {
+      await open(page, 'photos');
+      await expect(shareBtn(page)).toBeHidden();
+    });
+  });
+});
+
 test('night', async ({ page }) => {
   await open(page, 'home');
   await page.evaluate(() => App.setMode('night', true));

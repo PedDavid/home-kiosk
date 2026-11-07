@@ -59,6 +59,20 @@ async fn json_of(app: &Router, req: Request<Body>) -> Value {
 // ------------------------------------------------------------------ auth
 
 #[tokio::test]
+async fn state_exposes_configured_weather_location_without_fetching_weather() {
+    for location in [
+        json!({"lat": 0.0, "lon": -9.1393}),
+        json!({"lat": 38.7223, "lon": -9.1393}),
+        Value::Null,
+    ] {
+        let settings = Settings::parse(&json!({"location": location}).to_string()).unwrap();
+        let app = router(AppState::new(settings, None, Arc::new(Utc::now)));
+        let state = json_of(&app, get("/api/state")).await;
+        assert_eq!(state["weatherLocation"], location);
+    }
+}
+
+#[tokio::test]
 async fn api_is_locked_without_a_key() {
     let app = app(Some(KEY));
     let (status, _, body) = send(&app, Request::get("/api/state").body(Body::empty()).unwrap()).await;
@@ -385,6 +399,16 @@ async fn immich_photos_get_a_share_url_when_the_public_url_is_set() {
         } else {
             assert_eq!(url, None, "{id} has no Immich asset ID");
         }
+    }
+}
+
+#[tokio::test]
+async fn immich_photos_get_an_app_link_too() {
+    let app = sharing_app(Some("https://photos.example.com")).await;
+    let state = json_of(&app, get("/api/state")).await;
+    for p in state["photos"].as_array().unwrap() {
+        let want = (p["id"] == "demo0").then(|| format!("immich://asset?id={ASSET}"));
+        assert_eq!(p["shareAppUrl"].as_str().map(String::from), want, "{p}");
     }
 }
 

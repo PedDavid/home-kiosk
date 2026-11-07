@@ -293,6 +293,10 @@ impl Demo {
             "bins": self.bins(now),
             "notes": self.live_notes(now),
             "awayOffMinutes": self.settings.display.away_off_minutes,
+            "weatherLocation": self.settings.location.as_ref().map(|loc| json!({
+                "lat": loc.lat,
+                "lon": loc.lon,
+            })),
         })
     }
 

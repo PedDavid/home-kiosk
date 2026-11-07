@@ -3,6 +3,21 @@
   'use strict';
   var D = window.DATA, V = { chimed: {} };
 
+  // Fractional grid tracks put the right-hand columns between pixels at the
+  // frame's native resolution. Distribute rounding across tracks instead of
+  // translating/scaling text, keeping the full available width on resize.
+  function alignGrid() {
+    var grid = V.el && V.el.querySelector('.home');
+    if (!grid || !grid.clientWidth) return;
+    var gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
+    var available = grid.clientWidth - gap * 11;
+    var columns = [];
+    for (var i = 0; i < 12; i++) {
+      columns.push((Math.round(available * (i + 1) / 12) - Math.round(available * i / 12)) + 'px');
+    }
+    grid.style.setProperty('--home-columns', columns.join(' '));
+  }
+
   function clock() {
     var n = App.now();
     return '<div class="h-time num">' + App.fmt.time(n, false) + '<span class="h-ampm">' + App.fmt.ampm(n) + '</span></div>' +
@@ -13,8 +28,6 @@
     var w = App.weatherNow();
     if (!w) return '<div class="h-wx-say"><b>No forecast yet.</b> Set <i>location</i> in settings.json.</div>';
     var hours = App.hourly(7);
-    var tmin = Math.min.apply(null, hours.map(function (h) { return h.t; }));
-    var tmax = Math.max.apply(null, hours.map(function (h) { return h.t; }));
     return '<div class="h-wx-top">' +
       '<span class="h-wx-icon">' + App.icon(w.cond, 60) + '</span>' +
       '<span class="h-wx-temp num">' + w.temp + '°</span>' +
@@ -22,9 +35,8 @@
       '</div>' +
       (warning() || '<div class="h-wx-say"><b>' + w.summary + '.</b> ' + w.advice + '.</div>') +
       '<div class="h-wx-hours">' + hours.map(function (h) {
-        var lift = tmax === tmin ? 0 : Math.round((h.t - tmin) / (tmax - tmin) * 8);
         return '<div class="h-hr' + (h.p >= 50 ? ' is-wet' : '') + '"><span class="h-hr-l">' + h.label + '</span>' +
-          '<span class="h-hr-i" style="transform:translateY(' + -lift + 'px)">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
+          '<span class="h-hr-i">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
       }).join('') + '</div>';
   }
 
@@ -340,6 +352,11 @@
           if (g) App.go(g.dataset.go, g.dataset.photo ? { photo: g.dataset.photo } : undefined);
         });
         V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, interval: 12000, onChange: photoCaption });
+      }
+      alignGrid();
+      if (!V.gridObserver) {
+        V.gridObserver = new ResizeObserver(alignGrid);
+        V.gridObserver.observe(el.querySelector('.home'));
       }
       paint();
       V.slides.start();
