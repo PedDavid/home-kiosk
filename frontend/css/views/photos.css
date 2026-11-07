@@ -55,3 +55,52 @@
 .ph-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; font-size: 44px; line-height: 1.2; background: #111; }
 .ph-empty i { font-size: 26px; opacity: .7; }
 .ph-empty[hidden] { display: none; }
+
+.ph-connect { text-decoration: none; margin-bottom: 12px; justify-self: end; }
+.ph-connect[hidden] { display: none; }
+
+/* Explicit viewing mode: preserve the slide, remove chrome, and keep one way out. */
+.ph-screen {
+  position: absolute; top: 20px; left: 20px; z-index: 5;
+  width: 52px; height: 52px; min-width: 52px; padding: 0; border-radius: 50%;
+  background: rgba(0, 0, 0, .18); color: rgba(255, 255, 255, .85);
+}
+/* Extra touch area without enlarging or darkening the visible circle. */
+.ph-screen::before { content: ''; position: absolute; inset: -14px; }
+.ph-screen .i { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .45)); }
+.ph-screen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.ph-exit { display: none; background: rgba(0, 0, 0, .1); color: rgba(255, 255, 255, .7); }
+@media (hover: hover) {
+  .ph-screen:hover { background: rgba(0, 0, 0, .25); color: #fff; }
+}
+.stage.is-photo-fullscreen > .rail { display: none; }
+.stage.is-photo-fullscreen > .views { grid-column: 1 / -1; grid-row: 1; }
+.stage.is-photo-fullscreen .ph-enter,
+.stage.is-photo-fullscreen .ph-top,
+.stage.is-photo-fullscreen .ph-bottom,
+.stage.is-photo-fullscreen .ph-zone,
+.stage.is-photo-fullscreen .photos .cap,
+.stage.is-photo-fullscreen .photos .polaroid figcaption,
+.stage.is-photo-fullscreen .notes,
+.stage.is-photo-fullscreen .banners,
+.stage.is-photo-fullscreen > .toasts,
+.stage.is-photo-fullscreen > .demo { display: none; }
+.stage.is-photo-fullscreen .photos .slide::after { display: none; }
+.stage.is-photo-fullscreen .ph-exit { display: inline-flex; }
+
+/* Remove-from-favorites confirmation: the photo on the left, the question on the right. */
+.sheet--unfav { width: 760px; }
+.ph-unfav { display: flex; gap: 28px; align-items: center; }
+.ph-unfav > div { padding-right: 40px; }
+.ph-unfav-img { flex: none; width: 220px; height: 220px; object-fit: cover; border-radius: 18px; background: var(--paper-2); }
+.ph-unfav .sheet-h { font-size: 46px; }
+.ph-unfav .sheet-actions { justify-content: flex-start; }
+.ph-unfav-hint { margin: 14px 0 0; font-size: 17px; color: var(--ink-2); }
+/* Hold-to-remove button: fills with the heart pink left to right over the hold (--hold, set by App.hold). */
+.ph-hold { position: relative; overflow: hidden; }
+.ph-hold > * { position: relative; z-index: 1; }
+.ph-hold::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 0;
+  background: rgba(228, 0, 124, .3); transition: width .15s ease-out;
+}
+.ph-hold.is-holding::before { width: 100%; transition: width var(--hold, 1s) linear; }

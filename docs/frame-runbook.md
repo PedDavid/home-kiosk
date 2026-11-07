@@ -151,7 +151,7 @@ CA store.
 ## 3. Kiosk app
 
 Upstream's kiosk APK is a full-screen WebView with a two-finger menu, screen-off modes and
-reload after a deploy.
+an update notice after a deploy.
 
 1. **Build it** with [`frontend/kiosk/build.sh`](../frontend/kiosk/build.sh) (JDK 17, Android
    build-tools 34; the script header lists the packages), then install it:
@@ -203,8 +203,11 @@ reload after a deploy.
       own after Wi-Fi connects (the first load may fail and retry).
 - [ ] **Screen-off test.** From the display controls choose Modes → Screen off. The panel goes
       fully black, and a tap brings it back.
-- [ ] **Deploy pickup.** After the next image tag is deployed, the frame reloads by itself
-      within about 5 minutes of being idle (it compares `/build.json`).
+- [ ] **Deploy pickup.** After the next image tag is deployed, the frame shows an **Update available — tap to refresh**
+      notice within about 5 minutes (it compares `/build.json`). It chimes once per detected build,
+      respecting mute, volume and quiet hours. Tap the notice to load the update; it never
+      automatically reloads. The notice waits while the screen is off, photos are explicitly
+      full screen, or a dialog is open.
 - [ ] **Isolation.** The frame can't reach the internet, from the kiosk's two-finger menu →
       Android settings → any online check, or from `adb -d shell ping -c1 1.1.1.1`. From
       another IoT client, the frame's port 5555 is unreachable.

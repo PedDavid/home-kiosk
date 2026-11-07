@@ -1,5 +1,5 @@
 // This display as a device: screen off while everyone is away, checking in so a quiet frame is
-// noticed, and reloading itself after a deploy. The kiosk app (window.HomeHQKiosk, kiosk 1.2+)
+// noticed, and offering updates after a deploy. The kiosk app (window.HomeHQKiosk, kiosk 1.2+)
 // turns the backlight down and reports its version and Wi-Fi signal; in a browser those parts
 // are skipped.
 (function () {
@@ -31,6 +31,7 @@
   }
   App.everyoneAway = function () { return !!D.homeOnline && everyoneAway(); };
   App.on('minute', function () {
+    if (App.photoFullscreen) { awaySince = null; return; }
     if (!D.awayOffMinutes || !D.homeOnline) {
       awaySince = null;
       if (App.mode === 'off' && autoOff) { App.setMode('day'); App.go('home'); } // can't tell who's home: wake
@@ -104,19 +105,45 @@
     App.on('ready', function () { setTimeout(beat, 5000); setInterval(beat, 5 * 60e3); });
   }
 
-  // ------------------------------------------------------------ reload after a deploy
-  // Each build writes /build.json. When it differs from the build running here, reload, but
-  // only while nobody is using the screen.
-  var newBuild = null;
+  // ------------------------------------------------------------ notify after a deploy
+  // Keep this page running until someone chooses to refresh. Defer the notice during
+  // full-screen photos, screen-off and dialogs; never wake the frame for an update.
+  var newBuild = null, announcedBuild = null, updateNotice = null;
+  function showUpdate() {
+    var blocked = App.photoFullscreen || App.mode === 'off' ||
+      $('#takeover').classList.contains('is-open') || $('#sheetLayer').classList.contains('is-open');
+    if (!newBuild || blocked) {
+      if (updateNotice) updateNotice.hidden = true;
+      return;
+    }
+    if (!updateNotice) {
+      updateNotice = document.createElement('div');
+      updateNotice.className = 'update-notice';
+      updateNotice.setAttribute('role', 'status');
+      var refresh = document.createElement('button');
+      refresh.type = 'button';
+      refresh.setAttribute('aria-label', 'Update available — tap to refresh');
+      refresh.title = 'Update available — tap to refresh';
+      refresh.innerHTML = '<svg class="update-burst" viewBox="0 0 112 112" aria-hidden="true"><polygon class="update-depth" points="50.00,4.00 59.32,15.23 73.00,10.16 75.46,24.54 89.84,27.00 84.77,40.68 96.00,50.00 84.77,59.32 89.84,73.00 75.46,75.46 73.00,89.84 59.32,84.77 50.00,96.00 40.68,84.77 27.00,89.84 24.54,75.46 10.16,73.00 15.23,59.32 4.00,50.00 15.23,40.68 10.16,27.00 24.54,24.54 27.00,10.16 40.68,15.23" transform="translate(4 14)"/><polygon class="update-face" points="50.00,4.00 59.32,15.23 73.00,10.16 75.46,24.54 89.84,27.00 84.77,40.68 96.00,50.00 84.77,59.32 89.84,73.00 75.46,75.46 73.00,89.84 59.32,84.77 50.00,96.00 40.68,84.77 27.00,89.84 24.54,75.46 10.16,73.00 15.23,59.32 4.00,50.00 15.23,40.68 10.16,27.00 24.54,24.54 27.00,10.16 40.68,15.23" transform="translate(4 4)"/><g transform="translate(4 4)" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M29 43a23 23 0 0 1 40-8l4 5m0-15v15H58M71 57a23 23 0 0 1-40 8l-4-5m0 15V60h15"/></g><circle cx="89" cy="23" r="15" fill="#850044"/><circle cx="89" cy="19" r="15" fill="#FFB5DE"/><path d="M89 11v10" stroke="#111" stroke-width="4" stroke-linecap="round"/><circle cx="89" cy="27" r="2.2" fill="#111"/></svg>';
+      refresh.addEventListener('click', function () { location.reload(); });
+      updateNotice.appendChild(refresh);
+      $('#stage').appendChild(updateNotice);
+    }
+    updateNotice.hidden = false;
+    if (announcedBuild !== newBuild) {
+      announcedBuild = newBuild;
+      App.sound('note'); // Uses the frame's existing mute, volume and quiet hours.
+    }
+  }
   function checkBuild() {
     fetch('/build.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (b) {
-      if (b && b.build && b.build !== __BUILD_ID__) newBuild = b.build;
+      if (!b || typeof b.build !== 'string' || !b.build) return;
+      newBuild = b.build !== __BUILD_ID__ ? b.build : null;
+      showUpdate();
     }).catch(function () {});
   }
   App.on('ready', function () { setInterval(checkBuild, 5 * 60e3); });
-  App.on('minute', function () {
-    // Not while the screen is off: a reload would light it. It reloads once it wakes.
-    var busy = App.mode === 'off' || App.idleFor() < 60 || $('#takeover').classList.contains('is-open') || $('#sheetLayer').classList.contains('is-open');
-    if (newBuild && !busy) location.reload();
-  });
+  App.on('minute', showUpdate);
+  App.on('mode', showUpdate);
+  App.on('photo-fullscreen', showUpdate);
 })();

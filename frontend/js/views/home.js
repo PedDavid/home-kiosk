@@ -322,6 +322,8 @@
 
   function photoCaption(s) {
     var m = App.photoMeta(s.photos[0]);
+    // Tapping the tile opens Photos on this same photo (see the click handler).
+    V.el.querySelector('.h-photo').setAttribute('data-photo', s.photos[0].id);
     V.el.querySelector('.h-photo-cap').innerHTML = '<b>' + (m.onThisDay ? 'On this day · ' : '') + m.kicker + '</b><span>' + App.esc(m.place) + '</span>';
   }
 
@@ -347,7 +349,7 @@
           if (e.target.closest('[data-checks]') && D.checks) { checksSheet(); return; }
           if (e.target.closest('[data-energy]')) { App.energySheet(); return; }
           var g = e.target.closest('[data-go]');
-          if (g) App.go(g.dataset.go);
+          if (g) App.go(g.dataset.go, g.dataset.photo ? { photo: g.dataset.photo } : undefined);
         });
         V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, interval: 12000, onChange: photoCaption });
       }

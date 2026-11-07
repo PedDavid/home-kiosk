@@ -282,6 +282,13 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .demo-x { width: var(--tap); height: var(--tap); border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .1); }
 .demo-sec { margin-bottom: 22px; }
 .demo-note { font-size: 16px; color: rgba(255, 255, 255, .6); }
+.demo-weather { margin-top: 10px; overflow-wrap: anywhere; }
+.demo-weather p { margin: 8px 0; }
+.demo-weather-city { color: #fff; }
+.demo-weather-toggle { padding: 6px 0; margin: -6px 0; background: none; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.demo-weather-toggle:hover, .demo-weather-toggle:focus-visible { color: #fff; }
+.demo-weather-qr { line-height: 0; margin-top: 10px; }
+.demo-weather-qr svg { max-width: 100%; height: auto; }
 .demo-test { display: flex; gap: 8px; margin-top: 10px; }
 .demo-frames { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .demo-sound { display: flex; align-items: center; gap: 14px; margin: 10px 0 8px; }
@@ -319,10 +326,17 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 }
 .demo-test button.demo-icon { width: var(--tap); padding: 0; display: grid; place-items: center; background: rgba(255, 255, 255, .1); color: #fff; }
 
-/* ---------------------------------------------------------------- night: the whole dashboard muted */
-/* Whenever the frame's night hours are on (display controls), tapped awake or not. */
+/* ---------------------------------------------------------------- night: mute UI without recolouring photos */
+/* Filter individual UI regions: a filter on .views also inverts/grayscales every photo. */
 .stage[data-night="1"] > .rail,
-.stage[data-night="1"] > .views {
+.stage[data-night="1"] > .views > .view:not([data-view="home"]):not([data-view="photos"]),
+.stage[data-night="1"] .home > :not(.h-side),
+.stage[data-night="1"] .h-side > :not(.h-photo),
+.stage[data-night="1"] .ph-top,
+.stage[data-night="1"] .ph-bottom,
+.stage[data-night="1"] .photos .cap,
+.stage[data-night="1"] > .views > .notes,
+.stage[data-night="1"] > .views > .banners {
   filter: invert(1) hue-rotate(180deg) grayscale(1) sepia(1) saturate(5) hue-rotate(-38deg) brightness(.62);
 }
 .stage[data-night="1"] { background: #000; }
@@ -346,3 +360,17 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
     text-align: center; color: #9a958b; font: 500 15px/1.4 var(--sans); letter-spacing: .02em;
   }
 }
+
+/* The update button floats above the dashboard until someone chooses to refresh. */
+.update-notice { position: absolute; left: calc(87.5% - 33px); top: calc(73.5% - 33px); transform: translate(-50%, -50%); z-index: 65; }
+.update-notice[hidden] { display: none; }
+.update-notice button { position: relative; display: block; width: 88px; height: 88px; padding: 0; border: 0; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.update-notice button::before { content: ''; position: absolute; left: 15px; right: 12px; bottom: 0; height: 12px; border-radius: 50%; background: #26001955; filter: blur(5px); animation: update-shadow 0.5s ease-in-out infinite; }
+.update-burst { position: relative; display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(2px 5px 2px #21001644); transform: translateY(-6px); animation: update-float 0.5s ease-in-out infinite; }
+.update-depth { fill: #870044; stroke: #650035; stroke-width: 1; }
+.update-face { fill: #ED008C; }
+.update-notice button:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; border-radius: 50%; }
+.update-notice button:active .update-burst { animation: none; transform: translateY(0) scale(.94); }
+@keyframes update-float { 0%, 100% { transform: translateY(-6px); } 50% { transform: translateY(-18px); } }
+@keyframes update-shadow { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: .3; transform: scale(.8); } }
+@media (prefers-reduced-motion: reduce) { .update-burst, .update-notice button::before { animation: none; } }

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import pkg from './package.json' with { type: 'json' };
 
-// Changes with every build; frames compare it with /build.json and reload after a deploy.
+// Changes with every build; frames compare it with /build.json and offer an update after a deploy.
 const BUILD_ID = Date.now().toString(36);
 
 // The wall tablet runs Android WebView 106 — keep JS output within Chromium 106.
@@ -18,7 +18,7 @@ export default defineConfig({
   build: {
     target: 'chrome106',
     cssTarget: 'chrome61',
-    rollupOptions: { input: { main: 'index.html', upload: 'upload.html', m: 'm.html' } },
+    rollupOptions: { input: { main: 'index.html', immich: 'immich.html', upload: 'upload.html', m: 'm.html' } },
   },
   // `npm run dev` serves the UI; /api goes to `npm run dev:api` (wrangler dev, local D1 + R2).
   server: { host: true, proxy: { '/api': 'http://localhost:8787' } },

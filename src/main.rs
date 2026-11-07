@@ -1,7 +1,14 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use home_hq::{AppState, router, settings::Settings, tls};
+use home_hq::{
+    AppState,
+    calendar::{self, CalendarSource, ics::IcsSource},
+    geocoding, router,
+    settings::Settings,
+    share::ImmichPublicUrl,
+    tls, weather,
+};
 use tokio::sync::watch;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -27,7 +34,43 @@ async fn main() -> anyhow::Result<()> {
         "loaded settings"
     );
 
-    let state = AppState::new(settings, key, Arc::new(chrono::Utc::now));
+    let immich_public_url = ImmichPublicUrl::parse(&std::env::var("HQ_IMMICH_PUBLIC_URL").unwrap_or_default())?;
+    match &immich_public_url {
+        Some(u) => tracing::info!(immich_public_url = u.as_str(), "photo sharing on"),
+        None => tracing::info!("HQ_IMMICH_PUBLIC_URL is not set: the Share button is hidden"),
+    }
+
+    // reqwest (calendar, Immich, weather) and the TLS listener share rustls's ring provider.
+    tls::install_crypto_provider();
+    let clock: home_hq::Clock = Arc::new(chrono::Utc::now);
+    let calendar = calendars(&settings, clock.clone())?;
+    let weather = weather_from_env(&settings, clock.clone())?;
+    let geocoding = if weather.is_some() {
+        settings
+            .location
+            .as_ref()
+            .map(|location| {
+                let endpoint = std::env::var("HQ_GEOCODING_URL").unwrap_or_else(|_| geocoding::NOMINATIM_URL.into());
+                geocoding::Geocoding::new(location, &endpoint, geocoding::http_fetch()?).map(Arc::new)
+            })
+            .transpose()?
+    } else {
+        None
+    };
+    let mut state = AppState::new(settings, key, clock)
+        .with_calendar(calendar)
+        .with_immich_public_url(immich_public_url);
+    if let Some(w) = weather {
+        state = state.with_weather(w);
+    }
+    if let Some(source) = geocoding {
+        source.start();
+        state.geocoding = Some(source);
+    }
+    state.device_auth = home_hq::device_auth::DeviceAuth::from_env()?.map(Arc::new);
+    if state.device_auth.is_none() {
+        state.immich = home_hq::immich::Immich::from_env()?.map(Arc::new);
+    }
     let app = router(state).layer(TraceLayer::new_for_http());
 
     // One signal stops every listener.
@@ -49,7 +92,6 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    tls::install_crypto_provider();
     let (config, pem) = tls::load(&files).await?;
     let addr: SocketAddr = tls_listen
         .parse()
@@ -75,6 +117,47 @@ async fn main() -> anyhow::Result<()> {
     reloader.abort();
     result?;
     Ok(())
+}
+
+/// Live weather from Open-Meteo by default (`HQ_OPEN_METEO_URL` overrides the endpoint);
+/// `HQ_WEATHER=demo` serves the demo forecast instead and makes no outbound calls.
+fn weather_from_env(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Option<weather::Weather>> {
+    match std::env::var("HQ_WEATHER").unwrap_or_default().as_str() {
+        "demo" => Ok(None),
+        "" | "open-meteo" => {
+            let url = std::env::var("HQ_OPEN_METEO_URL")
+                .ok()
+                .filter(|u| !u.is_empty())
+                .unwrap_or_else(|| weather::OPEN_METEO_URL.into());
+            let w = weather::Weather::new(settings, &url, weather::http_fetch()?, clock)?;
+            match w.request_url() {
+                Some(_) => tracing::info!(endpoint = %url, "weather from Open-Meteo"),
+                None => tracing::warn!("settings have no location: weather is off"),
+            }
+            Ok(Some(w))
+        }
+        other => anyhow::bail!("HQ_WEATHER must be open-meteo or demo, not {other:?}"),
+    }
+}
+
+/// The calendar from `HQ_CALENDARS` (ICS feeds); unset keeps the demo calendar.
+fn calendars(settings: &Settings, clock: home_hq::Clock) -> anyhow::Result<Arc<dyn CalendarSource>> {
+    let value = std::env::var("HQ_CALENDARS").ok();
+    let people: Vec<String> = settings.people.iter().map(|p| p.id.clone()).collect();
+    let fetch = Arc::new(calendar::fetch::Http::new()?);
+    let tz = settings.tz()?;
+    Ok(
+        match IcsSource::from_env_value(value.as_deref(), &people, tz, fetch, clock) {
+            Some(source) => {
+                tracing::info!(calendars = source.len(), "calendar: ICS feeds");
+                Arc::new(source)
+            }
+            None => {
+                tracing::info!("calendar: HQ_CALENDARS is not set, serving the demo calendar");
+                Arc::new(calendar::NotConfigured)
+            }
+        },
+    )
 }
 
 async fn stopped(mut stop: watch::Receiver<bool>) {

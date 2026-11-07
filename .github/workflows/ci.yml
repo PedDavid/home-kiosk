@@ -3,10 +3,26 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update-screenshots:
+        description: Render new screenshot baselines in CI's image and commit them to this branch
+        type: boolean
+        default: false
+      record-weather-snapshot:
+        description: Fetch a fresh Open-Meteo response into tests/fixtures/weather/open-meteo-snapshot.json and commit it to this branch
+        type: boolean
+        default: false
+
+# The app calls Open-Meteo by default. Nothing in CI should, apart from recording the snapshot.
+env:
+  HQ_WEATHER: demo
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      weather-recorded: ${{ steps.weather.outputs.recorded }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -24,9 +40,159 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
+      # The one live call: only when the snapshot is missing or a manual run asks for a new one.
+      # Every other run maps the stored response and stays offline.
+      - name: Record the Open-Meteo snapshot
+        id: weather
+        if: ${{ inputs.record-weather-snapshot || hashFiles('tests/fixtures/weather/open-meteo-snapshot.json') == '' }}
+        env:
+          HQ_RECORD_WEATHER: "1"
+        run: |
+          cargo test --locked --test weather_snapshot
+          cargo run --quiet --locked --example screen_fixtures
+          echo "recorded=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: ${{ steps.weather.outputs.recorded == 'true' }}
+        with:
+          # The snapshot and the screen fixture rendered from it (frontend/tests/screens/fixtures/).
+          name: weather-snapshot
+          path: |
+            tests/fixtures/weather/open-meteo-snapshot.json
+            frontend/tests/screens/fixtures/weather-open-meteo.json
       - run: cargo test --locked
+      - name: Screenshot fixtures are up to date with src/demo.rs
+        # A new recording changes weather-open-meteo.json on purpose; the commit job takes it.
+        if: ${{ steps.weather.outputs.recorded != 'true' }}
+        run: |
+          cargo run --quiet --locked --example screen_fixtures
+          git diff --exit-code frontend/tests/screens/fixtures
+          test -z "$(git status --porcelain frontend/tests/screens/fixtures)"
       - name: Build release binary (frontend embedded)
         run: cargo build --release --locked
+
+  screens:
+    # Screenshot tests of the wall view (frontend/tests/screens). The same image as
+    # `npm run test:screens:docker` (browsers and fonts included), so baselines rendered on any
+    # machine with Docker match CI pixel for pixel. Keep its tag in step with @playwright/test.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # Only for the screenshots comment on pull requests from this repository.
+      pull-requests: write
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - run: npm ci --no-audit --no-fund
+      - name: Screenshots and layout at 1280x800
+        if: ${{ !inputs.update-screenshots }}
+        run: npm run test:screens
+      - name: Render new baselines
+        if: ${{ inputs.update-screenshots }}
+        run: npm run test:screens:update
+      - uses: actions/upload-artifact@v4
+        id: artifact
+        if: ${{ always() }}
+        with:
+          # The baselines (or the new ones), and on failure each -actual/-diff PNG and the report.
+          name: screenshots
+          path: |
+            frontend/tests/screens/screenshots/
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
+      # Links the screenshots from the run's summary and, on a pull request from this repository,
+      # from one comment that each run updates: the baselines the PR changes, shown from its head
+      # commit, the result and the artifact. Nobody has to push images anywhere else.
+      - name: Link the screenshots
+        if: ${{ always() && steps.artifact.outputs.artifact-url }}
+        uses: actions/github-script@v7
+        env:
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+          OUTCOME: ${{ job.status }}
+        with:
+          script: |
+            const dir = 'frontend/tests/screens/screenshots/';
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const result = process.env.OUTCOME === 'success'
+              ? 'Screenshots and layout checks passed.'
+              : 'Screenshot tests **failed**: the artifact has each `-actual.png` and `-diff.png` under `test-results/`.';
+            let lines = ['<!-- screens -->', '### Screenshots (1280×800)', '', result, '', `Artifact: ${process.env.ARTIFACT_URL}`];
+            if (pr) {
+              const files = await github.paginate(github.rest.pulls.listFiles, { owner, repo, pull_number: pr.number });
+              const shots = files.filter(f => f.filename.startsWith(dir) && f.filename.endsWith('.png') && f.status !== 'removed');
+              lines.push('', shots.length ? `Baselines this PR adds or changes (at ${pr.head.sha.slice(0, 7)}):` : 'This PR changes no baselines.');
+              for (const f of shots) {
+                const name = f.filename.slice(dir.length, -4);
+                lines.push('', `**${name}**`, '', `![${name}](https://raw.githubusercontent.com/${pr.head.repo.full_name}/${pr.head.sha}/${f.filename})`);
+              }
+            }
+            const body = lines.join('\n');
+            await core.summary.addRaw(body).write();
+            if (!pr || pr.head.repo.full_name !== `${owner}/${repo}`) return; // forks get a read-only token
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number });
+            const mine = comments.find(c => c.user.type === 'Bot' && c.body.startsWith('<!-- screens -->'));
+            if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+
+  # Commits the baselines the screens job rendered on a manual run with update-screenshots ticked.
+  # Separate so that only this job, which runs no project code, holds a write token. Baselines must
+  # come from CI's image, so this is how a change without Docker gets them. A push with
+  # GITHUB_TOKEN doesn't start a new CI run: run the workflow again (unticked) or push to check.
+  screenshots-commit:
+    needs: screens
+    if: ${{ inputs.update-screenshots && github.ref_type == 'branch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: screenshots
+          # Paths in the artifact are relative to frontend/; only its baselines are taken.
+          path: ${{ runner.temp }}/screenshots
+      - name: Commit new or changed baselines
+        run: |
+          cp "$RUNNER_TEMP"/screenshots/tests/screens/screenshots/*.png frontend/tests/screens/screenshots/
+          git add frontend/tests/screens/screenshots
+          if git diff --cached --quiet; then echo "Baselines unchanged"; exit 0; fi
+          git diff --cached --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update screenshot baselines (rendered in CI)"
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+
+  # Commits a snapshot the test job recorded (and tested) back to the branch. Separate so that
+  # only this job, which runs no project code, holds a write token. Pull request runs skip it:
+  # the push run of the same commit commits instead, and a fork's PR keeps it as an artifact.
+  # A push with GITHUB_TOKEN doesn't start a new CI run; the snapshot was already tested above.
+  weather-snapshot:
+    needs: test
+    if: ${{ needs.test.outputs.weather-recorded == 'true' && github.event_name != 'pull_request' && github.ref_type == 'branch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: weather-snapshot
+          # upload-artifact keeps paths relative to the files' common parent: the repository root.
+          path: .
+      - name: Commit the snapshot
+        run: |
+          git add tests/fixtures/weather/open-meteo-snapshot.json frontend/tests/screens/fixtures/weather-open-meteo.json
+          if git diff --cached --quiet; then echo "Snapshot unchanged"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Record the Open-Meteo weather snapshot"
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
 
   chart:
     runs-on: ubuntu-latest
@@ -35,7 +201,12 @@ jobs:
       - uses: azure/setup-helm@v4
       - run: helm lint charts/home-hq
       - run: helm lint charts/home-hq -f charts/home-hq/ci/test-values.yaml
-      - name: Render with defaults and with every option on
+      - name: Render with defaults, with every option on, and with persistence turned off
         run: |
           helm template home-hq charts/home-hq > /dev/null
           helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml
+          helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml --set persistence.enabled=false > /dev/null
+      - name: Weather is Open-Meteo by default and demo in the CI values
+        run: |
+          helm template home-hq charts/home-hq | grep -A1 'name: HQ_WEATHER' | grep -q '"open-meteo"'
+          helm template home-hq charts/home-hq -f charts/home-hq/ci/test-values.yaml | grep -A1 'name: HQ_WEATHER' | grep -q '"demo"'
