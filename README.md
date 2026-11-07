@@ -82,6 +82,12 @@ Click **Show QR** to reveal a locally generated QR code for opening the map on a
 
 ### Photo frame behaviour
 
+The **Fit** layout shows the entire photo with its original proportions. Pair, Collage and
+Polaroid also fit each image inside its panel instead of cropping it; unused space is black.
+Polaroid frames adapt to the available width, including portrait full-screen viewports, and
+retain their bottom border when captions are hidden. This deliberately trades edge-to-edge
+coverage for keeping the whole image visible.
+
 After eight seconds without interaction in Photos, the daytime frame shows only an
 edge-to-edge slideshow: navigation, captions, notes, clock, weather and controls are hidden.
 The first touch restores the Photos controls without triggering a photo action. Other views

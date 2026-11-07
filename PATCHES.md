@@ -17,4 +17,6 @@ Keep this list short. Every patch here has to be carried across `git subtree pul
 | Screenshot tests | `frontend/tests/screens/`, `frontend/playwright.config.mjs`, `frontend/package.json`, `frontend/package-lock.json` | Playwright screenshots and a layout check of the wall view at the frame's 1280×800, against mocked API fixtures; test tooling only, the app is unchanged |
 | Share photo as a QR code (#21) | `frontend/js/share.js`, `frontend/css/views/share.css` (new); two lines in `frontend/js/views/photos.js`, one each in `frontend/js/main.js` and `frontend/index.html`; `qrcode-generator` in `frontend/package.json` and `frontend/package-lock.json` | An icon-only Share button beside the full-screen button (also in full screen) shows a QR code that opens the photo in the Immich phone app (`shareAppUrl`) or, switched to Web, in a browser (`shareUrl`); the web link is also shown as text, clickable outside the kiosk app. Shown only for photos with a `shareUrl` from `/api/state` |
 
+| Fit photos and responsive Polaroids | `frontend/css/views/photos.css`, `frontend/js/slideshow.js`, `frontend/js/views/photos.js`, `frontend/tests/screens/` | Preserve the full image in every layout; size Polaroid frames to the available width and retain the bottom border in full screen. |
+
 Planned: hide tabs whose capability `/api/state` reports as unavailable (PRD 002).
