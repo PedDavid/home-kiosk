@@ -159,6 +159,66 @@ test.describe('remove favorite', () => {
   });
 });
 
+// Share photo (#21): an icon-only Share button beside the full-screen button opens a sheet with a
+// QR code for the photo in Immich. The backend only sets shareUrl on Immich photos when
+// HQ_IMMICH_PUBLIC_URL is set; the fixtures are demo photos, so these tests give demo0 one.
+test.describe('share photo', () => {
+  const ASSET = '9b2d8a4e-3f1c-4e7a-b0d5-6c8f1e2a3b4c';
+  const WEB = 'https://photos.example.com/photos/' + ASSET;
+  const immich = extra => ({ state: s => ({ ...s, photos: s.photos.filter(p => p.id === 'demo0').map(p => ({ ...p, immichId: ASSET, ...extra })) }) });
+  const shareBtn = page => page.locator('#view-photos [data-share]');
+  const sheet = page => page.locator('#sheetLayer.is-open .sheet--share');
+  // The QR on screen is the one App.share draws for `url` (the same 400 px rendering).
+  const qrIs = (page, url) => page.evaluate(u => {
+    const want = document.createElement('div');
+    want.innerHTML = App.share.qrSvg(u, 400);
+    return document.querySelector('.share-qr').innerHTML === want.innerHTML;
+  }, url);
+
+  test.describe('on an Immich photo', () => {
+    test.use({ api: immich({ shareUrl: WEB }) });
+
+    test('share-sheet', async ({ page }) => {
+      await open(page, 'photos');
+      await expect(shareBtn(page)).toBeVisible();
+      await shareBtn(page).click();
+      await expect(sheet(page)).toBeVisible();
+      expect(await qrIs(page, WEB), 'QR encodes the web link').toBe(true);
+      await settle(page);
+      await expect(page).toHaveScreenshot('share-sheet.png');
+      await fits(page);
+    });
+
+    test('share-sheet-fullscreen', async ({ page }) => {
+      await open(page, 'photos');
+      await page.locator('#view-photos [data-photo-fullscreen]').click();
+      await expect(page.locator('#stage')).toHaveClass(/is-photo-fullscreen/);
+      await expect(shareBtn(page)).toBeVisible();
+      await shareBtn(page).click();
+      await expect(sheet(page)).toBeVisible();
+      await settle(page);
+      await expect(page).toHaveScreenshot('share-sheet-fullscreen.png');
+      await fits(page);
+    });
+  });
+
+  test.describe('without HQ_IMMICH_PUBLIC_URL', () => {
+    test.use({ api: immich({}) });
+    test('Share is hidden', async ({ page }) => {
+      await open(page, 'photos');
+      await expect(shareBtn(page)).toBeHidden();
+    });
+  });
+
+  test.describe('on a demo photo', () => {
+    test.use({ api: only('demo0') });
+    test('Share is hidden', async ({ page }) => {
+      await open(page, 'photos');
+      await expect(shareBtn(page)).toBeHidden();
+    });
+  });
+});
+
 test('night', async ({ page }) => {
   await open(page, 'home');
   await page.evaluate(() => App.setMode('night', true));
