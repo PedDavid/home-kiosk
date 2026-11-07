@@ -10,6 +10,8 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 800, height: 1100
         `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><path fill="#297b91" d="M0 0h${w}v${h}H0z"/><path fill="#e95342" d="M0 0h${w * .08}v${h}H0z"/><path fill="#49ae66" d="M${w * .92} 0h${w * .08}v${h}H${w * .92}z"/><path fill="#f5ce60" d="M0 0h${w}v${h * .04}H0z"/><path fill="#bd6fe2" d="M0 ${h * .96}h${w}v${h * .04}H0z"/></svg>` });
     });
     await open(page, 'photos');
+    // Exercise the background warm-up that used to shift the shared random stream.
+    await page.waitForFunction(() => App.views.home._built);
     await page.evaluate(() => {
       App.setIdle({ home: 3600, rest: 3600 });
       // Render known slides rather than depending on the production shuffle/queue.
@@ -25,7 +27,13 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 800, height: 1100
         for (const fullscreen of [false, true]) {
           await page.evaluate(({ layout, photos, fullscreen }) => {
             App.setPhotoFullscreen(fullscreen);
-            fitFixture.render({ layout, photos });
+            // Background view warming also consumes the app's seeded Math.random.
+            // Give this synchronous fixture render its own fixed value: -1.1° for
+            // Polaroid, matching the existing CI baseline regardless of timing.
+            const random = Math.random;
+            Math.random = () => 0.28;
+            try { fitFixture.render({ layout, photos }); }
+            finally { Math.random = random; }
           }, { layout, photos, fullscreen });
           await settle(page);
           const failures = await page.evaluate(() => {
