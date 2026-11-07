@@ -13,9 +13,13 @@ key:
   existingSecret: ""
   secretKey: HQ_KEY
 
-# Calendar feeds (HQ_CALENDARS) come from an existing Secret, because the links are secrets:
-# a JSON list of { "url": "https://…/basic.ics", "people": ["alex"] | "all" }.
-# With no existingSecret the calendar shows demo events. It may be the same Secret as `key`.
+# Calendars are normally added on the dashboard's calendar page (/calendars) and kept encrypted
+# on the PVC (needs persistence and a dashboard key). Optionally, fixed calendars (HQ_CALENDARS)
+# come from an existing Secret: a JSON list of ICS links and CalDAV calendars, e.g.
+#   [ { "url": "https://calendar.google.com/calendar/ical/…/basic.ics", "people": ["sam"] },
+#     { "type": "caldav", "id": "family", "url": "https://dav.example/alex/family/",
+#       "username": "alex", "password": "…", "people": "all" } ]
+# It may be the same Secret as `key`.
 calendars:
   existingSecret: ""
   secretKey: HQ_CALENDARS

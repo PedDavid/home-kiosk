@@ -68,6 +68,7 @@ pub fn router() -> Router<AppState> {
         .route("/immich/auth/poll", post(immich_poll))
         .route("/immich/auth/qr", get(immich_qr))
         .route("/calendar", get(calendar))
+        .nest("/calendars", calendar::admin::router())
         .route("/weather", get(weather))
         .route("/events", post(add_event))
         .route("/events/{id}", delete(delete_event))
@@ -113,6 +114,10 @@ async fn state(State(app): State<AppState>) -> Response {
         }
     }
     share::annotate(&mut state["photos"], app.immich_public_url.as_deref());
+    // The frame's "+" (add event) shows only when events can be saved somewhere: the demo
+    // calendar, or a configured calendar with a writable (CalDAV) calendar in it.
+    let add_events = !app.calendar.configured() || app.calendar.can_write();
+    state["capabilities"] = json!({ "addEvents": add_events });
     ok(state)
 }
 
@@ -131,6 +136,8 @@ async fn weather(State(app): State<AppState>) -> Response {
     ok(app.demo.lock().await.weather(app.now()))
 }
 
+/// A failed write. The frame shows it as "Couldn't save · <error>" and refreshes the calendar,
+/// which still has everything it had.
 fn calendar_error(e: calendar::CalendarError) -> Response {
     let status = match e {
         calendar::CalendarError::ReadOnly => StatusCode::METHOD_NOT_ALLOWED,

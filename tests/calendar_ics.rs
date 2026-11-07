@@ -82,6 +82,7 @@ fn feeds(seed: &Seed) -> Vec<FeedConfig> {
         .map(|(i, c)| FeedConfig {
             url: url(i),
             people: People::Many(c.people.clone()),
+            label: None,
         })
         .collect()
 }
@@ -137,6 +138,7 @@ fn setup(entries: &[(usize, &str)]) -> Setup {
         .map(|(i, people)| FeedConfig {
             url: url(*i),
             people: serde_json::from_str(people).unwrap(),
+            label: None,
         })
         .collect();
     let source = IcsSource::new(configs, &seed.people, seed.tz, fetch.clone(), clock.clock());

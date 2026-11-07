@@ -36,6 +36,9 @@ pub struct FeedConfig {
     pub url: String,
     #[serde(default)]
     pub people: People,
+    /// A name for the Status panel instead of "Calendar N" (feeds added on the calendar page).
+    #[serde(default)]
+    pub label: Option<String>,
 }
 
 /// `"all"`, one id, or a list of ids.
@@ -70,6 +73,8 @@ pub fn parse_config(json: &str) -> Result<Vec<FeedConfig>, String> {
 
 struct Feed {
     url: String,
+    /// How the Status panel names it.
+    title: String,
     people: Vec<String>,
     /// Config problems found up front (unknown people), reported with every refresh.
     notes: Vec<String>,
@@ -106,6 +111,7 @@ impl IcsSource {
             .enumerate()
             .map(|(i, f)| {
                 let wanted = f.people.ids();
+                let title = f.label.clone().unwrap_or_else(|| format!("Calendar {}", i + 1));
                 let mut notes = Vec::new();
                 let people: Vec<String> = if wanted.iter().any(|p| p == "all") || wanted.is_empty() {
                     known_people.to_vec()
@@ -117,8 +123,7 @@ impl IcsSource {
                         .collect();
                     if !unknown.is_empty() {
                         notes.push(format!(
-                            "Calendar {}: unknown people {} (ids must match settings.json)",
-                            i + 1,
+                            "{title}: unknown people {} (ids must match settings.json)",
                             unknown.join(", ")
                         ));
                     }
@@ -127,6 +132,7 @@ impl IcsSource {
                 };
                 Feed {
                     url: f.url.trim().replacen("webcal://", "https://", 1),
+                    title,
                     people,
                     notes,
                 }
@@ -216,7 +222,7 @@ impl IcsSource {
                 }
                 Err(e) => {
                     tracing::warn!(calendar = i + 1, error = %e, "calendar failed; keeping its last events");
-                    errors.push(format!("Calendar {}: {e}", i + 1));
+                    errors.push(format!("{}: {e}", self.feeds[i].title));
                 }
             }
         }

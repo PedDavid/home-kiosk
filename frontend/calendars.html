@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendars · Home HQ</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f2eee6; color: #171917; font: 19px/1.45 system-ui, sans-serif; }
+    main { max-width: 880px; margin: 0 auto; padding: 28px 24px 64px; }
+    h1 { font: 46px/1.1 Georgia, serif; margin: 18px 0 8px; }
+    h2 { font: 26px/1.2 Georgia, serif; margin: 0 0 12px; }
+    a { color: inherit; }
+    section, .account { background: #fbf9f4; border-radius: 18px; padding: 20px 22px; margin: 18px 0; }
+    label { display: block; font-size: 15px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #575d59; margin: 10px 0 4px; }
+    input[type=text], input[type=url], input[type=password] { width: 100%; min-height: 50px; padding: 10px 14px; border: 2px solid #d9d3c7; border-radius: 12px; font: inherit; background: white; }
+    input:focus { outline: none; border-color: #171917; }
+    .row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .row > div { flex: 1 1 260px; }
+    button { min-height: 50px; padding: 10px 22px; border: 0; border-radius: 12px; background: #171917; color: white; font: inherit; font-weight: 600; cursor: pointer; }
+    button.ghost { background: transparent; color: #171917; border: 2px solid #171917; }
+    button.small { min-height: 40px; padding: 6px 14px; font-size: 16px; }
+    button:disabled { opacity: .45; cursor: default; }
+    .muted { color: #575d59; }
+    .note { font-size: 16px; color: #575d59; }
+    .error { color: #a21c3b; font-weight: 600; }
+    .ok { color: #1f6b3a; font-weight: 600; }
+    #qr { width: 260px; height: 260px; background: white; padding: 10px; border-radius: 12px; }
+    .pending { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+    .pending > div { flex: 1 1 300px; }
+    .account-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .cal { border-top: 1px solid #e5dfd3; padding: 14px 0 6px; }
+    .cal:first-of-type { border-top: 0; }
+    .cal-name { font-weight: 700; font-size: 21px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    .chip { min-height: 42px; padding: 6px 14px; border-radius: 999px; border: 2px solid #d9d3c7; background: white; color: #171917; font-weight: 600; font-size: 16px; }
+    .chip.on { background: var(--c, #171917); border-color: var(--c, #171917); color: white; }
+    .toggles { display: flex; gap: 18px; flex-wrap: wrap; font-size: 17px; }
+    .toggles label { display: inline-flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 17px; color: #171917; margin: 0; }
+    .toggles input { width: 24px; height: 24px; }
+    details summary { cursor: pointer; font-weight: 600; margin: 6px 0; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body><main>
+  <a href="/#calendar">← Back to the calendar</a>
+  <h1>Calendars</h1>
+  <p class="muted">Calendars show on the frame for the people you pick. CalDAV calendars can also take events added on the frame.</p>
+  <p id="persist" class="note" hidden></p>
+  <p id="error" class="error" role="alert"></p>
+  <div id="accounts"></div>
+  <p id="env" class="note" hidden></p>
+
+  <section>
+    <h2 id="connect-title">Connect a calendar server</h2>
+    <p class="note">Nextcloud and RustiCal: sign in on your phone (with your usual login, OIDC included) and approve. Home HQ gets its own app password, which you can revoke on the server.</p>
+    <div id="connect-form" class="row">
+      <div><label for="server">Server address</label><input id="server" type="url" placeholder="https://dav.example.com" autocomplete="url"></div>
+      <button id="connect">Connect</button>
+    </div>
+    <div id="pending" class="pending" hidden>
+      <img id="qr" alt="Scan to sign in to the calendar server on your phone">
+      <div>
+        <p id="pending-text" role="status" aria-live="polite">Scan the code with your phone, sign in and approve Home HQ.</p>
+        <p><a id="login-link" target="_blank" rel="noopener noreferrer">Or open the login page here</a></p>
+        <button id="cancel" class="ghost">Cancel</button>
+      </div>
+    </div>
+    <p id="connect-status" role="status" aria-live="polite"></p>
+    <details>
+      <summary>Use an app password instead</summary>
+      <p class="note">For servers without the login flow (Radicale, Baïkal, iCloud): create an app password on the server.</p>
+      <div class="row">
+        <div><label for="pw-server">Server or calendar address</label><input id="pw-server" type="url" placeholder="https://dav.example.com"></div>
+      </div>
+      <div class="row">
+        <div><label for="pw-user">User name</label><input id="pw-user" type="text" autocomplete="username"></div>
+        <div><label for="pw-pass">App password</label><input id="pw-pass" type="password" autocomplete="new-password"></div>
+        <button id="pw-add">Add</button>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Add an ICS link</h2>
+    <p class="note">Read-only, such as Google's "Secret address in iCal format". The link stays on the server.</p>
+    <div class="row">
+      <div><label for="ics-url">Link</label><input id="ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"></div>
+      <div><label for="ics-name">Name</label><input id="ics-name" type="text" placeholder="School term dates"></div>
+    </div>
+    <label>Whose calendar</label>
+    <div id="ics-people" class="chips"></div>
+    <button id="ics-add">Add link</button>
+  </section>
+
+</main><script type="module" src="/js/calendars.js"></script></body>
+</html>

@@ -24,6 +24,8 @@ pub struct Settings {
     pub shopping: Shopping,
     #[serde(default)]
     pub display: Display,
+    #[serde(default)]
+    pub calendar: CalendarSettings,
 }
 
 fn default_tz() -> String {
@@ -81,6 +83,22 @@ pub struct Store {
 pub struct Display {
     #[serde(default)]
     pub away_off_minutes: u32,
+}
+
+/// `calendar`: which writable calendar events added on the frame go to (CalDAV).
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarSettings {
+    /// Checked before the calendars' own `people`; see `calendar::caldav::config`.
+    #[serde(default)]
+    pub write_to: Vec<WriteRule>,
+}
+
+/// Events for exactly `people` (or `"all"`) go to the `HQ_CALENDARS` entry with this `id`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct WriteRule {
+    pub people: crate::calendar::ics::People,
+    pub calendar: String,
 }
 
 /// A person as the frontend sees it (`/api/state` → `people`).
